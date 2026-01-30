@@ -4,7 +4,7 @@
 
 ### 1. 确认依赖包已编译
 ```bash
-cd /home/robotics/temp/new_ws
+cd /home/robotics/robocon/new_ws
 colcon build --packages-select my_joystick_msgs my_joystick_driver joystick_bridge
 source install/setup.bash
 ```
@@ -26,7 +26,7 @@ sudo evtest
 
 ### 方法 1：一键启动脚本（推荐）
 ```bash
-cd /home/robotics/temp/new_ws
+cd /home/robotics/robocon/new_ws
 ./start_full_control_chain.sh
 ```
 
@@ -34,26 +34,26 @@ cd /home/robotics/temp/new_ws
 
 **终端 1：手柄驱动**
 ```bash
-source /home/robotics/temp/new_ws/install/setup.bash
+source /home/robotics/robocon/new_ws/install/setup.bash
 ros2 run my_joystick_driver joystick_node
 ```
 
 **终端 2：转换节点**
 ```bash
-source /home/robotics/temp/new_ws/install/setup.bash
+source /home/robotics/robocon/new_ws/install/setup.bash
 ros2 run joystick_bridge joystick_bridge
 ```
 
 **终端 3：底盘驱动**
 ```bash
-cd /home/robotics/temp/Robocon2026_r2/2026R2_ws
+cd /home/robotics/robocon/Robocon2026_r2/2026R2_ws
 source install/setup.bash
 ros2 run base_omniwheel_r2_700 damiao_node
 ```
 
 **终端 4：导航节点**
 ```bash
-cd /home/robotics/temp/Robocon2026_r2/2026R2_ws
+cd /home/robotics/robocon/Robocon2026_r2/2026R2_ws
 source install/setup.bash
 ros2 run base_omniwheel_r2_700 local_navigation_node
 ```

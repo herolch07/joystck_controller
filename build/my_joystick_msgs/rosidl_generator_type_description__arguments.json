@@ -1,0 +1,7 @@
+{
+  "package_name": "my_joystick_msgs",
+  "output_dir": "/home/robotics/temp/new_ws/build/my_joystick_msgs/rosidl_generator_type_description/my_joystick_msgs",
+  "idl_tuples": [
+    "/home/robotics/temp/new_ws/build/my_joystick_msgs/rosidl_adapter/my_joystick_msgs:msg/Joystick.idl"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "my_joystick_msgs__py",
+		"source" : "/home/robotics/temp/new_ws/build/my_joystick_msgs/my_joystick_msgs__py"
+	}
+}

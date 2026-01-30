@@ -1,0 +1,8 @@
+setup.py
+my_joystick_msgs/__init__.py
+my_joystick_msgs.egg-info/PKG-INFO
+my_joystick_msgs.egg-info/SOURCES.txt
+my_joystick_msgs.egg-info/dependency_links.txt
+my_joystick_msgs.egg-info/top_level.txt
+my_joystick_msgs/msg/__init__.py
+my_joystick_msgs/msg/_joystick.py

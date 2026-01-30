@@ -1,0 +1,242 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-1acc4a84b03e4f4f819b.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18
+					]
+				},
+				{
+					"build" : "my_joystick_msgs__py",
+					"jsonFile" : "directory-my_joystick_msgs__py-baecd105c6a460696134.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "/home/robotics/temp/new_ws/build/my_joystick_msgs/my_joystick_msgs__py",
+					"targetIndexes" : 
+					[
+						4
+					]
+				}
+			],
+			"name" : "",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0,
+						1
+					],
+					"name" : "my_joystick_msgs",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "ament_cmake_python_build_my_joystick_msgs_egg::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ament_cmake_python_build_my_joystick_msgs_egg-eb68f388f6154e3c19c8.json",
+					"name" : "ament_cmake_python_build_my_joystick_msgs_egg",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ament_cmake_python_copy_my_joystick_msgs::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ament_cmake_python_copy_my_joystick_msgs-2016e8ff75ea384fd044.json",
+					"name" : "ament_cmake_python_copy_my_joystick_msgs",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "my_joystick_msgs::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-my_joystick_msgs-a211348c65824559a2a1.json",
+					"name" : "my_joystick_msgs",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "my_joystick_msgs__cpp::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-my_joystick_msgs__cpp-0f75c5b6677b0fbfa567.json",
+					"name" : "my_joystick_msgs__cpp",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "my_joystick_msgs__py::@d3b44c031292f06a7198",
+					"jsonFile" : "target-my_joystick_msgs__py-804c49b68b4db13039bc.json",
+					"name" : "my_joystick_msgs__py",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "my_joystick_msgs__rosidl_generator_c::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-my_joystick_msgs__rosidl_generator_c-7aeb2788cf7b454271b8.json",
+					"name" : "my_joystick_msgs__rosidl_generator_c",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "my_joystick_msgs__rosidl_generator_py::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-my_joystick_msgs__rosidl_generator_py-dafec75564b87052c798.json",
+					"name" : "my_joystick_msgs__rosidl_generator_py",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "my_joystick_msgs__rosidl_generator_type_description::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-my_joystick_msgs__rosidl_generator_type_description-9baeaccea9552b332bfb.json",
+					"name" : "my_joystick_msgs__rosidl_generator_type_description",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "my_joystick_msgs__rosidl_typesupport_c::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-my_joystick_msgs__rosidl_typesupport_c-c14d523c55478ec3eca4.json",
+					"name" : "my_joystick_msgs__rosidl_typesupport_c",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "my_joystick_msgs__rosidl_typesupport_cpp::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-my_joystick_msgs__rosidl_typesupport_cpp-c340493f7630190ae668.json",
+					"name" : "my_joystick_msgs__rosidl_typesupport_cpp",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "my_joystick_msgs__rosidl_typesupport_fastrtps_c::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-my_joystick_msgs__rosidl_typesupport_fastrtps_c-bbbb1a7f147b63236cc0.json",
+					"name" : "my_joystick_msgs__rosidl_typesupport_fastrtps_c",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "my_joystick_msgs__rosidl_typesupport_fastrtps_cpp::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-my_joystick_msgs__rosidl_typesupport_fastrtps_cpp-d29c8e8e643ff0bb7199.json",
+					"name" : "my_joystick_msgs__rosidl_typesupport_fastrtps_cpp",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "my_joystick_msgs__rosidl_typesupport_introspection_c::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-my_joystick_msgs__rosidl_typesupport_introspection_c-f075c2209246a144b880.json",
+					"name" : "my_joystick_msgs__rosidl_typesupport_introspection_c",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "my_joystick_msgs__rosidl_typesupport_introspection_cpp::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-my_joystick_msgs__rosidl_typesupport_introspection_cpp-cb3c4fab215ec8496230.json",
+					"name" : "my_joystick_msgs__rosidl_typesupport_introspection_cpp",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "my_joystick_msgs_s__rosidl_typesupport_c::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-my_joystick_msgs_s__rosidl_typesupport_c-2c993986f5d51e966c33.json",
+					"name" : "my_joystick_msgs_s__rosidl_typesupport_c",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "my_joystick_msgs_s__rosidl_typesupport_fastrtps_c::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-my_joystick_msgs_s__rosidl_typesupport_fastrtps_c-031d3fd0e2df23cf4eea.json",
+					"name" : "my_joystick_msgs_s__rosidl_typesupport_fastrtps_c",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "my_joystick_msgs_s__rosidl_typesupport_introspection_c::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-my_joystick_msgs_s__rosidl_typesupport_introspection_c-0c3d33d70edfc2c41e74.json",
+					"name" : "my_joystick_msgs_s__rosidl_typesupport_introspection_c",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "my_joystick_msgs_uninstall::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-my_joystick_msgs_uninstall-6ea38622cb5a2b044f01.json",
+					"name" : "my_joystick_msgs_uninstall",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uninstall::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uninstall-2753aede47849ceeae76.json",
+					"name" : "uninstall",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/robotics/temp/new_ws/build/my_joystick_msgs",
+		"source" : "/home/robotics/temp/new_ws/src/my_joystick_msgs"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 6
+	}
+}

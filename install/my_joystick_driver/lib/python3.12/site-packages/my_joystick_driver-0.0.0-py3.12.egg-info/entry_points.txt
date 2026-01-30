@@ -1,0 +1,2 @@
+[console_scripts]
+joystick_node = my_joystick_driver.joystick_node:main

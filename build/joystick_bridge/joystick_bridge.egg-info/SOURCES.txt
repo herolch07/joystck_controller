@@ -1,0 +1,13 @@
+README.md
+package.xml
+setup.py
+../../build/joystick_bridge/joystick_bridge.egg-info/PKG-INFO
+../../build/joystick_bridge/joystick_bridge.egg-info/SOURCES.txt
+../../build/joystick_bridge/joystick_bridge.egg-info/dependency_links.txt
+../../build/joystick_bridge/joystick_bridge.egg-info/entry_points.txt
+../../build/joystick_bridge/joystick_bridge.egg-info/requires.txt
+../../build/joystick_bridge/joystick_bridge.egg-info/top_level.txt
+../../build/joystick_bridge/joystick_bridge.egg-info/zip-safe
+joystick_bridge/__init__.py
+joystick_bridge/joystick_bridge.py
+resource/joystick_bridge

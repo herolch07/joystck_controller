@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>joystick_bridge</name>
+  <version>1.0.0</version>
+  <description>Bridge node to convert joystick input to omniwheel base navigation commands</description>
+  
+  <!-- 符合 AGENTS.md 规范：明确包的用途 -->
+  <maintainer email="robotics@example.com">EdUHK Robocon Team</maintainer>
+  <license>Apache License 2.0</license>
+  
+  <!-- 依赖项 -->
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+  <depend>my_joystick_msgs</depend>
+  
+  <!-- Python 执行入口 -->
+  <exec_depend>ros2run</exec_depend>
+  
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

@@ -1,0 +1,2 @@
+[console_scripts]
+joystick_bridge = joystick_bridge.joystick_bridge:main

@@ -919,7 +919,7 @@ normalized = (raw_value - min) / (max - min)
 
 ## 参考资料
 
-- [ROS2 官方文档](https://docs.ros.org/en/humble/)
+- [ROS2 官方文档](https://docs.ros.org/en/jazzy/)
 - [evdev Python 库](https://python-evdev.readthedocs.io/)
 - [Linux Input Subsystem](https://www.kernel.org/doc/html/latest/input/)
 

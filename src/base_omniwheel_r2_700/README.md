@@ -288,7 +288,7 @@ Scripts for debugging:
 ### POS_VEL Mode Test (Legacy)
 - Auto-detects ROS 2 version by checking:
   - `/opt/ros/jazzy/setup.bash`
-  - `/opt/ros/humble/setup.bash`
+  - `/opt/ros/jazzy/setup.bash`
 - Default test: mode 2 (pos_vel), position 50.0, speed 0.5
 
 Run inside the container or on host:

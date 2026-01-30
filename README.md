@@ -463,7 +463,7 @@ sudo reboot
 ### 1. 编译工作空间
 
 ```bash
-cd /home/robotics/temp/new_ws
+cd /home/robotics/robocon/new_ws
 colcon build
 ```
 
@@ -471,12 +471,12 @@ colcon build
 
 **每次打开新终端时需要执行：**
 ```bash
-source /home/robotics/temp/new_ws/install/setup.bash
+source /home/robotics/robocon/new_ws/install/setup.bash
 ```
 
 **或者一劳永逸（自动加载）：**
 ```bash
-echo "source /home/robotics/temp/new_ws/install/setup.bash" >> ~/.bashrc
+echo "source /home/robotics/robocon/new_ws/install/setup.bash" >> ~/.bashrc
 source ~/.bashrc
 ```
 
@@ -818,7 +818,7 @@ sudo reboot
 
 ### 3. 启动驱动查看日志
 ```bash
-source /home/robotics/temp/new_ws/install/setup.bash
+source /home/robotics/robocon/new_ws/install/setup.bash
 ros2 run my_joystick_driver joystick_node
 ```
 

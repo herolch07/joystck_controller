@@ -41,6 +41,9 @@ class MotorControllerNode(Node):
         # 创建定时器用于检测和重连
         self.reconnect_timer = self.create_timer(RECONNECT_INTERVAL, self._check_connection)
         
+        # 创建定时器用于周期性读取电机反馈（关键！）
+        self.recv_timer = self.create_timer(0.01, self._recv_feedback)  # 100Hz 读取反馈
+        
         # 订阅控制话题
         self.subscription = self.create_subscription(
             Float32MultiArray, "damiao_control", self.control_callback, 10
@@ -100,6 +103,14 @@ class MotorControllerNode(Node):
             self.get_logger().error(f"Hardware initialization failed: {e}")
             return False
 
+    def _recv_feedback(self):
+        """周期性读取电机反馈数据并更新状态"""
+        if self.is_connected and hasattr(self, 'motor_control'):
+            try:
+                self.motor_control.recv()
+            except Exception as e:
+                self.get_logger().debug(f"Recv feedback error: {e}")
+    
     def _check_connection(self):
         """定时检查连接状态，断线时尝试重连"""
         if self.is_connected:
@@ -146,6 +157,10 @@ class MotorControllerNode(Node):
         mode = int(msg.data[1])
         speed = float(msg.data[2])
         param4 = float(msg.data[3])
+        
+        # 调试 M4
+        if motor_id == 4:
+            self.get_logger().info(f"M4 received: mode={mode}, speed={speed}, param4={param4}")
 
         if motor_id in self.motors:
             motor = self.motors[motor_id]
@@ -166,7 +181,7 @@ class MotorControllerNode(Node):
                     duration = param4
                     if not motor.isEnable:
                         self.motor_control.enable(motor)
-                        self.get_logger().info(f"Motor {motor_id} re-enabled")
+                        self.get_logger().info(f"Motor {motor_id} re-enabled (isEnable={motor.isEnable})")
                     self.motor_control.control_Vel(motor, speed)
                     self.get_logger().debug(f"Motor {motor_id}: vel={speed}, duration={duration}s")
                     

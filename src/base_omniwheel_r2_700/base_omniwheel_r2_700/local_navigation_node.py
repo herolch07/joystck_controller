@@ -23,37 +23,40 @@ WHEEL_BASE_RADIUS = WHEEL_RADIUS_M  # 别名，更清晰
 
 # 轮子角度 (X 型布局，单位：弧度)
 # 实际布局（从上方看机器人）：
-#   Motor 1 (左前)    Motor 2 (右前)
-#         \_______/
-#         /       \
-#   Motor 4 (左后)    Motor 3 (右后)
+#        前方 (Front)
+#           ↑
+#     M1         M2
+#      \         /
+#       \       /
+#        \     /
+#         机器人
+#        /     \
+#       /       \
+#      /         \
+#     M4         M3
 #
-# 电机位置：
-# - Motor 1: 左前 (135°)
-# - Motor 2: 右前 (45°)
-# - Motor 3: 右后 (315°)
-# - Motor 4: 左后 (225°)
+# 电机位置与安装角度（X型全向轮标准配置）：
+# - Motor 1: 左前 (Left Front)  - 45°  角度
+# - Motor 2: 右前 (Right Front) - 135° 角度  
+# - Motor 3: 右后 (Right Back)  - 225° 角度
+# - Motor 4: 左后 (Left Back)   - 315° 角度
 #
-# 正速度方向（电机正转时的推力方向）：
-# - Motor 1: 向左后方推 (135° + 180° = 315°)
-# - Motor 2: 向左前方推 (45° + 180° = 225°)
-# - Motor 3: 向右前方推 (315° + 180° = 135°)
-# - Motor 4: 向右后方推 (225° + 180° = 45°)
+# 注意：这里的角度是相对于机器人坐标系的安装角度
 
 WHEEL_ANGLES = {
-    1: np.deg2rad(315),   # 左前位置，但推力向左后 (135° + 180°)
-    2: np.deg2rad(225),   # 右前位置，但推力向左前 (45° + 180°)
-    3: np.deg2rad(135),   # 右后位置，但推力向右前 (315° + 180°)
-    4: np.deg2rad(45),    # 左后位置，但推力向右后 (225° + 180°)
+    1: np.deg2rad(45),    # 左前
+    2: np.deg2rad(135),   # 右前
+    3: np.deg2rad(225),   # 右后
+    4: np.deg2rad(315),   # 左后
 }
 
-# 电机方向反转标志 (1=正常, -1=反转)
-# 所有电机都需要反转方向
+# 电机方向标志 (1=正常, -1=反转)
+# 根据实际测试调整 - 最终版本
 MOTOR_DIRECTION = {
-    1: -1,  # 左前 - 反转
-    2: -1,  # 右前 - 反转
+    1: -1,  # 左前 - 反转（直接测试确认需要反转）
+    2: 1,   # 右前 - 正常
     3: -1,  # 右后 - 反转
-    4: -1,  # 左后 - 反转
+    4: 1,   # 左后 - 正常（手动测试确认：逆运动学输出已经是反向，不需要再反转）
 }
 
 # ROS2 控制参数
@@ -156,21 +159,15 @@ class LocalNavigationNode(Node):
             R = 轮心到中心的距离
         """
         # 检查是否为停止指令
-        if plane_speed_m == 0.0 and rotation_rad == 0.0:
-            # 发送停止命令到所有电机
-            for motor_id in [1, 2, 3, 4]:
-                stop_msg = Float32MultiArray()
-                stop_msg.data = [float(motor_id), 0.0, 0.0, 0.0]  # mode 0 = disable
-                self.motor_publisher.publish(stop_msg)
-            self.get_logger().info("All motors stopped")
-            return
+        # 不再发送 disable，而是继续计算零速度让电机保持使能状态
+        # if plane_speed_m == 0.0 and rotation_rad == 0.0:
+        #     self.get_logger().debug("Zero velocity command")
+        #     # 不 return，继续计算（会得到全零速度）
         
-        # 分解平移速度到机体坐标系 (需要旋转坐标系使前方=左方)
-        # 当前: direction=0° 应该是向左移动
-        # 所以我们将方向偏移 90° (π/2)，使 0°=左，90°=前
-        adjusted_direction = direction_rad + np.pi/2  # 旋转 90° CCW
-        v_x = plane_speed_m * np.cos(adjusted_direction)
-        v_y = plane_speed_m * np.sin(adjusted_direction)
+        # 分解平移速度到机体坐标系
+        # direction_rad: 0 = 前方, π/2 = 右方, π = 后方, -π/2 = 左方
+        v_x = plane_speed_m * np.cos(direction_rad)
+        v_y = plane_speed_m * np.sin(direction_rad)
         
         wheel_speeds = {}
         
@@ -211,6 +208,11 @@ class LocalNavigationNode(Node):
             float(speed_rad),
             float(DEFAULT_DURATION)
         ]
+        
+        # 调试日志
+        if motor_id == 4:
+            self.get_logger().info(f"Publishing M4: {msg.data}")
+        
         self.motor_publisher.publish(msg)
 
 

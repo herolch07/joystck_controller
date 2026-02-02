@@ -105,15 +105,27 @@ class MotorControl:
                     can_id = frame[13] | (frame[14] << 8)
                     data = frame[21:29]
                     
-                    # 反馈解析逻辑
-                    motor_id_feedback = data[0] & 0x0F
-                    is_enabled = ((data[0] >> 4) & 0x0F) == 1
+                    # ✅ 正确解析：电机ID在 data[3] 的低4位
+                    # 根据实际测试：
+                    # - data[3] = 0x11 → 电机1
+                    # - data[3] = 0x12 → 电机2
+                    # - data[3] = 0x13 → 电机3
+                    # - data[3] = 0x14 → 电机4
+                    motor_id_feedback = data[3] & 0x0F  # data[3]的低4位是电机ID
+                    
+                    # ✅ 正确解析：使能状态在 data[3] 的高4位
+                    # data[3] >> 4 = 0x1 表示使能
+                    is_enabled = ((data[3] >> 4) & 0x0F) == 1
+                    
+                    # 调试日志（保留用于验证）
+                    data_hex = ''.join(f'{b:02X}' for b in data)
+                    print(f"[DEBUG] can_id=0x{can_id:03X}, motor_id(data[3]&0x0F)={motor_id_feedback}, is_enabled=(data[3]>>4)==1={is_enabled}, data[3]=0x{data[3]:02X}, full_data={data_hex}")
                     
                     # 查找对应的电机对象并更新状态
-                    target_id = can_id if can_id in self.motors_map else motor_id_feedback
+                    target_id = motor_id_feedback
                     if target_id in self.motors_map:
                         m = self.motors_map[target_id]
-                        # 手册 p7 反馈数据格式
+                        # 手册 p7 反馈数据格式（注意：q, dq, tau的字节位置可能需要根据实际调整）
                         q_uint = np.uint16((np.uint16(data[1]) << 8) | data[2])
                         dq_uint = np.uint16((np.uint16(data[3]) << 4) | (data[4] >> 4))
                         tau_uint = np.uint16(((data[4] & 0xf) << 8) | data[5])
@@ -123,6 +135,9 @@ class MotorControl:
                         dq = self.__uint_to_float(dq_uint, -limit[1], limit[1], 12)
                         tau = self.__uint_to_float(tau_uint, -limit[2], limit[2], 12)
                         m.recv_data(q, dq, tau, is_enabled)
+                        print(f"[DEBUG] Motor {target_id} updated: q={q:.2f}, dq={dq:.2f}, tau={tau:.2f}, isEnable={is_enabled}")
+                    else:
+                        print(f"[WARN] Motor ID {target_id} not in motors_map {list(self.motors_map.keys())}")
                     
                     del self.recv_buffer[:30]
                 else:
@@ -135,9 +150,9 @@ class MotorControl:
         self.serial_.write(bytes(self.send_data_frame))
 
     def __uint_to_float(self, uint_value, min_value, max_value, bits):
-        span = x_max - x_min
-        offset = x_min
-        return float(x_int) * span / (float((1 << bits) - 1)) + offset
+        span = max_value - min_value
+        offset = min_value
+        return float(uint_value) * span / (float((1 << bits) - 1)) + offset
 
 # --- 枚举类定义 ---
 class Control_Type(IntEnum):

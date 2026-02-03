@@ -1,0 +1,8 @@
+#!/usr/bin/env python3
+"""
+Joystick Bridge Node - ROS2 executable wrapper
+"""
+from joystick_bridge.joystick_bridge import main
+
+if __name__ == '__main__':
+    main()

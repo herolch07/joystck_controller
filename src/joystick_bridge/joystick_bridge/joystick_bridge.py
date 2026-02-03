@@ -45,10 +45,8 @@ class JoystickBridge(Node):
         self.declare_parameter('max_rotation', 2.0)
         self.declare_parameter('deadzone', 410)
         
-        # 获取参数值
-        self.max_speed_cm = self.get_parameter('max_speed_cm').get_parameter_value().double_value
-        self.max_rotation = self.get_parameter('max_rotation').get_parameter_value().double_value
-        self.deadzone = self.get_parameter('deadzone').get_parameter_value().integer_value
+        # 添加参数回调以支持运行时动态调整
+        self.add_on_set_parameters_callback(self.parameter_callback)
         
         # 订阅手柄数据
         self.joy_sub = self.create_subscription(
@@ -66,9 +64,23 @@ class JoystickBridge(Node):
         )
         
         self.get_logger().info("Joystick bridge node initialized")
-        self.get_logger().info(f"Max speed: {self.max_speed_cm} cm/s")
-        self.get_logger().info(f"Max rotation: {self.max_rotation} rad/s")
-        self.get_logger().info(f"Deadzone: {self.deadzone}")
+        self.get_logger().info(f"Max speed: {self.get_parameter('max_speed_cm').value} cm/s")
+        self.get_logger().info(f"Max rotation: {self.get_parameter('max_rotation').value} rad/s")
+        self.get_logger().info(f"Deadzone: {self.get_parameter('deadzone').value}")
+        self.get_logger().info("✓ Dynamic parameter updates enabled")
+    
+    def parameter_callback(self, params):
+        """
+        运行时参数更新回调
+        允许在节点运行时动态调整速度参数
+        """
+        from rcl_interfaces.msg import SetParametersResult
+        
+        for param in params:
+            if param.name in ['max_speed_cm', 'max_rotation', 'deadzone']:
+                self.get_logger().info(f"Parameter updated: {param.name} = {param.value}")
+        
+        return SetParametersResult(successful=True)
     
     def joystick_callback(self, msg):
         """
@@ -82,12 +94,17 @@ class JoystickBridge(Node):
         ly = msg.ly  # 左摇杆 Y
         rx = msg.rx  # 右摇杆 X
         
+        # 实时获取参数（支持运行时修改）
+        max_speed_cm = self.get_parameter('max_speed_cm').value
+        max_rotation = self.get_parameter('max_rotation').value
+        deadzone = self.get_parameter('deadzone').value
+        
         # 应用死区过滤
-        if abs(lx) < self.deadzone:
+        if abs(lx) < deadzone:
             lx = 0
-        if abs(ly) < self.deadzone:
+        if abs(ly) < deadzone:
             ly = 0
-        if abs(rx) < self.deadzone:
+        if abs(rx) < deadzone:
             rx = 0
         
         # 转换为底盘指令
@@ -102,10 +119,10 @@ class JoystickBridge(Node):
             
             # 计算速度大小 (0-100%)
             magnitude = math.sqrt(lx*lx + ly*ly) / 8192.0
-            speed_cm = magnitude * self.max_speed_cm
+            speed_cm = magnitude * max_speed_cm
         
         # 计算旋转速度
-        rotation = (rx / 8192.0) * self.max_rotation
+        rotation = (rx / 8192.0) * max_rotation
         
         # 构造导航消息
         nav_msg = Float32MultiArray()

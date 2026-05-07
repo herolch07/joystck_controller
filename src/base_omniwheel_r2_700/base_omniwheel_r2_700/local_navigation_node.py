@@ -207,9 +207,8 @@ class LocalNavigationNode(Node):
             float(DEFAULT_DURATION)
         ]
         
-        # 调试日志
         if motor_id == 4:
-            self.get_logger().info(f"Publishing M4: {msg.data}")
+            self.get_logger().debug(f"Publishing M4: {msg.data}")
         
         self.motor_publisher.publish(msg)
 

@@ -25,13 +25,15 @@ from my_joystick_msgs.msg import Joystick
 from std_msgs.msg import Float32MultiArray
 import math
 
+AXIS_MAX = 128.0
+
 class JoystickBridge(Node):
     """
     手柄到底盘控制的桥接节点
     
     订阅: /joystick_data (my_joystick_msgs/Joystick)
-        - lx, ly: 左摇杆坐标 (-8192 到 8192)
-        - rx: 右摇杆 X 坐标 (-8192 到 8192)
+        - lx, ly: 左摇杆坐标 (-128 到 128)
+        - rx: 右摇杆 X 坐标 (-128 到 128)
     
     发布: /local_driving (std_msgs/Float32MultiArray)
         - [direction_rad, plane_speed_cm/s, rotation_rad/s]
@@ -41,9 +43,9 @@ class JoystickBridge(Node):
         super().__init__('joystick_bridge')
         
         # 声明参数（符合 AGENTS.md 2.2.4 规范）
-        self.declare_parameter('max_speed_cm', 100.0)
+        self.declare_parameter('max_speed_cm', 40.0)
         self.declare_parameter('max_rotation', 2.0)
-        self.declare_parameter('deadzone', 410)
+        self.declare_parameter('deadzone', 6)
         
         # 添加参数回调以支持运行时动态调整
         self.add_on_set_parameters_callback(self.parameter_callback)
@@ -86,7 +88,7 @@ class JoystickBridge(Node):
         """
         处理手柄输入并转换为底盘指令
         
-        输入: Joystick 消息 (lx, ly, rx ∈ [-8192, 8192])
+        输入: Joystick 消息 (lx, ly, rx ∈ [-128, 128])
         输出: Float32MultiArray [direction_rad, speed_cm/s, rotation_rad/s]
         """
         # 从手柄读取数据
@@ -118,12 +120,12 @@ class JoystickBridge(Node):
             direction = math.atan2(float(lx), -float(ly))
             
             # 计算速度大小并限幅到 0-100%。斜向推杆时 lx/ly 同时接近满量程，
-            # 如果不限幅，sqrt(lx^2 + ly^2) 会超过 8192。
-            magnitude = min(math.sqrt(lx*lx + ly*ly) / 8192.0, 1.0)
+            # 如果不限幅，sqrt(lx^2 + ly^2) 会超过 AXIS_MAX。
+            magnitude = min(math.sqrt(lx*lx + ly*ly) / AXIS_MAX, 1.0)
             speed_cm = magnitude * max_speed_cm
         
         # 计算旋转速度
-        rotation = (rx / 8192.0) * max_rotation
+        rotation = (rx / AXIS_MAX) * max_rotation
         
         # 构造导航消息
         nav_msg = Float32MultiArray()

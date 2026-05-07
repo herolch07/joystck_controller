@@ -6,6 +6,9 @@ from rclpy.node import Node
 from my_joystick_msgs.msg import Joystick
 from evdev import InputDevice, ecodes, list_devices
 
+AXIS_MAX = 128
+DEADZONE = 6  # ~5% of 128
+
 class JoystickPublisher(Node):
     def __init__(self):
         super().__init__('joystick_node')
@@ -34,7 +37,7 @@ class JoystickPublisher(Node):
             "dx": 0, "dy": 0, "l2": 0, "r2": 0,
         }
 
-        # Axis normalization parameters (raw min/max -> -8192 to 8192)
+        # Axis normalization parameters (raw min/max -> -128 to 128)
         # Adjust these based on your controller's calibration
         self.axis_ranges = {
             "lx": (-32768, 32767),
@@ -48,7 +51,7 @@ class JoystickPublisher(Node):
         }
 
         # Deadzone threshold to filter out small drift near center
-        self.deadzone = 410  # ~5% of 8192
+        self.deadzone = DEADZONE
 
         self.button_mapping = {
             ecodes.BTN_SOUTH: "a",
@@ -93,12 +96,12 @@ class JoystickPublisher(Node):
         self.get_logger().info("Joystick states reset to safety (all zeros)")
 
     def _normalize_axis(self, axis_name, raw_value):
-        """Normalize raw axis value to -8192 ~ 8192 range with deadzone"""
+        """Normalize raw axis value to -128 ~ 128 range with deadzone."""
         min_val, max_val = self.axis_ranges[axis_name]
         
-        # Special handling for triggers (0 to 8192 instead of -8192 to 8192)
+        # Special handling for triggers (0 to 128 instead of -128 to 128)
         if axis_name in ["l2", "r2"]:
-            normalized = int((raw_value - min_val) / (max_val - min_val) * 8192)
+            normalized = int((raw_value - min_val) / (max_val - min_val) * AXIS_MAX)
             # Apply deadzone for triggers
             if normalized < self.deadzone:
                 return 0
@@ -107,7 +110,7 @@ class JoystickPublisher(Node):
         # Standard normalization for joysticks and D-pad
         mid = (min_val + max_val) / 2.0
         range_half = (max_val - min_val) / 2.0
-        normalized = int((raw_value - mid) / range_half * 8192)
+        normalized = int((raw_value - mid) / range_half * AXIS_MAX)
         
         # Apply deadzone - ignore small values near center
         if abs(normalized) < self.deadzone:

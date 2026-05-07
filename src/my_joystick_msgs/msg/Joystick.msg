@@ -1,6 +1,7 @@
 # Joystick.msg
 
-# Axes (analog inputs) - Normalized to -8192 ~ 8192 range for better precision
+# Axes (analog inputs) - normalized to -128 ~ 128.
+# Trigger axes l2/r2 use 0 ~ 128.
 int32 lx
 int32 ly
 int32 rx

@@ -12,6 +12,7 @@ DEVICE_ID = "usb-HDSC_CDC_Device_00000000050C-if00"
 DEFAULT_CONTROL_MODE = Control_Type.VEL  # 默认使用速度模式
 RECONNECT_INTERVAL = 2.0  # 重连尝试间隔（秒）
 RECONNECT_MAX_ATTEMPTS = 5  # 最大重连尝试次数，0 表示无限重试
+REENABLE_MIN_INTERVAL = 1.0  # 不在每条速度命令里反复阻塞使能
 
 def find_device_port(device_id):
     by_id_dir = "/dev/serial/by-id/"
@@ -33,6 +34,7 @@ class MotorControllerNode(Node):
         
         # 电机计时器字典 {motor_id: timer}
         self.motor_timers = {}
+        self.last_reenable_time = {}
         
         # 初始化硬件连接
         if not self._init_hardware():
@@ -158,9 +160,8 @@ class MotorControllerNode(Node):
         speed = float(msg.data[2])
         param4 = float(msg.data[3])
         
-        # 调试 M4
         if motor_id == 4:
-            self.get_logger().info(f"M4 received: mode={mode}, speed={speed}, param4={param4}")
+            self.get_logger().debug(f"M4 received: mode={mode}, speed={speed}, param4={param4}")
 
         if motor_id in self.motors:
             motor = self.motors[motor_id]
@@ -171,17 +172,13 @@ class MotorControllerNode(Node):
                 elif mode == 2:
                     # POS_VEL 模式: param4 = position
                     position = param4
-                    if not motor.isEnable:
-                        self.motor_control.enable(motor)
-                        self.get_logger().info(f"Motor {motor_id} re-enabled")
+                    self.ensure_motor_enabled(motor, motor_id)
                     self.motor_control.control_Pos_Vel(motor, position, speed)
                     self.get_logger().debug(f"Motor {motor_id}: pos={position}, vel={speed}")
                 elif mode == 3:
                     # VEL 模式: param4 = time (持续时间)
                     duration = param4
-                    if not motor.isEnable:
-                        self.motor_control.enable(motor)
-                        self.get_logger().info(f"Motor {motor_id} re-enabled (isEnable={motor.isEnable})")
+                    self.ensure_motor_enabled(motor, motor_id)
                     self.motor_control.control_Vel(motor, speed)
                     self.get_logger().debug(f"Motor {motor_id}: vel={speed}, duration={duration}s")
                     
@@ -203,6 +200,23 @@ class MotorControllerNode(Node):
                 self.get_logger().error(f"Motor control error: {e}")
         else:
             self.get_logger().warn(f"Motor {motor_id} not initialized")
+
+    def ensure_motor_enabled(self, motor, motor_id):
+        """Re-enable at a throttled rate so feedback glitches do not stall control."""
+        if motor.isEnable:
+            return
+
+        now = time.monotonic()
+        last_time = self.last_reenable_time.get(motor_id, 0.0)
+        if now - last_time < REENABLE_MIN_INTERVAL:
+            self.get_logger().debug(
+                f"Motor {motor_id} feedback reports disabled; skipping repeated enable"
+            )
+            return
+
+        self.last_reenable_time[motor_id] = now
+        self.motor_control.enable(motor)
+        self.get_logger().warn(f"Motor {motor_id} re-enabled (feedback isEnable={motor.isEnable})")
     
     def _auto_stop_motor(self, motor, motor_id):
         """自动停止电机（duration 结束后调用）- 由 threading.Timer 触发"""

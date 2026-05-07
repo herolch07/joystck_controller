@@ -3,6 +3,8 @@ import numpy as np
 from enum import IntEnum
 from struct import unpack, pack
 
+DEBUG_CAN = False
+
 class Control_Type(IntEnum):
     MIT = 1
     POS_VEL = 2  # 位置速度模式
@@ -119,9 +121,9 @@ class MotorControl:
                     # data[3] >> 4 = 0x1 表示使能
                     is_enabled = ((data[3] >> 4) & 0x0F) == 1
                     
-                    # 调试日志（保留用于验证）
-                    data_hex = ''.join(f'{b:02X}' for b in data)
-                    print(f"[DEBUG] can_id=0x{can_id:03X}, motor_id(data[3]&0x0F)={motor_id_feedback}, is_enabled=(data[3]>>4)==1={is_enabled}, data[3]=0x{data[3]:02X}, full_data={data_hex}")
+                    if DEBUG_CAN:
+                        data_hex = ''.join(f'{b:02X}' for b in data)
+                        print(f"[DEBUG] can_id=0x{can_id:03X}, motor_id(data[3]&0x0F)={motor_id_feedback}, is_enabled=(data[3]>>4)==1={is_enabled}, data[3]=0x{data[3]:02X}, full_data={data_hex}")
                     
                     # 查找对应的电机对象并更新状态
                     target_id = motor_id_feedback
@@ -137,9 +139,11 @@ class MotorControl:
                         dq = self.__uint_to_float(dq_uint, -limit[1], limit[1], 12)
                         tau = self.__uint_to_float(tau_uint, -limit[2], limit[2], 12)
                         m.recv_data(q, dq, tau, is_enabled)
-                        print(f"[DEBUG] Motor {target_id} updated: q={q:.2f}, dq={dq:.2f}, tau={tau:.2f}, isEnable={is_enabled}")
+                        if DEBUG_CAN:
+                            print(f"[DEBUG] Motor {target_id} updated: q={q:.2f}, dq={dq:.2f}, tau={tau:.2f}, isEnable={is_enabled}")
                     else:
-                        print(f"[WARN] Motor ID {target_id} not in motors_map {list(self.motors_map.keys())}")
+                        if DEBUG_CAN:
+                            print(f"[WARN] Motor ID {target_id} not in motors_map {list(self.motors_map.keys())}")
                     
                     del self.recv_buffer[:30]
                 else:

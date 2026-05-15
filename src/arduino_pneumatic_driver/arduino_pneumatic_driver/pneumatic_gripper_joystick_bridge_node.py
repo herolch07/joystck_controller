@@ -33,12 +33,15 @@ class PneumaticGripperJoystickBridgeNode(Node):
 
         self.declare_parameter("initial_height_state", 0)
         self.declare_parameter("publish_hz", 20.0)
+        self.declare_parameter("input_timeout_sec", 0.3)
 
         self.height_state = self.normalize_state(
             self.get_parameter("initial_height_state").value
         )
         self.gripper_state = 1
         self.height_latched = False
+        self.b_pressed = False
+        self.last_joystick_time = None
 
         self.joy_sub = self.create_subscription(
             Joystick,
@@ -61,6 +64,8 @@ class PneumaticGripperJoystickBridgeNode(Node):
         A latches height high. X latches height low. B opens the gripper while
         it is held; releasing B closes the gripper while preserving height.
         """
+        self.last_joystick_time = self.get_clock().now()
+
         if msg.a:
             self.height_state = 1
             self.height_latched = True
@@ -68,10 +73,11 @@ class PneumaticGripperJoystickBridgeNode(Node):
             self.height_state = 0
             self.height_latched = True
 
-        self.gripper_state = 0 if msg.b else 1
+        self.b_pressed = bool(msg.b)
+        self.gripper_state = 0 if self.b_pressed else 1
 
-        if msg.b or msg.a or msg.x or self.height_latched:
-            self.publish_state([self.gripper_state, self.height_state])
+        # The timer is the single publisher path. Keeping command output there
+        # avoids duplicate serial traffic when joystick updates arrive at 20Hz.
 
     def normalize_state(self, value):
         """Convert any numeric state parameter to the relay protocol value 0 or 1."""
@@ -84,8 +90,19 @@ class PneumaticGripperJoystickBridgeNode(Node):
         This prevents the lower-level driver timeout from returning D8 to the
         startup safe state once the match flow has selected a height state.
         """
-        if self.height_latched:
-            self.publish_state([self.gripper_state, self.height_state])
+        if self.is_joystick_timed_out():
+            self.b_pressed = False
+            self.gripper_state = 1
+
+        self.publish_state([self.gripper_state, self.height_state])
+
+    def is_joystick_timed_out(self):
+        """Return true when joystick updates stop, so B cannot stay open forever."""
+        if self.last_joystick_time is None:
+            return True
+
+        elapsed = (self.get_clock().now() - self.last_joystick_time).nanoseconds / 1e9
+        return elapsed > float(self.get_parameter("input_timeout_sec").value)
 
     def publish_state(self, state):
         """Publish [D9_gripper_state, D8_height_state] to the serial driver node."""

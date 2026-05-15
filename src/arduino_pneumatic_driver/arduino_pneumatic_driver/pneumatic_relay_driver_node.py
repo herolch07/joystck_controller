@@ -52,6 +52,7 @@ class PneumaticRelayDriverNode(Node):
         self.command_seen = False
         self.timeout_safe_sent = False
         self.current_state = self.get_safe_state()
+        self.last_serial_state = None
         self.last_reconnect_attempt = 0.0
 
         self.cmd_sub = self.create_subscription(
@@ -67,7 +68,7 @@ class PneumaticRelayDriverNode(Node):
         self.reader_timer = self.create_timer(0.05, self.read_serial_lines)
 
         self.connect_serial()
-        self.send_state(self.current_state, reason="startup_safe_state")
+        self.send_state(self.current_state, reason="startup_safe_state", force=True)
 
     def get_safe_state(self):
         """Return the configured two-relay safe state, clamped to 0/1 values."""
@@ -117,9 +118,12 @@ class PneumaticRelayDriverNode(Node):
         self.timeout_safe_sent = False
         self.send_state(state, reason="command")
 
-    def send_state(self, state, reason):
+    def send_state(self, state, reason, force=False):
         """Send one relay state command to Arduino using the tested list format."""
         self.current_state = state
+        if not force and self.last_serial_state == state:
+            return
+
         if not self.connected or self.serial_handle is None:
             self.publish_status(f"NOT_CONNECTED {reason} state={state}")
             return
@@ -128,6 +132,7 @@ class PneumaticRelayDriverNode(Node):
         try:
             self.serial_handle.write(line.encode("ascii"))
             self.serial_handle.flush()
+            self.last_serial_state = list(state)
             self.publish_status(f"SENT {reason} {line.strip()}")
         except Exception as exc:
             self.connected = False
@@ -163,7 +168,11 @@ class PneumaticRelayDriverNode(Node):
             self.last_reconnect_attempt = now
             self.connect_serial()
             if self.connected:
-                self.send_state(self.get_safe_state(), reason="reconnect_safe_state")
+                self.send_state(
+                    self.get_safe_state(),
+                    reason="reconnect_safe_state",
+                    force=True,
+                )
 
         if not self.command_seen:
             return
@@ -174,7 +183,7 @@ class PneumaticRelayDriverNode(Node):
 
         if not self.timeout_safe_sent:
             safe_state = self.get_safe_state()
-            self.send_state(safe_state, reason="timeout_safe_state")
+            self.send_state(safe_state, reason="timeout_safe_state", force=True)
             self.timeout_safe_sent = True
             self.get_logger().warn(
                 f"No pneumatic command for {timeout_sec:.2f}s; sent safe state {safe_state}"
@@ -190,7 +199,11 @@ class PneumaticRelayDriverNode(Node):
         """Close serial after sending safe state when ROS context is still valid."""
         try:
             if rclpy.ok():
-                self.send_state(self.get_safe_state(), reason="shutdown_safe_state")
+                self.send_state(
+                    self.get_safe_state(),
+                    reason="shutdown_safe_state",
+                    force=True,
+                )
         except Exception:
             pass
         try:

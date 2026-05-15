@@ -9,6 +9,7 @@
 - Motor 5 是机械臂升降电机。
 - Motor 6 是机械臂水平移动电机。
 - Motor 7 是机械臂夹爪电机，默认夹爪速度是 `1.0 rad/s`。
+- Pneumatic gripper 通过 Arduino Mega USB Serial 控制，默认串口是 `/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0`。
 - Motor 3 之前的反向响应慢问题已确认是 ESC 损坏导致；更换/修复 ESC 后问题已解决。
 
 ## 0. 启动前检查
@@ -70,7 +71,9 @@ r1_control
 7 horiz_bridge 手柄到水平控制
 8 gripper    夹爪电机控制
 9 grip_bridge 手柄到夹爪控制
-10 monitor   监控命令窗口
+10 pneumatic Arduino pneumatic relay driver
+11 pneu_bridge 手柄到 pneumatic gripper
+12 monitor   监控命令窗口
 ```
 
 tmux 常用操作：
@@ -84,7 +87,7 @@ tmux 常用操作：
 
 ## 2. 手动启动
 
-如果不用脚本，开 10 个 terminal。
+如果不用脚本，开 12 个 terminal。
 
 Terminal 1:
 
@@ -166,6 +169,22 @@ source install/setup.bash
 ros2 run r1_arm_control arm_gripper_joystick_bridge_node
 ```
 
+Terminal 11:
+
+```bash
+cd /home/robotics/robocon/new_ws
+source install/setup.bash
+ros2 run arduino_pneumatic_driver pneumatic_relay_driver_node
+```
+
+Terminal 12:
+
+```bash
+cd /home/robotics/robocon/new_ws
+source install/setup.bash
+ros2 run arduino_pneumatic_driver pneumatic_gripper_joystick_bridge_node
+```
+
 ## 3. 验证节点
 
 ```bash
@@ -187,6 +206,8 @@ ros2 node list
 /horizontal_joystick_bridge_node
 /arm_gripper_controller_node
 /arm_gripper_joystick_bridge_node
+/pneumatic_relay_driver_node
+/pneumatic_gripper_joystick_bridge_node
 ```
 
 ## 4. 验证话题
@@ -251,6 +272,13 @@ ros2 topic echo /horizontal_speed_cmd
 ros2 topic echo /arm_gripper_speed_cmd
 ```
 
+Pneumatic gripper 命令和状态：
+
+```bash
+ros2 topic echo /pneumatic_gripper_cmd
+ros2 topic echo /pneumatic_gripper_status
+```
+
 ## 5. 调速度
 
 默认：
@@ -298,6 +326,8 @@ D-pad 上: 水平电机加速档，0.2 -> 0.5 -> 1.0
 D-pad 下: 水平电机减速档，1.0 -> 0.5 -> 0.2
 R1: 夹爪正向
 L1: 夹爪反向
+B: pneumatic gripper OPEN -> [0,1]
+松开 B / 命令超时: pneumatic gripper CLOSE + height HIGH -> [1,1]
 ```
 
 所有操作建议先小幅推动摇杆。
@@ -372,6 +402,11 @@ r1_arm_control controllers:
   elevator / horizontal / arm_gripper
   超过 0.3s 没收到对应 speed_cmd
   -> 对应电机发布 0 rad/s
+
+arduino_pneumatic_driver:
+  B 按下时发布 /pneumatic_gripper_cmd = [0,1]
+  超过 0.5s 没收到 /pneumatic_gripper_cmd
+  -> driver 向 Arduino 发送 safe_state [1,1]，即 CLOSE + HIGH
 ```
 
 查看参数：
@@ -383,6 +418,9 @@ ros2 param get /motor_controller_node command_timeout_sec
 ros2 param get /elevator_controller_node timeout_sec
 ros2 param get /horizontal_controller_node timeout_sec
 ros2 param get /arm_gripper_controller_node timeout_sec
+ros2 param get /pneumatic_relay_driver_node command_timeout_sec
+ros2 param get /pneumatic_relay_driver_node safe_state
+ros2 param get /pneumatic_gripper_joystick_bridge_node open_state
 ```
 
 正常情况下不建议关掉这些 timeout。调试时如果需要改，只建议小范围调整，例如：

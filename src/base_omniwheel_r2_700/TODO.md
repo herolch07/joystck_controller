@@ -11,6 +11,7 @@
 - [x] README 追加 2026-05-14 安全更新说明
 - [x] 修正 `local_navigation_node` 横向平移符号，避免左/右平移变成原地旋转
 - [x] 将 `local_navigation_node` 的轮距、轮径、横向符号、旋转符号、电机方向改为 ROS 参数
+- [x] 将 `local_navigation_node` 的 forward/lateral/rotation 运动基底改为可校准参数
 
 ## 待完成
 

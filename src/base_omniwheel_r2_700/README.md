@@ -5,16 +5,19 @@ ROS 2 motor control package for R2 omniwheel base.
 ## Changelog
 
 ### 2026-05-16 - v4 横向平移修正与参数化
-- **Local Navigation Node**: 修正横向平移分量符号
-  - 保持前进/后退的 `v_x` 分量不变
-  - 新增 `lateral_axis_sign` 参数，默认 `-1.0`
+- **Local Navigation Node**: 将理想 45° 公式改为实机校准运动基底
+  - 保持前进/后退的 `forward` 轮速组合不变
+  - 将横向 `lateral` 与旋转 `rotation` 分离为独立 per-motor 系数
   - 解决左摇杆左/右横推时底盘原地旋转，而不是直接横移的问题
 - **参数化改进**:
   - 新增 `wheel_base_radius_m`
   - 新增 `omniwheel_radius_m`
   - 新增 `rotation_axis_sign`
   - 新增 `motor_direction_1` ~ `motor_direction_4`
-  - 以后轮距、轮径、电机方向、横向轴镜像差异可通过参数调整，不需要复制 package
+  - 新增 `forward_coeff_1` ~ `forward_coeff_4`
+  - 新增 `lateral_coeff_1` ~ `lateral_coeff_4`
+  - 新增 `rotation_coeff_1` ~ `rotation_coeff_4`
+  - 以后轮距、轮径、电机方向、运动基底差异可通过参数调整，不需要复制 package
 - **安全行为不变**:
   - `/local_driving` 输入 watchdog 保持 `command_timeout_sec = 0.3 s`
   - 超时后仍向 Motor 1-4 发布 `0 rad/s`
@@ -133,13 +136,15 @@ CAN-based VESC speed control.
 ### local_navigation_node Parameters
 - **wheel_base_radius_m**: Distance from wheel center to robot center (default: `0.327038 m`)
 - **omniwheel_radius_m**: Omniwheel radius (default: `0.0635 m`)
-- **lateral_axis_sign**: Lateral translation sign (default: `-1.0`)
-  - `-1.0`: current calibrated default, used when left/right joystick should produce direct sideways motion
-  - `1.0`: legacy behavior before 2026-05-16
+- **lateral_axis_sign**: Lateral translation sign (default: `1.0`)
+  - Use `-1.0` if left/right translation direction is reversed after the base can strafe correctly
 - **rotation_axis_sign**: Rotation command sign (default: `1.0`)
   - Use `-1.0` if pure rotation direction is reversed on hardware
 - **motor_direction_1** ~ **motor_direction_4**: Per-motor output sign (default: `[-1, 1, -1, 1]`)
   - Use `1.0` for normal direction, `-1.0` for reversed direction
+- **forward_coeff_1** ~ **forward_coeff_4**: Forward/backward motion basis before motor direction (default: `[1, 1, -1, -1]`)
+- **lateral_coeff_1** ~ **lateral_coeff_4**: Left/right motion basis before motor direction (default: `[-1, -1, -1, -1]`)
+- **rotation_coeff_1** ~ **rotation_coeff_4**: Rotation motion basis before motor direction (default: `[-1, 1, 1, -1]`)
 - **WHEEL_ANGLES**: X-configuration wheel angles
   - Motor 1 (Right Front): 45°
   - Motor 2 (Left Front): 135°
@@ -381,17 +386,32 @@ ros2 param set /local_navigation_node command_timeout_sec 0.3
 
 ### 横向平移校准说明
 
-如果前进/后退正常，但左摇杆向左/向右时底盘原地旋转，优先检查 `lateral_axis_sign`：
+如果前进/后退正常，但左摇杆向左/向右时底盘原地旋转，说明横向基底打到了旋转组合。当前版本默认使用独立 `lateral_coeff_*` 修正。
+
+先检查默认参数：
 
 ```bash
 ros2 param get /local_navigation_node lateral_axis_sign
-ros2 param set /local_navigation_node lateral_axis_sign -1.0
+ros2 param get /local_navigation_node lateral_coeff_1
+ros2 param get /local_navigation_node lateral_coeff_2
+ros2 param get /local_navigation_node lateral_coeff_3
+ros2 param get /local_navigation_node lateral_coeff_4
 ```
 
-如果修改后左右方向刚好反了，可以改成：
+默认应该是：
+
+```text
+lateral_axis_sign = 1.0
+lateral_coeff_1 = -1.0
+lateral_coeff_2 = -1.0
+lateral_coeff_3 = -1.0
+lateral_coeff_4 = -1.0
+```
+
+如果已经可以横移，但左右方向刚好反了，可以改：
 
 ```bash
-ros2 param set /local_navigation_node lateral_axis_sign 1.0
+ros2 param set /local_navigation_node lateral_axis_sign -1.0
 ```
 
 如果只有某一个轮子方向异常，再单独调整对应电机方向：

@@ -62,6 +62,32 @@ MOTOR_DIRECTION = {
     4: 1,   # 左后 - 正常（手动测试确认：逆运动学输出已经是反向，不需要再反转）
 }
 
+# 实机校准后的 3 个运动基底。
+#
+# 旧版 45° 公式在当前底盘上表现为：前后正常，但横向组合会变成原地旋转。
+# 因此这里把底盘运动拆成 forward / lateral / rotation 三组独立系数。
+# 每组系数仍然通过 ROS 参数暴露，后续如果换轮组安装或电机编号，只需调参数。
+FORWARD_COEFF = {
+    1: 1.0,
+    2: 1.0,
+    3: -1.0,
+    4: -1.0,
+}
+
+LATERAL_COEFF = {
+    1: -1.0,
+    2: -1.0,
+    3: -1.0,
+    4: -1.0,
+}
+
+ROTATION_COEFF = {
+    1: -1.0,
+    2: 1.0,
+    3: 1.0,
+    4: -1.0,
+}
+
 # ROS2 控制参数
 DEFAULT_MOTOR_MODE = 3  # VEL 模式
 DEFAULT_DURATION = 0.0  # 0 = 持续运行，由下一条指令更新
@@ -91,12 +117,13 @@ class LocalNavigationNode(Node):
         self.declare_parameter("watchdog_hz", 20.0)
         self.declare_parameter("wheel_base_radius_m", WHEEL_BASE_RADIUS)
         self.declare_parameter("omniwheel_radius_m", OMNIWHEEL_RADIUS_M)
-        self.declare_parameter("lateral_axis_sign", -1.0)
+        self.declare_parameter("lateral_axis_sign", 1.0)
         self.declare_parameter("rotation_axis_sign", 1.0)
         self.declare_parameter("motor_direction_1", float(MOTOR_DIRECTION[1]))
         self.declare_parameter("motor_direction_2", float(MOTOR_DIRECTION[2]))
         self.declare_parameter("motor_direction_3", float(MOTOR_DIRECTION[3]))
         self.declare_parameter("motor_direction_4", float(MOTOR_DIRECTION[4]))
+        self.declare_motion_coeff_parameters()
 
         self.last_command_time = 0.0
         self.command_seen = False
@@ -135,6 +162,19 @@ class LocalNavigationNode(Node):
         )
         self.get_logger().info(f"Motor control mode: {DEFAULT_MOTOR_MODE} (VEL)")
         self.get_logger().info(f"Command timeout: {self.get_parameter('command_timeout_sec').value}s")
+
+    def declare_motion_coeff_parameters(self):
+        """Declare per-motor motion basis coefficients for hardware calibration."""
+        for motor_id in WHEEL_ANGLES:
+            self.declare_parameter(
+                f"forward_coeff_{motor_id}", float(FORWARD_COEFF[motor_id])
+            )
+            self.declare_parameter(
+                f"lateral_coeff_{motor_id}", float(LATERAL_COEFF[motor_id])
+            )
+            self.declare_parameter(
+                f"rotation_coeff_{motor_id}", float(ROTATION_COEFF[motor_id])
+            )
     
     def driving_callback(self, msg):
         """
@@ -225,8 +265,8 @@ class LocalNavigationNode(Node):
         
         # 分解平移速度到机体坐标系
         # direction_rad: 0 = 前方, π/2 = 右方, π = 后方, -π/2 = 左方
-        v_x = plane_speed_m * np.cos(direction_rad)
-        v_y = plane_speed_m * np.sin(direction_rad)
+        v_forward = plane_speed_m * np.cos(direction_rad)
+        v_lateral = plane_speed_m * np.sin(direction_rad)
         lateral_axis_sign = float(self.get_parameter("lateral_axis_sign").value)
         rotation_axis_sign = float(self.get_parameter("rotation_axis_sign").value)
         wheel_base_radius = float(self.get_parameter("wheel_base_radius_m").value)
@@ -234,23 +274,25 @@ class LocalNavigationNode(Node):
         
         wheel_speeds = {}
         
-        for motor_id, wheel_angle in WHEEL_ANGLES.items():
-            # X 型布局的运动学公式。
-            #
-            # v_x 分量已经由实机验证为前后方向正确；横向 v_y 分量单独保留
-            # lateral_axis_sign 参数，用于适配轮组安装镜像或坐标正方向差异。
-            # 默认 -1 修正了“左摇杆横推变成原地旋转”的现象，同时不改变前后分量。
+        for motor_id in WHEEL_ANGLES:
+            # 当前底盘使用实机校准矩阵，而不是直接套 45° 理想公式。
+            # 这样 forward / lateral / rotation 三个基底可以独立调试：
+            # - forward 已由实机确认正常
+            # - lateral 使用与旋转不同的对角轮组合，避免横推变成原地旋转
+            # - rotation 使用实机观察到的同侧轮组合
             v_translation = (
-                v_x * np.sin(wheel_angle)
-                + lateral_axis_sign * v_y * np.cos(wheel_angle)
+                v_forward * self.motion_coeff("forward", motor_id)
+                + lateral_axis_sign * v_lateral * self.motion_coeff("lateral", motor_id)
             )
-            v_rotation = rotation_axis_sign * rotation_rad * wheel_base_radius
+            v_rotation = (
+                rotation_axis_sign
+                * rotation_rad
+                * wheel_base_radius
+                * self.motion_coeff("rotation", motor_id)
+            )
             
             # 轮子线速度 (m/s)
             v_wheel = v_translation + v_rotation
-            
-            # 应用电机方向反转
-            v_wheel *= self.motor_direction(motor_id)
             
             # 达妙 VEL 模式需要电机角速度。这里按轮子直驱换算:
             # rad/s = wheel linear speed (m/s) / wheel radius (m)
@@ -267,6 +309,16 @@ class LocalNavigationNode(Node):
         """
         value = float(self.get_parameter(f"motor_direction_{motor_id}").value)
         return 1.0 if value >= 0.0 else -1.0
+
+    def motion_coeff(self, axis, motor_id):
+        """
+        读取某个运动基底在单个电机上的系数，并叠加电机方向参数。
+
+        axis 只能是 forward / lateral / rotation。系数本身描述底盘运动
+        基底，motor_direction_* 负责处理电机接线或安装方向差异。
+        """
+        coeff = float(self.get_parameter(f"{axis}_coeff_{motor_id}").value)
+        return coeff * self.motor_direction(motor_id)
     
     def publish_motor_command(self, motor_id, speed_rad):
         """

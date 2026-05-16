@@ -119,12 +119,16 @@ class LocalNavigationNode(Node):
         self.declare_parameter("omniwheel_radius_m", OMNIWHEEL_RADIUS_M)
         self.declare_parameter("lateral_axis_sign", -1.0)
         self.declare_parameter("rotation_axis_sign", 1.0)
+        self.declare_parameter("max_wheel_speed_rad_s", 3.0)
+        self.declare_parameter("max_wheel_accel_rad_s2", 12.0)
         self.declare_parameter("motor_direction_1", float(MOTOR_DIRECTION[1]))
         self.declare_parameter("motor_direction_2", float(MOTOR_DIRECTION[2]))
         self.declare_parameter("motor_direction_3", float(MOTOR_DIRECTION[3]))
         self.declare_parameter("motor_direction_4", float(MOTOR_DIRECTION[4]))
         self.declare_motion_coeff_parameters()
 
+        self.last_wheel_speeds = {motor_id: 0.0 for motor_id in WHEEL_ANGLES}
+        self.last_speed_time = time.monotonic()
         self.last_command_time = 0.0
         self.command_seen = False
         self.timeout_stop_sent = False
@@ -159,6 +163,12 @@ class LocalNavigationNode(Node):
         )
         self.get_logger().info(
             f"Rotation axis sign: {self.get_parameter('rotation_axis_sign').value}"
+        )
+        self.get_logger().info(
+            f"Max wheel speed: {self.get_parameter('max_wheel_speed_rad_s').value} rad/s"
+        )
+        self.get_logger().info(
+            f"Max wheel accel: {self.get_parameter('max_wheel_accel_rad_s2').value} rad/s^2"
         )
         self.get_logger().info(f"Motor control mode: {DEFAULT_MOTOR_MODE} (VEL)")
         self.get_logger().info(f"Command timeout: {self.get_parameter('command_timeout_sec').value}s")
@@ -204,6 +214,7 @@ class LocalNavigationNode(Node):
             plane_speed_m,
             rotation_rad
         )
+        wheel_speeds = self.apply_output_limits(wheel_speeds)
         
         # 发布电机指令
         for motor_id, speed in wheel_speeds.items():
@@ -230,7 +241,7 @@ class LocalNavigationNode(Node):
             return
 
         if not self.timeout_stop_sent:
-            self.publish_all_stop()
+            self.publish_all_stop(use_accel_limit=False)
             self.timeout_stop_sent = True
             self.get_logger().warn(
                 f"No /local_driving for {timeout_sec:.2f}s; sent zero speed to base motors"
@@ -300,6 +311,49 @@ class LocalNavigationNode(Node):
         
         return wheel_speeds
 
+    def apply_output_limits(self, wheel_speeds):
+        """
+        Apply wheel-speed and acceleration limits before publishing motor commands.
+
+        Diagonal and combined translate+rotate commands can produce a larger wheel
+        command than pure forward/sideways motion. Scaling all wheels together
+        preserves the requested direction while keeping the motor driver inside a
+        safer test range. The acceleration limiter reduces current spikes that can
+        trip the motor driver or CAN adapter during sudden joystick movement.
+        """
+        max_speed = abs(float(self.get_parameter("max_wheel_speed_rad_s").value))
+        if max_speed > 0.0:
+            peak = max(abs(speed) for speed in wheel_speeds.values())
+            if peak > max_speed:
+                scale = max_speed / peak
+                wheel_speeds = {
+                    motor_id: speed * scale for motor_id, speed in wheel_speeds.items()
+                }
+                self.get_logger().debug(
+                    f"Wheel speeds scaled by {scale:.2f} to max {max_speed:.2f} rad/s"
+                )
+
+        max_accel = abs(float(self.get_parameter("max_wheel_accel_rad_s2").value))
+        if max_accel <= 0.0:
+            self.last_wheel_speeds = dict(wheel_speeds)
+            self.last_speed_time = time.monotonic()
+            return wheel_speeds
+
+        now = time.monotonic()
+        dt = max(now - self.last_speed_time, 1e-3)
+        max_delta = max_accel * dt
+        limited = {}
+        for motor_id, target in wheel_speeds.items():
+            current = self.last_wheel_speeds.get(motor_id, 0.0)
+            delta = target - current
+            if abs(delta) > max_delta:
+                target = current + max_delta * (1.0 if delta > 0.0 else -1.0)
+            limited[motor_id] = target
+
+        self.last_wheel_speeds = dict(limited)
+        self.last_speed_time = now
+        return limited
+
     def motor_direction(self, motor_id):
         """
         读取单个电机方向参数。
@@ -341,10 +395,16 @@ class LocalNavigationNode(Node):
         
         self.motor_publisher.publish(msg)
 
-    def publish_all_stop(self):
+    def publish_all_stop(self, use_accel_limit=True):
         """向底盘 4 个轮子发布零速度命令。"""
+        speeds = {motor_id: 0.0 for motor_id in WHEEL_ANGLES}
+        if use_accel_limit:
+            speeds = self.apply_output_limits(speeds)
+        else:
+            self.last_wheel_speeds = dict(speeds)
+            self.last_speed_time = time.monotonic()
         for motor_id in WHEEL_ANGLES:
-            self.publish_motor_command(motor_id, 0.0)
+            self.publish_motor_command(motor_id, speeds[motor_id])
 
 
 def main(args=None):

@@ -9,7 +9,8 @@
 - [x] 符合 AGENTS.md 工程规范
 - [x] 增加 `/joystick_data` 输入 watchdog，超时后发布 `/local_driving = [0,0,0]`
 - [x] README 追加 2026-05-14 watchdog 说明
-- [x] 将右摇杆默认最大旋转速度 `max_rotation` 从 `2.0 rad/s` 降到 `1.0 rad/s`
+- [x] 将右摇杆默认最大旋转速度 `max_rotation` 从 `2.0 rad/s` 先降到 `1.0 rad/s`
+- [x] 为降低实机联调风险，将默认 `max_speed_cm` 调整为 `20.0 cm/s`，`max_rotation` 调整为 `0.5 rad/s`
 
 ## 待完善功能
 - [ ] 添加按键映射支持（A/B/X/Y 键功能）

@@ -22,6 +22,16 @@ ROS 2 motor control package for R2 omniwheel base.
   - `/local_driving` 输入 watchdog 保持 `command_timeout_sec = 0.3 s`
   - 超时后仍向 Motor 1-4 发布 `0 rad/s`
 
+### 2026-05-16 - v5 轮速限幅与加速度保护
+- **Local Navigation Node**: 新增输出保护，降低调试时 CAN/电机驱动断连风险
+  - 新增 `max_wheel_speed_rad_s`，默认 `3.0 rad/s`
+  - 新增 `max_wheel_accel_rad_s2`，默认 `12.0 rad/s²`
+  - 斜向移动或平移+旋转叠加时，如果某个轮速超过限制，会按比例缩放全部轮速，保持运动方向但降低强度
+  - 摇杆突然大幅移动时，会限制每个轮子的速度变化率，减少瞬时电流冲击
+- **安全建议**:
+  - 如果出现驱动器红灯、CAN 断连或必须重启电源，先降低 `max_wheel_speed_rad_s` 和 `max_wheel_accel_rad_s2`
+  - 不建议在横向/斜向校准未完成前使用高速度测试
+
 ### 2026-01-29 (night - v3)
 - **Local Navigation Node**: New high-level motion control node
   - Subscribes to `local_driving` topic for holonomic motion commands
@@ -141,6 +151,10 @@ CAN-based VESC speed control.
   - Use `1.0` if left/right translation direction is reversed on another hardware setup
 - **rotation_axis_sign**: Rotation command sign (default: `1.0`)
   - Use `-1.0` if pure rotation direction is reversed on hardware
+- **max_wheel_speed_rad_s**: Per-wheel speed limit before publishing to `/damiao_control` (default: `3.0 rad/s`)
+  - If any wheel exceeds this value, all four wheel speeds are scaled together
+- **max_wheel_accel_rad_s2**: Per-wheel acceleration limit (default: `12.0 rad/s²`)
+  - Set to `0.0` to disable acceleration limiting
 - **motor_direction_1** ~ **motor_direction_4**: Per-motor output sign (default: `[-1, 1, -1, 1]`)
   - Use `1.0` for normal direction, `-1.0` for reversed direction
 - **forward_coeff_1** ~ **forward_coeff_4**: Forward/backward motion basis before motor direction (default: `[1, 1, -1, -1]`)
@@ -422,6 +436,43 @@ ros2 param set /local_navigation_node motor_direction_1 -1.0
 ros2 param set /local_navigation_node motor_direction_2 1.0
 ros2 param set /local_navigation_node motor_direction_3 -1.0
 ros2 param set /local_navigation_node motor_direction_4 1.0
+```
+
+### 轮速限幅与加速度保护
+
+触发条件：
+
+```text
+任意一个 wheel speed 超过 max_wheel_speed_rad_s
+或某个 wheel speed 的变化率超过 max_wheel_accel_rad_s2
+```
+
+默认参数：
+
+```text
+max_wheel_speed_rad_s = 3.0 rad/s
+max_wheel_accel_rad_s2 = 12.0 rad/s²
+```
+
+行为：
+
+```text
+wheel speed 超过上限时，四个轮子的速度一起按比例缩小
+wheel speed 变化过快时，每个轮子按加速度上限渐变到目标值
+```
+
+低速排查建议：
+
+```bash
+ros2 param set /local_navigation_node max_wheel_speed_rad_s 1.5
+ros2 param set /local_navigation_node max_wheel_accel_rad_s2 6.0
+```
+
+恢复当前默认：
+
+```bash
+ros2 param set /local_navigation_node max_wheel_speed_rad_s 3.0
+ros2 param set /local_navigation_node max_wheel_accel_rad_s2 12.0
 ```
 
 ### damiao_node 电机级连续速度命令保护

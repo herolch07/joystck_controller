@@ -20,7 +20,7 @@ from std_msgs.msg import Float32MultiArray
 import numpy as np
 import time
 
-# 机械参数
+# 默认机械参数。运行时会复制到 ROS 参数，方便不同底盘小改动时不改源码。
 WHEEL_BASE_RADIUS = 0.327038  # 轮心到底盘中心距离 (m)
 OMNIWHEEL_RADIUS_M = 0.0635  # 全向轮半径 (m)
 
@@ -89,6 +89,14 @@ class LocalNavigationNode(Node):
 
         self.declare_parameter("command_timeout_sec", 0.3)
         self.declare_parameter("watchdog_hz", 20.0)
+        self.declare_parameter("wheel_base_radius_m", WHEEL_BASE_RADIUS)
+        self.declare_parameter("omniwheel_radius_m", OMNIWHEEL_RADIUS_M)
+        self.declare_parameter("lateral_axis_sign", -1.0)
+        self.declare_parameter("rotation_axis_sign", 1.0)
+        self.declare_parameter("motor_direction_1", float(MOTOR_DIRECTION[1]))
+        self.declare_parameter("motor_direction_2", float(MOTOR_DIRECTION[2]))
+        self.declare_parameter("motor_direction_3", float(MOTOR_DIRECTION[3]))
+        self.declare_parameter("motor_direction_4", float(MOTOR_DIRECTION[4]))
 
         self.last_command_time = 0.0
         self.command_seen = False
@@ -113,8 +121,18 @@ class LocalNavigationNode(Node):
         self.watchdog_timer = self.create_timer(1.0 / watchdog_hz, self.watchdog_callback)
         
         self.get_logger().info("Local Navigation Node initialized")
-        self.get_logger().info(f"Wheel base radius: {WHEEL_BASE_RADIUS*1000:.2f} mm")
-        self.get_logger().info(f"Omniwheel radius: {OMNIWHEEL_RADIUS_M*1000:.2f} mm")
+        self.get_logger().info(
+            f"Wheel base radius: {self.get_parameter('wheel_base_radius_m').value * 1000:.2f} mm"
+        )
+        self.get_logger().info(
+            f"Omniwheel radius: {self.get_parameter('omniwheel_radius_m').value * 1000:.2f} mm"
+        )
+        self.get_logger().info(
+            f"Lateral axis sign: {self.get_parameter('lateral_axis_sign').value}"
+        )
+        self.get_logger().info(
+            f"Rotation axis sign: {self.get_parameter('rotation_axis_sign').value}"
+        )
         self.get_logger().info(f"Motor control mode: {DEFAULT_MOTOR_MODE} (VEL)")
         self.get_logger().info(f"Command timeout: {self.get_parameter('command_timeout_sec').value}s")
     
@@ -209,26 +227,46 @@ class LocalNavigationNode(Node):
         # direction_rad: 0 = 前方, π/2 = 右方, π = 后方, -π/2 = 左方
         v_x = plane_speed_m * np.cos(direction_rad)
         v_y = plane_speed_m * np.sin(direction_rad)
+        lateral_axis_sign = float(self.get_parameter("lateral_axis_sign").value)
+        rotation_axis_sign = float(self.get_parameter("rotation_axis_sign").value)
+        wheel_base_radius = float(self.get_parameter("wheel_base_radius_m").value)
+        omniwheel_radius = float(self.get_parameter("omniwheel_radius_m").value)
         
         wheel_speeds = {}
         
         for motor_id, wheel_angle in WHEEL_ANGLES.items():
-            # X 型布局的运动学公式
-            # 每个轮子的线速度 = 平移分量 + 旋转分量
-            v_translation = v_x * np.sin(wheel_angle) + v_y * np.cos(wheel_angle)
-            v_rotation = rotation_rad * WHEEL_BASE_RADIUS
+            # X 型布局的运动学公式。
+            #
+            # v_x 分量已经由实机验证为前后方向正确；横向 v_y 分量单独保留
+            # lateral_axis_sign 参数，用于适配轮组安装镜像或坐标正方向差异。
+            # 默认 -1 修正了“左摇杆横推变成原地旋转”的现象，同时不改变前后分量。
+            v_translation = (
+                v_x * np.sin(wheel_angle)
+                + lateral_axis_sign * v_y * np.cos(wheel_angle)
+            )
+            v_rotation = rotation_axis_sign * rotation_rad * wheel_base_radius
             
             # 轮子线速度 (m/s)
             v_wheel = v_translation + v_rotation
             
             # 应用电机方向反转
-            v_wheel *= MOTOR_DIRECTION[motor_id]
+            v_wheel *= self.motor_direction(motor_id)
             
             # 达妙 VEL 模式需要电机角速度。这里按轮子直驱换算:
             # rad/s = wheel linear speed (m/s) / wheel radius (m)
-            wheel_speeds[motor_id] = v_wheel / OMNIWHEEL_RADIUS_M
+            wheel_speeds[motor_id] = v_wheel / omniwheel_radius
         
         return wheel_speeds
+
+    def motor_direction(self, motor_id):
+        """
+        读取单个电机方向参数。
+
+        返回值只允许 1 或 -1。这样实机发现某个电机方向相反时，可以通过
+        ROS 参数临时修正，而不需要复制一份新的底盘控制代码。
+        """
+        value = float(self.get_parameter(f"motor_direction_{motor_id}").value)
+        return 1.0 if value >= 0.0 else -1.0
     
     def publish_motor_command(self, motor_id, speed_rad):
         """

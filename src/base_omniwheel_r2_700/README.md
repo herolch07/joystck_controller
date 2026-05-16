@@ -4,6 +4,21 @@ ROS 2 motor control package for R2 omniwheel base.
 
 ## Changelog
 
+### 2026-05-16 - v4 横向平移修正与参数化
+- **Local Navigation Node**: 修正横向平移分量符号
+  - 保持前进/后退的 `v_x` 分量不变
+  - 新增 `lateral_axis_sign` 参数，默认 `-1.0`
+  - 解决左摇杆左/右横推时底盘原地旋转，而不是直接横移的问题
+- **参数化改进**:
+  - 新增 `wheel_base_radius_m`
+  - 新增 `omniwheel_radius_m`
+  - 新增 `rotation_axis_sign`
+  - 新增 `motor_direction_1` ~ `motor_direction_4`
+  - 以后轮距、轮径、电机方向、横向轴镜像差异可通过参数调整，不需要复制 package
+- **安全行为不变**:
+  - `/local_driving` 输入 watchdog 保持 `command_timeout_sec = 0.3 s`
+  - 超时后仍向 Motor 1-4 发布 `0 rad/s`
+
 ### 2026-01-29 (night - v3)
 - **Local Navigation Node**: New high-level motion control node
   - Subscribes to `local_driving` topic for holonomic motion commands
@@ -116,7 +131,15 @@ CAN-based VESC speed control.
 - **RECONNECT_MAX_ATTEMPTS**: Max reconnection attempts (default: 5, set to 0 for infinite)
 
 ### local_navigation_node Parameters
-- **WHEEL_BASE_RADIUS**: Distance from wheel center to robot center (default: 0.327038 m)
+- **wheel_base_radius_m**: Distance from wheel center to robot center (default: `0.327038 m`)
+- **omniwheel_radius_m**: Omniwheel radius (default: `0.0635 m`)
+- **lateral_axis_sign**: Lateral translation sign (default: `-1.0`)
+  - `-1.0`: current calibrated default, used when left/right joystick should produce direct sideways motion
+  - `1.0`: legacy behavior before 2026-05-16
+- **rotation_axis_sign**: Rotation command sign (default: `1.0`)
+  - Use `-1.0` if pure rotation direction is reversed on hardware
+- **motor_direction_1** ~ **motor_direction_4**: Per-motor output sign (default: `[-1, 1, -1, 1]`)
+  - Use `1.0` for normal direction, `-1.0` for reversed direction
 - **WHEEL_ANGLES**: X-configuration wheel angles
   - Motor 1 (Right Front): 45°
   - Motor 2 (Left Front): 135°
@@ -354,6 +377,30 @@ watchdog_hz = 20.0 Hz
 ```bash
 ros2 param get /local_navigation_node command_timeout_sec
 ros2 param set /local_navigation_node command_timeout_sec 0.3
+```
+
+### 横向平移校准说明
+
+如果前进/后退正常，但左摇杆向左/向右时底盘原地旋转，优先检查 `lateral_axis_sign`：
+
+```bash
+ros2 param get /local_navigation_node lateral_axis_sign
+ros2 param set /local_navigation_node lateral_axis_sign -1.0
+```
+
+如果修改后左右方向刚好反了，可以改成：
+
+```bash
+ros2 param set /local_navigation_node lateral_axis_sign 1.0
+```
+
+如果只有某一个轮子方向异常，再单独调整对应电机方向：
+
+```bash
+ros2 param set /local_navigation_node motor_direction_1 -1.0
+ros2 param set /local_navigation_node motor_direction_2 1.0
+ros2 param set /local_navigation_node motor_direction_3 -1.0
+ros2 param set /local_navigation_node motor_direction_4 1.0
 ```
 
 ### damiao_node 电机级连续速度命令保护

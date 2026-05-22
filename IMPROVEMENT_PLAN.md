@@ -204,3 +204,19 @@ ros2 run joystick_bridge joystick_bridge --ros-args \
 
 **评估日期：** 2026-02-02  
 **评估结论：** 系统安全可用，建议添加超时检测进一步提升可靠性
+
+---
+
+## 2026-05-22 当前状态更新
+
+本计划早期列出的 `joystick_bridge.py` 缺少 `/joystick_data` timeout 问题已经完成。当前版本包含三层控制链路保护：
+
+- `joystick_bridge`: `/joystick_data` 超过 `input_timeout_sec = 0.3 s` 后发布 `/local_driving = [0,0,0]`
+- `local_navigation_node`: `/local_driving` 超过 `command_timeout_sec = 0.3 s` 后 Motor 1-4 归零
+- `damiao_node`: 连续 VEL 命令超过 `command_timeout_sec = 0.5 s` 后对应电机归零
+
+当前上传 GitHub 前的最终实机确认记录见：
+
+- `README.md` 顶部当前最终版说明
+- `r1 final operation guide 1.0.md` 第 10 节
+- `src/base_omniwheel_r2_700/README.md` v8 实机最终确认版

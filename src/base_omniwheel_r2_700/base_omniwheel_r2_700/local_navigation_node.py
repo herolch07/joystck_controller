@@ -10,7 +10,7 @@ Local Navigation Node for R2 Omniwheel Base
 - 4 轮 X 型布局 (45°, 135°, 225°, 315°)
 - 轮心距中心距离: 327.038 mm = 0.327038 m
 - 全向轮半径: 63.5 mm = 0.0635 m
-- 轮子编号: 1(右前), 2(左前), 3(左后), 4(右后)
+- 轮子编号: 1(左前), 2(右前), 3(右后), 4(左后)
 """
 
 import rclpy
@@ -53,8 +53,8 @@ WHEEL_ANGLES = {
     4: np.deg2rad(315),   # 左后
 }
 
-# 电机方向标志 (1=正常, -1=反转)
-# 根据实际测试调整 - 最终版本
+# 电机方向标志 (1=正常, -1=反转)。
+# 这里仅描述电机接线/安装方向，不描述底盘运动基底。
 MOTOR_DIRECTION = {
     1: -1,  # 左前 - 反转（直接测试确认需要反转）
     2: 1,   # 右前 - 正常
@@ -64,9 +64,12 @@ MOTOR_DIRECTION = {
 
 # 实机校准后的 3 个运动基底。
 #
-# 旧版 45° 公式在当前底盘上表现为：前后正常，但横向组合会变成原地旋转。
-# 因此这里把底盘运动拆成 forward / lateral / rotation 三组独立系数。
+# 当前底盘轮位:
+#   1 = 左前, 2 = 右前, 3 = 右后, 4 = 左后
+#
+# 这里把底盘运动拆成 forward / lateral / rotation 三组独立系数。
 # 每组系数仍然通过 ROS 参数暴露，后续如果换轮组安装或电机编号，只需调参数。
+# 这些系数会再叠加 motor_direction_*, 所以不要把电机反转重复写进这里。
 FORWARD_COEFF = {
     1: 1.0,
     2: 1.0,
@@ -74,18 +77,22 @@ FORWARD_COEFF = {
     4: -1.0,
 }
 
+# X 型四轮全向底盘的横移基底必须使用前左/后左与前右/后右的交叉组合。
+# 旧版全 -1 会让左右摇杆时四个轮子都转，但底盘受力互相抵消，无法横移。
 LATERAL_COEFF = {
-    1: -1.0,
+    1: 1.0,
     2: -1.0,
     3: -1.0,
-    4: -1.0,
+    4: 1.0,
 }
 
+# 原地旋转基底使用 checkerboard 组合，避免右摇杆旋转混入前后或横移。
+# 如果实机旋转方向相反，只需要调整 rotation_axis_sign。
 ROTATION_COEFF = {
-    1: -1.0,
+    1: 1.0,
     2: 1.0,
     3: 1.0,
-    4: -1.0,
+    4: 1.0,
 }
 
 # ROS2 控制参数
@@ -117,7 +124,7 @@ class LocalNavigationNode(Node):
         self.declare_parameter("watchdog_hz", 20.0)
         self.declare_parameter("wheel_base_radius_m", WHEEL_BASE_RADIUS)
         self.declare_parameter("omniwheel_radius_m", OMNIWHEEL_RADIUS_M)
-        self.declare_parameter("lateral_axis_sign", -1.0)
+        self.declare_parameter("lateral_axis_sign", 1.0)
         self.declare_parameter("rotation_axis_sign", 1.0)
         self.declare_parameter("max_wheel_speed_rad_s", 3.0)
         self.declare_parameter("max_wheel_accel_rad_s2", 12.0)

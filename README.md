@@ -1,3 +1,58 @@
+# Robocon R1 ROS2 Workspace - 当前最终版
+
+> 本节是 2026-05-22 GitHub 上传前的最终实机确认入口。下方旧版 joystick-only 文档保留为历史记录；当前完整系统请优先参考本节和 `r1 final operation guide 1.0.md`。
+
+## 最终实机状态
+
+- 完整启动脚本：`./r1_start_base_1_0.sh`
+- 底盘 Motor 1-4：前后、左右横移、右摇杆原地旋转均测试成功
+- Motor 5：elevator 升降，L2/R2 控制，测试成功
+- Motor 6：horizontal 水平移动，D-pad 控制，测试成功
+- Motor 7：arm gripper motor，L1/R1 控制，测试成功
+- Arduino pneumatic gripper：A/B/X 控制，测试成功
+
+## Controller 映射
+
+```text
+左摇杆上/下: 底盘前进/后退
+左摇杆左/右: 底盘左/右横移
+右摇杆左/右: 底盘原地旋转
+R2: Motor 5 elevator 正向
+L2: Motor 5 elevator 反向
+D-pad 左/右: Motor 6 horizontal 左/右移动
+D-pad 上/下: Motor 6 horizontal power level 增加/减少
+R1: Motor 7 arm gripper 正向
+L1: Motor 7 arm gripper 反向
+B: pneumatic gripper OPEN，松开 CLOSE
+A: pneumatic height HIGH latch
+X: pneumatic height LOW latch
+```
+
+## 最终底盘运动学参数
+
+```text
+Motor 1 = 左前
+Motor 2 = 右前
+Motor 3 = 右后
+Motor 4 = 左后
+
+lateral_axis_sign = 1.0
+rotation_axis_sign = 1.0
+forward_coeff_1..4 = [1, 1, -1, -1]
+lateral_coeff_1..4 = [1, -1, -1, 1]
+rotation_coeff_1..4 = [1, 1, 1, 1]
+motor_direction_1..4 = [-1, 1, -1, 1]
+```
+
+## 关键文档
+
+- `r1 final operation guide 1.0.md`: 完整启动、控制、调试指南
+- `src/base_omniwheel_r2_700/README.md`: 底盘、电机、运动学和安全保护说明
+- `src/r1_arm_control/README.md`: Motor 5/6/7 控制说明
+- `src/arduino_pneumatic_driver/README.md`: pneumatic gripper 说明
+
+---
+
 # ROS2 Joystick Driver Workspace
 
 这个工作空间实现了一个基于 ROS2 的游戏手柄驱动系统，可以将物理手柄（8BitDo 或其他兼容设备）的输入信号转换为标准化的 ROS2 消息，供机器人控制系统使用。

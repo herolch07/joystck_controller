@@ -146,9 +146,9 @@ CAN-based VESC speed control.
 ### local_navigation_node Parameters
 - **wheel_base_radius_m**: Distance from wheel center to robot center (default: `0.327038 m`)
 - **omniwheel_radius_m**: Omniwheel radius (default: `0.0635 m`)
-- **lateral_axis_sign**: Lateral translation sign (default: `-1.0`)
-  - `-1.0`: current calibrated default, joystick left produces left strafe
-  - Use `1.0` if left/right translation direction is reversed on another hardware setup
+- **lateral_axis_sign**: Lateral translation sign (default: `1.0`)
+  - `1.0`: current verified default, joystick left produces left strafe on the tested R1/R2 base
+  - Use `-1.0` if left/right translation direction is reversed on another hardware setup
 - **rotation_axis_sign**: Rotation command sign (default: `1.0`)
   - Use `-1.0` if pure rotation direction is reversed on hardware
 - **max_wheel_speed_rad_s**: Per-wheel speed limit before publishing to `/damiao_control` (default: `3.0 rad/s`)
@@ -158,13 +158,13 @@ CAN-based VESC speed control.
 - **motor_direction_1** ~ **motor_direction_4**: Per-motor output sign (default: `[-1, 1, -1, 1]`)
   - Use `1.0` for normal direction, `-1.0` for reversed direction
 - **forward_coeff_1** ~ **forward_coeff_4**: Forward/backward motion basis before motor direction (default: `[1, 1, -1, -1]`)
-- **lateral_coeff_1** ~ **lateral_coeff_4**: Left/right motion basis before motor direction (default: `[-1, -1, -1, -1]`)
-- **rotation_coeff_1** ~ **rotation_coeff_4**: Rotation motion basis before motor direction (default: `[-1, 1, 1, -1]`)
+- **lateral_coeff_1** ~ **lateral_coeff_4**: Left/right motion basis before motor direction (default: `[1, -1, -1, 1]`)
+- **rotation_coeff_1** ~ **rotation_coeff_4**: Rotation motion basis before motor direction (default: `[1, 1, 1, 1]`)
 - **WHEEL_ANGLES**: X-configuration wheel angles
-  - Motor 1 (Right Front): 45°
-  - Motor 2 (Left Front): 135°
-  - Motor 3 (Left Back): 225°
-  - Motor 4 (Right Back): 315°
+  - Motor 1 (Left Front): 45°
+  - Motor 2 (Right Front): 135°
+  - Motor 3 (Right Back): 225°
+  - Motor 4 (Left Back): 315°
 - **DEFAULT_MOTOR_MODE**: VEL mode (3) for continuous control
 - **DEFAULT_DURATION**: 0.0 (continuous, updated by next command)
 
@@ -416,17 +416,17 @@ ros2 param get /local_navigation_node lateral_coeff_4
 默认应该是：
 
 ```text
-lateral_axis_sign = -1.0
-lateral_coeff_1 = -1.0
+lateral_axis_sign = 1.0
+lateral_coeff_1 = 1.0
 lateral_coeff_2 = -1.0
 lateral_coeff_3 = -1.0
-lateral_coeff_4 = -1.0
+lateral_coeff_4 = 1.0
 ```
 
 如果在另一套硬件上左右方向刚好反了，可以改：
 
 ```bash
-ros2 param set /local_navigation_node lateral_axis_sign 1.0
+ros2 param set /local_navigation_node lateral_axis_sign -1.0
 ```
 
 如果只有某一个轮子方向异常，再单独调整对应电机方向：
@@ -506,4 +506,116 @@ watchdog_hz = 20.0 Hz
 ```bash
 ros2 param get /motor_controller_node command_timeout_sec
 ros2 param set /motor_controller_node command_timeout_sec 0.5
+```
+
+## 2026-05-22 - v6 横向平移轮速基底修正
+
+### 修改目标
+- 修正 R1/R2 四轮 X 型全向底盘在左摇杆左右输入时只能四轮转动、车体不横移的问题。
+- 当前实机轮位约定：Motor 1 = 左前，Motor 2 = 右前，Motor 3 = 右后，Motor 4 = 左后。
+
+### local_navigation_node 接口
+- 订阅：`/local_driving` (`std_msgs/Float32MultiArray`)
+  - `[direction_rad, plane_speed_cm_s, rotation_rad_s]`
+  - `direction_rad = 0` 表示前进，`+pi/2` 表示右移，`-pi/2` 表示左移。
+- 发布：`/damiao_control` (`std_msgs/Float32MultiArray`)
+  - `[motor_id, mode, speed_rad_s, duration]`
+  - `mode = 3` 为达妙 VEL 模式，`duration = 0.0` 表示连续刷新。
+
+### 当前运动基底默认值
+- `forward_coeff_1..4 = [1, 1, -1, -1]`
+- `lateral_coeff_1..4 = [1, -1, -1, 1]`
+- `rotation_coeff_1..4 = [-1, 1, 1, -1]`
+- `motor_direction_1..4 = [-1, 1, -1, 1]`
+
+说明：`lateral_coeff` 由旧版 `[-1, -1, -1, -1]` 改为 `[1, -1, -1, 1]`。旧组合会导致左右摇杆时轮子在转但横向力互相抵消；新组合使用 X 型全向轮的交叉横移基底。
+
+### 超时保护
+- `local_navigation_node` 保持 `command_timeout_sec = 0.3 s`。
+- 如果超过该时间未收到 `/local_driving`，节点会向 Motor 1-4 发布 `0 rad/s`。
+- `damiao_node` 仍有电机级 watchdog，连续 VEL 命令超时后对应电机归零。
+
+### 最小测试命令
+```bash
+source /home/robotics/robocon/new_ws/install/setup.bash
+ros2 topic pub --once /local_driving std_msgs/msg/Float32MultiArray "{data: [1.5708, 10.0, 0.0]}"
+ros2 topic pub --once /local_driving std_msgs/msg/Float32MultiArray "{data: [-1.5708, 10.0, 0.0]}"
+```
+
+如果横移方向反了，优先只改参数 `lateral_axis_sign`：
+
+```bash
+ros2 param set /local_navigation_node lateral_axis_sign 1.0
+```
+
+## 2026-05-22 - v7 左右方向与右摇杆原地旋转修正
+
+### 修改目标
+- 根据实机测试结果，左/右横移方向相反，因此将 `lateral_axis_sign` 默认值由 `-1.0` 改为 `1.0`。
+- 修正右摇杆旋转基底，使 `rx` 输入用于底盘原地旋转，而不是混入平移。
+
+### local_navigation_node 当前默认参数
+- `lateral_axis_sign = 1.0`
+- `rotation_axis_sign = 1.0`
+- `lateral_coeff_1..4 = [1, -1, -1, 1]`
+- `rotation_coeff_1..4 = [1, 1, 1, 1]`
+- `motor_direction_1..4 = [-1, 1, -1, 1]`
+
+叠加 `motor_direction_*` 后，右摇杆旋转输出为 checkerboard 轮速组合，目标行为是车体中心基本不平移，只绕自身中心转动。
+
+### 测试建议
+1. 左摇杆只测左/右横移，确认方向已正确。
+2. 右摇杆只推左/右，确认底盘原地旋转。
+3. 如果右摇杆旋转方向与操作习惯相反，只改参数：
+
+```bash
+ros2 param set /local_navigation_node rotation_axis_sign -1.0
+```
+
+### 安全保护
+- `/local_driving` 超过 `command_timeout_sec = 0.3 s` 未刷新时，Motor 1-4 仍会收到 `0 rad/s`。
+- `damiao_node` 的电机级 watchdog 仍作为第二层保护。
+
+## 2026-05-22 - v8 实机最终确认版
+
+### 实机确认结果
+- 左摇杆前后、左右平移均可正常工作。
+- 右摇杆左/右可控制底盘原地旋转。
+- Motor 1-4 底盘、Motor 5 升降、Motor 6 水平移动、Motor 7 夹爪电机、Arduino pneumatic gripper 均已通过 controller 测试。
+
+### 最终底盘默认参数
+```text
+Motor 1 = 左前
+Motor 2 = 右前
+Motor 3 = 右后
+Motor 4 = 左后
+
+lateral_axis_sign = 1.0
+rotation_axis_sign = 1.0
+forward_coeff_1..4 = [1, 1, -1, -1]
+lateral_coeff_1..4 = [1, -1, -1, 1]
+rotation_coeff_1..4 = [1, 1, 1, 1]
+motor_direction_1..4 = [-1, 1, -1, 1]
+```
+
+### Controller 最终映射
+```text
+左摇杆上/下: 底盘前进/后退
+左摇杆左/右: 底盘左/右横移
+右摇杆左/右: 底盘原地旋转
+R2 / L2: Motor 5 升降正/反向
+D-pad 左/右: Motor 6 水平移动
+D-pad 上/下: Motor 6 水平移动速度档位增加/减少
+R1 / L1: Motor 7 夹爪电机正/反向
+B: pneumatic gripper OPEN，松开后 CLOSE
+A: pneumatic height HIGH latch
+X: pneumatic height LOW latch
+```
+
+### 启动方式
+完整手柄控制系统使用根目录脚本：
+
+```bash
+cd /home/robotics/robocon/new_ws
+./r1_start_base_1_0.sh
 ```

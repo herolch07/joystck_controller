@@ -446,3 +446,73 @@ git add .
 git commit -m "Add R1 final operation guide and startup script"
 git push origin main
 ```
+
+## 10. 2026-05-22 最终实机确认记录
+
+本节记录当前 GitHub 上传前的实机确认状态。
+
+### 启动脚本
+
+完整 controller 控制系统使用：
+
+```bash
+cd /home/robotics/robocon/new_ws
+./r1_start_base_1_0.sh
+```
+
+该脚本会启动：
+
+```text
+Motor 1-4: omniwheel 底盘
+Motor 5: elevator 升降
+Motor 6: horizontal 水平移动
+Motor 7: arm gripper motor
+Arduino pneumatic: gripper open/close + height high/low
+Joystick driver / bridge / monitor
+```
+
+### Controller 最终映射
+
+```text
+左摇杆上/下: 底盘前进/后退
+左摇杆左/右: 底盘左/右横移
+右摇杆左/右: 底盘原地旋转
+R2: Motor 5 elevator 正向
+L2: Motor 5 elevator 反向
+D-pad 左/右: Motor 6 horizontal 左/右移动
+D-pad 上: Motor 6 horizontal power level 增加，0.2 -> 0.5 -> 1.0
+D-pad 下: Motor 6 horizontal power level 减少，1.0 -> 0.5 -> 0.2
+R1: Motor 7 arm gripper 正向
+L1: Motor 7 arm gripper 反向
+B: pneumatic gripper OPEN，松开后 CLOSE
+A: pneumatic height HIGH，并保持到按 X
+X: pneumatic height LOW，并保持到按 A
+```
+
+### 最终底盘运动学参数
+
+```text
+Motor 1 = 左前
+Motor 2 = 右前
+Motor 3 = 右后
+Motor 4 = 左后
+
+lateral_axis_sign = 1.0
+rotation_axis_sign = 1.0
+forward_coeff_1..4 = [1, 1, -1, -1]
+lateral_coeff_1..4 = [1, -1, -1, 1]
+rotation_coeff_1..4 = [1, 1, 1, 1]
+motor_direction_1..4 = [-1, 1, -1, 1]
+```
+
+### 实机结果
+
+```text
+底盘前后移动: OK
+底盘左右横移: OK
+底盘原地旋转: OK
+Motor 5 elevator: OK
+Motor 6 horizontal: OK
+Motor 7 arm gripper: OK
+Arduino pneumatic gripper: OK
+```

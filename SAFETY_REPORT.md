@@ -371,3 +371,29 @@ class JoystickBridge(Node):
 **报告日期：** 2026-02-02  
 **系统版本：** R2-700 全向轮底盘控制系统  
 **安全等级：** ✅ 良好（建议添加超时检测进一步提升）
+
+---
+
+## 2026-05-22 当前状态更新
+
+本报告早期指出 `joystick_bridge` 缺少 `/joystick_data` 输入 timeout，可能在 `joystick_node` 崩溃后保持最后一条非零底盘指令。当前代码已经完成修复：
+
+```text
+joystick_bridge:
+  input_timeout_sec = 0.3 s
+  watchdog_hz = 20.0 Hz
+  超过 input_timeout_sec 未收到 /joystick_data
+  -> 发布 /local_driving = [0.0, 0.0, 0.0]
+
+local_navigation_node:
+  command_timeout_sec = 0.3 s
+  超过 command_timeout_sec 未收到 /local_driving
+  -> Motor 1-4 发布 0 rad/s
+
+damiao_node:
+  command_timeout_sec = 0.5 s
+  连续 VEL 命令超时
+  -> 对应 motor_id 发布 0 rad/s
+```
+
+因此，早期报告中的“joystick_bridge 不会自动发送停止指令”已不是当前版本状态。旧段落保留用于追溯当时风险和修复原因。

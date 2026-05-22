@@ -501,7 +501,7 @@ lateral_axis_sign = 1.0
 rotation_axis_sign = 1.0
 forward_coeff_1..4 = [1, 1, -1, -1]
 lateral_coeff_1..4 = [1, -1, -1, 1]
-rotation_coeff_1..4 = [1, 1, 1, 1]
+rotation_coeff_1..4 = [1, -1, 1, -1]
 motor_direction_1..4 = [-1, 1, -1, 1]
 ```
 
@@ -515,4 +515,18 @@ Motor 5 elevator: OK
 Motor 6 horizontal: OK
 Motor 7 arm gripper: OK
 Arduino pneumatic gripper: OK
+```
+
+### 2026-05-22 右摇杆旋转复修提醒
+
+实机确认记录：`[1, 1, 1, 1]` 会让四个轮子转动但车体不旋转，`[-1, 1, 1, -1]` 会变成反向横移。最终确认右摇杆原地旋转使用：
+
+```text
+rotation_coeff_1..4 = [1, -1, 1, -1]
+```
+
+请重新运行 `./r1_start_base_1_0.sh` 后只测试右摇杆左/右。若方向相反，使用：
+
+```bash
+ros2 param set /local_navigation_node rotation_axis_sign -1.0
 ```

@@ -40,7 +40,7 @@ lateral_axis_sign = 1.0
 rotation_axis_sign = 1.0
 forward_coeff_1..4 = [1, 1, -1, -1]
 lateral_coeff_1..4 = [1, -1, -1, 1]
-rotation_coeff_1..4 = [1, 1, 1, 1]
+rotation_coeff_1..4 = [1, -1, 1, -1]
 motor_direction_1..4 = [-1, 1, -1, 1]
 ```
 

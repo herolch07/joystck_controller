@@ -159,7 +159,7 @@ CAN-based VESC speed control.
   - Use `1.0` for normal direction, `-1.0` for reversed direction
 - **forward_coeff_1** ~ **forward_coeff_4**: Forward/backward motion basis before motor direction (default: `[1, 1, -1, -1]`)
 - **lateral_coeff_1** ~ **lateral_coeff_4**: Left/right motion basis before motor direction (default: `[1, -1, -1, 1]`)
-- **rotation_coeff_1** ~ **rotation_coeff_4**: Rotation motion basis before motor direction (default: `[1, 1, 1, 1]`)
+- **rotation_coeff_1** ~ **rotation_coeff_4**: Rotation motion basis before motor direction (default: `[1, -1, 1, -1]`)
 - **WHEEL_ANGLES**: X-configuration wheel angles
   - Motor 1 (Left Front): 45°
   - Motor 2 (Right Front): 135°
@@ -525,7 +525,7 @@ ros2 param set /motor_controller_node command_timeout_sec 0.5
 ### 当前运动基底默认值
 - `forward_coeff_1..4 = [1, 1, -1, -1]`
 - `lateral_coeff_1..4 = [1, -1, -1, 1]`
-- `rotation_coeff_1..4 = [-1, 1, 1, -1]`
+- `rotation_coeff_1..4 = [1, -1, 1, -1]`
 - `motor_direction_1..4 = [-1, 1, -1, 1]`
 
 说明：`lateral_coeff` 由旧版 `[-1, -1, -1, -1]` 改为 `[1, -1, -1, 1]`。旧组合会导致左右摇杆时轮子在转但横向力互相抵消；新组合使用 X 型全向轮的交叉横移基底。
@@ -558,7 +558,7 @@ ros2 param set /local_navigation_node lateral_axis_sign 1.0
 - `lateral_axis_sign = 1.0`
 - `rotation_axis_sign = 1.0`
 - `lateral_coeff_1..4 = [1, -1, -1, 1]`
-- `rotation_coeff_1..4 = [1, 1, 1, 1]`
+- `rotation_coeff_1..4 = [1, -1, 1, -1]`
 - `motor_direction_1..4 = [-1, 1, -1, 1]`
 
 叠加 `motor_direction_*` 后，右摇杆旋转输出为 checkerboard 轮速组合，目标行为是车体中心基本不平移，只绕自身中心转动。
@@ -594,7 +594,7 @@ lateral_axis_sign = 1.0
 rotation_axis_sign = 1.0
 forward_coeff_1..4 = [1, 1, -1, -1]
 lateral_coeff_1..4 = [1, -1, -1, 1]
-rotation_coeff_1..4 = [1, 1, 1, 1]
+rotation_coeff_1..4 = [1, -1, 1, -1]
 motor_direction_1..4 = [-1, 1, -1, 1]
 ```
 
@@ -618,4 +618,26 @@ X: pneumatic height LOW latch
 ```bash
 cd /home/robotics/robocon/new_ws
 ./r1_start_base_1_0.sh
+```
+
+## 2026-05-22 - v9 右摇杆旋转基底复修
+
+### 修改原因
+- 实机复测发现 `[1, 1, 1, 1]` 会四轮转但车体不转，`[-1, 1, 1, -1]` 会变成反向横移；最终确认 `[1, -1, 1, -1]` 可实现右摇杆原地旋转。
+- 前后移动和左右横移已经工作，因此本次只调整 rotation 基底，不修改 forward/lateral。
+
+### 实机确认最终默认参数
+```text
+rotation_axis_sign = 1.0
+rotation_coeff_1..4 = [1, -1, 1, -1]
+```
+
+### 测试方式
+1. 重启 `local_navigation_node` 或重新运行 `./r1_start_base_1_0.sh`。
+2. 只推右摇杆左/右，不碰左摇杆。
+3. 期望结果：底盘绕自身中心原地旋转。
+4. 如果旋转方向相反，只改：
+
+```bash
+ros2 param set /local_navigation_node rotation_axis_sign -1.0
 ```

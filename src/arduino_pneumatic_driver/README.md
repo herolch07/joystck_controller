@@ -133,6 +133,7 @@ X: latch height LOW
 ```text
 initial_height_state = 0
 publish_hz = 20.0
+input_timeout_sec = 0.3
 ```
 
 ## 超时保护
@@ -159,6 +160,8 @@ command_timeout_sec = 0.5 s
 ```
 
 默认启动后 safe state 是 `[1,0]`，即 gripper CLOSE + height LOW。按 A 后，bridge 会持续发布 height HIGH；按 X 后，bridge 会持续发布 height LOW。B 只临时打开 gripper，不改变 height。
+
+`pneumatic_gripper_joystick_bridge_node` 也有 `/joystick_data` 输入 timeout。超过 `input_timeout_sec = 0.3 s` 后，B 不会继续保持打开，bridge 会发布 `[1, current_height]`。
 
 ## 最小测试
 

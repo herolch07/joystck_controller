@@ -1,5 +1,7 @@
 # Motor 3 无限重启问题修复报告
 
+> 当前状态说明：本报告记录早期 Motor 3 `isEnable`/CAN feedback 解析问题。当前最终实机记录还确认过另一个 Motor 3 反向响应慢问题，最终原因是 ESC 损坏；这不是本报告中的软件解析问题。当前完整操作请以 `README.md` 和 `r1 final operation guide 1.0.md` 为准。
+
 ## 📋 问题概述
 
 **日期：** 2026-02-02  
@@ -234,7 +236,7 @@ ros2 run base_omniwheel_r2_700 damiao_node
 
 - **测试指南：** `/home/robotics/robocon/new_ws/TESTING_GUIDE.md`
 - **快速启动：** `/home/robotics/robocon/new_ws/QUICK_START.md`
-- **一键启动脚本：** `/home/robotics/robocon/new_ws/start_all_nodes.sh`
+- **当前一键启动脚本：** `/home/robotics/robocon/new_ws/r1_start_base_1_0.sh`
 
 ---
 

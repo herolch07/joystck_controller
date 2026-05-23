@@ -95,11 +95,8 @@ Low-level motor driver for DM motors via USB-CAN interface.
 ### 2. local_navigation_node
 High-level motion control for holonomic navigation.
 
-### 3. vesc_node
-VESC motor controller interface.
-
-### 4. vesc_canbus_speed_control_node
-CAN-based VESC speed control.
+### Legacy VESC nodes
+Older notes mention `vesc_node` and `vesc_canbus_speed_control_node`. They are not part of the current R1 verified runtime in this workspace. The current verified motor path is `local_navigation_node -> damiao_node`.
 
 ## Topics
 
@@ -246,7 +243,7 @@ The 4th parameter meaning depends on the control mode:
 
 **VEL mode auto-stop behavior:**
 - If `duration > 0`: Motor runs for specified time, then **auto-stops** (no manual stop needed)
-- If `duration == 0`: Motor runs indefinitely until manual stop command (`mode 0`)
+- If `duration == 0`: Current version treats this as a continuous command that must be refreshed. If it is not refreshed, `damiao_node` watchdog sends `0 rad/s` after `command_timeout_sec` (default `0.5 s`).
 - Timer is per-motor: sending new command to same motor cancels previous timer
 
 **Examples:**
@@ -254,7 +251,8 @@ The 4th parameter meaning depends on the control mode:
 # VEL mode with auto-stop: Motor 1, 10 rad/s, auto-stops after 5 seconds
 ros2 topic pub /damiao_control std_msgs/msg/Float32MultiArray "{data: [1.0, 3.0, 10.0, 5.0]}" --once
 
-# VEL mode continuous: Motor 1, 10 rad/s, runs until manual stop
+# VEL mode continuous refresh example: publish repeatedly in real control code.
+# If this is published only once, the watchdog will stop Motor 1 after command_timeout_sec.
 ros2 topic pub /damiao_control std_msgs/msg/Float32MultiArray "{data: [1.0, 3.0, 10.0, 0.0]}" --once
 
 # POS_VEL mode: Motor 2, speed 1 rad/s, target position 50 rad
@@ -340,14 +338,14 @@ Run inside the container or on host:
 bash test_damiao.sh
 ```
 
-## Docker (Jazzy)
+## Legacy Docker Notes
 
-Repository root provides a Dockerfile, and this package contains the run script:
+Docker was used in older R2 notes. The current R1 verified workflow runs directly from `/home/robotics/robocon/new_ws` and uses `./r1_start_base_1_0.sh`. The Docker paths below are historical references and may not exist in this workspace:
 
 - `Robocon2026_r2/Dockerfile`
 - `2026R2_ws/src/base_omniwheel_r2_700/run_r2_base_docker.sh`
 
-Build and enter container:
+Historical build/enter command:
 
 ```bash
 sudo bash /home/robotics/robocon/new_ws/src/base_omniwheel_r2_700/run_r2_base_docker.sh

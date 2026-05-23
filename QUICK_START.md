@@ -1,350 +1,143 @@
-# 快速启动指南 - R2-700 全向轮底盘
+# R1 快速启动指南
 
-## 🚀 一键启动（推荐）
+本文件只记录当前 R1 完整控制系统的启动方式。旧的 4 节点底盘启动方式已经不是首选入口。
 
-### 方法 1：一键启动所有节点
+## 1. 启动前检查
 
 ```bash
 cd /home/robotics/robocon/new_ws
-./start.sh
-```
-
-**特点：**
-- ✅ 一条命令启动所有节点
-- ✅ 自动打开 4 个独立终端窗口
-- ✅ 每个窗口显示一个节点的输出
-- ✅ 简单直观，无需学习额外工具
-
----
-
-## 📋 系统节点说明
-
-### 节点列表
-
-| 窗口 | 节点名称 | 功能 | 话题 |
-|-----|---------|------|------|
-| 1 | `damiao_node` | 电机驱动 | 订阅 `/damiao_control` |
-| 2 | `local_navigation_node` | 运动学解算 | 订阅 `/local_driving`，发布 `/damiao_control` |
-| 3 | `joystick_node` | 手柄驱动 | 发布 `/joystick_data` |
-| 4 | `joystick_bridge` | 坐标转换 | 订阅 `/joystick_data`，发布 `/local_driving` |
-
----
-
-## 🎮 手柄控制说明
-
-### 控制方式
-
-**左摇杆：** 控制底盘平移
-- 向上推 → 前进
-- 向下推 → 后退
-- 向左推 → 左平移
-- 向右推 → 右平移
-- 斜向推 → 斜向移动
-
-**右摇杆（左右）：** 控制底盘旋转
-- 向右推 → 顺时针旋转
-- 向左推 → 逆时针旋转
-
-**组合操作：**
-- 同时推动左右摇杆 → 边移动边旋转
-
----
-
-## 🔍 快速检查
-
-### 1. 检查所有节点是否运行
-
-在任意一个终端窗口运行：
-```bash
-ros2 node list
-```
-
-**预期输出：**
-```
-/damiao_node
-/joystick_bridge
-/joystick_node
-/local_navigation_node
-```
-
-### 2. 检查话题数据流
-
-```bash
-# 查看手柄输入
-ros2 topic echo /joystick_data
-
-# 查看底盘速度指令
-ros2 topic echo /local_driving
-
-# 查看电机控制指令
-ros2 topic echo /damiao_control
-
-# 查看话题频率
-ros2 topic hz /joystick_data
-```
-
-### 3. 检查电机状态
-
-查看窗口 1（电机驱动），观察日志：
-
-**正常输出：**
-```log
-[DEBUG] Motor 1 updated: q=X.XX, dq=X.XX, tau=X.XX, isEnable=True
-[DEBUG] Motor 2 updated: q=X.XX, dq=X.XX, tau=X.XX, isEnable=True
-[DEBUG] Motor 3 updated: q=X.XX, dq=X.XX, tau=X.XX, isEnable=True
-[DEBUG] Motor 4 updated: q=X.XX, dq=X.XX, tau=X.XX, isEnable=True
-```
-
-**关键指标：**
-- ✅ `isEnable=True` （所有电机）
-- ✅ 没有 `Motor X re-enabled` 循环
-- ✅ 没有 `Motor ID 0/12 not in motors_map` 警告
-
----
-
-## ⚙️ 参数调整
-
-### 调整底盘速度
-
-如果速度太快或太慢：
-
-1. 在窗口 4 按 `Ctrl+C` 停止 `joystick_bridge`
-2. 重新启动并设置参数：
-```bash
-source /home/robotics/robocon/new_ws/install/setup.bash
-ros2 run joystick_bridge joystick_bridge --ros-args \
-  -p max_speed_cm:=150.0 \
-  -p max_rotation:=3.0
-```
-
-### 调整摇杆死区
-
-如果摇杆回中后有微小漂移：
-```bash
-source /home/robotics/robocon/new_ws/install/setup.bash
-ros2 run joystick_bridge joystick_bridge --ros-args \
-  -p deadzone:=820
-```
-
-### 动态查看/修改参数
-
-```bash
-# 查看所有参数
-ros2 param list /joystick_bridge
-
-# 查看具体参数
-ros2 param get /joystick_bridge max_speed_cm
-
-# 动态修改参数（无需重启）
-ros2 param set /joystick_bridge max_speed_cm 150.0
-```
-
----
-
-## 🛠️ 故障排除
-
-### 问题 1：手柄未识别
-
-**症状：**
-```
-[ERROR] No device found with filter '8BitDo'
-```
-
-**解决：**
-```bash
-# 检查手柄连接
-ls -l /dev/input/event*
-sudo evtest
-
-# 检查权限
-sudo usermod -a -G input $USER
-# 然后重启系统
-```
-
-### 问题 2：电机不响应
-
-**症状：** 推动摇杆，底盘不动
-
-**检查步骤：**
-1. 确认电机电源已开启
-2. 确认 USB-CAN 适配器已连接（`/dev/ttyACM0`）
-3. 查看窗口 0 的日志，确认 `isEnable=True`
-4. 检查话题连接：
-```bash
-ros2 topic hz /local_driving
-ros2 topic hz /damiao_control
-```
-
-### 问题 3：Motor 3 仍然 re-enabled
-
-**症状：**
-```
-[INFO] Motor 3 re-enabled (isEnable=False)
-```
-
-**解决：**
-```bash
-# 确认代码已更新
-grep "data\[3\] & 0x0F" /home/robotics/robocon/new_ws/src/base_omniwheel_r2_700/base_omniwheel_r2_700/DM_CAN.py
-
-# 重新编译
-cd /home/robotics/robocon/new_ws
-colcon build --packages-select base_omniwheel_r2_700 --symlink-install
 source install/setup.bash
-
-# 重启系统
-./start_all_nodes.sh
 ```
 
-### 问题 4：底盘方向不对
+确认设备：
 
-**症状：** 推动摇杆方向与底盘实际运动不符
-
-**解决：** 调整电机方向映射
-
-编辑文件：
 ```bash
-nano /home/robotics/robocon/new_ws/src/base_omniwheel_r2_700/base_omniwheel_r2_700/local_navigation_node.py
+lsusb
+ls -l /dev/ttyACM0
+ls -l /dev/serial/by-id/
 ```
 
-找到 `MOTOR_DIRECTION` 字典（约第 56-60 行）：
-```python
-MOTOR_DIRECTION = {
-    1: -1,  # 如果方向反了，改为 1
-    2: 1,   # 如果方向反了，改为 -1
-    3: -1,
-    4: 1,
-}
+确认手柄能被 evdev 看到：
+
+```bash
+python3 - <<'PY'
+from evdev import InputDevice, list_devices
+for path in list_devices():
+    d = InputDevice(path)
+    print(path, d.name)
+PY
 ```
 
-保存后重新编译：
+8BitDo 手柄需要使用 X 模式。当前手柄消息范围是：
+
+```text
+lx/ly/rx/ry: -128 .. 128
+l2/r2: 0 .. 128
+deadzone: 6
+```
+
+## 2. 编译
+
 ```bash
 cd /home/robotics/robocon/new_ws
-colcon build --packages-select base_omniwheel_r2_700
+colcon build --symlink-install
+source install/setup.bash
 ```
 
----
+## 3. 一键启动
 
-## 🔧 手动启动（如果不用自动脚本）
-
-如果 `./start.sh` 无法使用，可以在 4 个终端中分别手动运行：
-
-**终端 1：电机驱动**
 ```bash
-source /home/robotics/robocon/new_ws/install/setup.bash
-ros2 run base_omniwheel_r2_700 damiao_node
+cd /home/robotics/robocon/new_ws
+chmod +x r1_start_base_1_0.sh
+./r1_start_base_1_0.sh
 ```
 
-**终端 2：运动学节点**
-```bash
-source /home/robotics/robocon/new_ws/install/setup.bash
-ros2 run base_omniwheel_r2_700 local_navigation_node
+脚本会启动 tmux session：
+
+```text
+r1_control
 ```
 
-**终端 3：手柄驱动**
-```bash
-source /home/robotics/robocon/new_ws/install/setup.bash
-ros2 run my_joystick_driver joystick_node
+窗口内容：
+
+```text
+0 joystick
+1 base_bridge
+2 motors
+3 nav
+4 elevator
+5 elev_bridge
+6 horizontal
+7 horiz_bridge
+8 gripper
+9 grip_bridge
+10 pneumatic
+11 pneu_bridge
+12 monitor
 ```
 
-**终端 4：手柄桥接**
-```bash
-source /home/robotics/robocon/new_ws/install/setup.bash
-ros2 run joystick_bridge joystick_bridge
+## 4. 常用 tmux 操作
+
+```text
+重新进入: tmux attach -t r1_control
+离开但保持运行: Ctrl+b，然后按 d
+关闭全部: tmux kill-session -t r1_control
 ```
 
----
+## 5. 控制映射
 
-## 📊 监控命令
+```text
+左摇杆上/下: 底盘前进/后退
+左摇杆左/右: 底盘左/右横移
+右摇杆左/右: 底盘原地旋转
+R2 / L2: Motor 5 升降正/反向
+D-pad 左/右: Motor 6 水平移动
+D-pad 上/下: Motor 6 水平移动速度档 0.2 / 0.5 / 1.0
+R1 / L1: Motor 7 机械夹爪正/反向
+B: pneumatic gripper OPEN，松开 CLOSE
+A: pneumatic height HIGH latch
+X: pneumatic height LOW latch
+```
 
-### 实时监控话题
+## 6. 快速验证
 
 ```bash
-# 查看话题列表
-ros2 topic list
-
-# 查看话题频率
-ros2 topic hz /joystick_data
-ros2 topic hz /local_driving
-ros2 topic hz /damiao_control
-
-# 查看话题内容
+ros2 node list
 ros2 topic echo /joystick_data
 ros2 topic echo /local_driving
 ros2 topic echo /damiao_control
+ros2 topic echo /pneumatic_gripper_cmd
 ```
 
-### 查看节点信息
+应至少看到：
+
+```text
+/joystick_node
+/joystick_bridge
+/motor_controller_node
+/local_navigation_node
+/elevator_controller_node
+/horizontal_controller_node
+/arm_gripper_controller_node
+/pneumatic_relay_driver_node
+```
+
+## 7. 当前重要默认值
+
+```text
+joystick_bridge max_speed_cm = 20.0
+joystick_bridge max_rotation = 0.5
+joystick_bridge input_timeout_sec = 0.3
+local_navigation_node command_timeout_sec = 0.3
+damiao_node command_timeout_sec = 0.5
+pneumatic safe_state = [1,0]
+```
+
+如需临时调高底盘速度：
 
 ```bash
-# 节点列表
-ros2 node list
-
-# 节点详细信息
-ros2 node info /damiao_node
-
-# 话题连接图
-rqt_graph
+ros2 param set /joystick_bridge max_speed_cm 40.0
+ros2 param set /joystick_bridge max_rotation 1.0
 ```
 
----
-
-## 📚 相关文档
-
-| 文档 | 说明 |
-|-----|------|
-| `QUICK_START.md` | 本文档 - 快速启动指南 |
-| `MOTOR3_FIX_REPORT.md` | Motor 3 问题修复报告 |
-| `TESTING_GUIDE.md` | 详细测试流程 |
-| `README.md` | 项目总体说明 |
-| `src/base_omniwheel_r2_700/README.md` | 底盘控制详细说明 |
-
----
-
-## ✅ 启动检查清单
-
-启动系统前，请确认：
-
-- [ ] 电机电源已开启
-- [ ] USB-CAN 适配器已连接（`/dev/ttyACM0` 存在）
-- [ ] 手柄已开机并配对
-- [ ] 工作区已编译：`colcon build`
-- [ ] 环境已加载：`source install/setup.bash`
-
-启动后，请确认：
-
-- [ ] 4 个 ROS2 节点都在运行
-- [ ] 所有电机 `isEnable=True`
-- [ ] 没有 `Motor X re-enabled` 循环
-- [ ] 手柄操作有响应
-
----
-
-## 🎯 快速测试
-
-启动系统后，进行以下测试：
-
-1. **手柄数据测试：** 推动左摇杆，观察窗口 2 的输出
-2. **坐标转换测试：** 在窗口 4 运行 `ros2 topic echo /local_driving`
-3. **电机响应测试：** 推动摇杆，观察窗口 0 的电机数据变化
-4. **实际运动测试：** 确认底盘按预期方向移动
-
----
-
-## 🔄 关闭系统
-
-在每个终端窗口按 `Ctrl+C` 关闭对应的节点。
-
-**建议关闭顺序：**
-1. 窗口 4：手柄桥接 (joystick_bridge)
-2. 窗口 3：手柄驱动 (joystick_node)
-3. 窗口 2：运动学节点 (local_navigation_node)
-4. 窗口 1：电机驱动 (damiao_node)
-
-然后关闭所有终端窗口即可。
-
----
-
-**版本：** v1.0  
-**更新日期：** 2026-02-02  
-**适用系统：** Robocon 2026 R2 全向轮底盘
+先低速确认方向，再逐步提高速度。

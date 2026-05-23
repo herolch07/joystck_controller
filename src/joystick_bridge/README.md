@@ -61,15 +61,15 @@
 ## 🎮 控制映射
 
 ### 左摇杆 (lx, ly)
-- **X 轴 (lx)**: 控制运动方向（-8192 到 8192）
-- **Y 轴 (ly)**: 控制平移速度大小（-8192 到 8192）
+- **X 轴 (lx)**: 控制运动方向（-128 到 128）
+- **Y 轴 (ly)**: 控制平移速度大小（-128 到 128）
 - **映射关系**:
   - 方向角 = atan2(lx, -ly) （注意 Y 轴取反）
-  - 速度大小 = sqrt(lx² + ly²) / 8192 × max_speed
+  - 速度大小 = min(sqrt(lx² + ly²) / 128, 1.0) × max_speed
 
 ### 右摇杆 (rx)
-- **X 轴 (rx)**: 控制旋转速度（-8192 到 8192）
-- **映射关系**: rotation = rx / 8192 × max_rotation
+- **X 轴 (rx)**: 控制旋转速度（-128 到 128）
+- **映射关系**: rotation = rx / 128 × max_rotation
 
 ### 死区处理
 当摇杆值小于 `deadzone` 时，视为回中状态：
@@ -188,9 +188,9 @@ ros2 run joystick_bridge joystick_bridge --ros-args --log-level debug
 - 无效数据会记录警告日志并忽略
 
 **日志输出：**
-```
-[DEBUG] Joy: lx=4096, ly=-8192, rx=0 → Nav: dir=150.0°, speed=100.0cm/s, rot=0.00rad/s
-[WARN] Invalid joystick command: expected 8 fields, got 5
+```text
+[DEBUG] Joy: lx=64, ly=-128, rx=0 -> Nav: dir=26.6deg, speed=20.0cm/s, rot=0.00rad/s
+[WARN] Invalid joystick command: expected Joystick message fields
 ```
 
 ---

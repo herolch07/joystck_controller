@@ -2,6 +2,8 @@
 
 ## 问题记录：ros2 run 报错 "No executable found"
 
+> 当前状态说明：当前 `src/joystick_bridge/setup.py` 使用 `scripts/joystick_bridge` 安装到 `lib/joystick_bridge/`，`entry_points` 为空。这与本历史排查文档中“同时保留 entry_points”的修复写法不同，但当前工作区的脚本安装方式是有效的。
+
 **问题发生时间**：2026-02-03  
 **影响版本**：v1.0.0  
 **修复版本**：v1.0.1  
@@ -33,7 +35,7 @@ No executable found
 
 ROS2 Python package 的可执行文件安装需要满足两个条件：
 
-1. **在 `setup.py` 中定义 `entry_points`**（已满足）
+1. **在 `setup.py` 中定义 `entry_points`**（历史方案；当前工作区改为 `entry_points={}` 并安装 `scripts/joystick_bridge`）
    ```python
    entry_points={
        'console_scripts': [
@@ -178,9 +180,9 @@ joystick_bridge joystick_bridge  # ✅ 能够找到
 # 测试运行
 $ ros2 run joystick_bridge joystick_bridge
 [INFO] [joystick_bridge]: Joystick bridge node initialized
-[INFO] [joystick_bridge]: Max speed: 100.0 cm/s
-[INFO] [joystick_bridge]: Max rotation: 2.0 rad/s
-[INFO] [joystick_bridge]: Deadzone: 410
+[INFO] [joystick_bridge]: Max speed: 20.0 cm/s
+[INFO] [joystick_bridge]: Max rotation: 0.5 rad/s
+[INFO] [joystick_bridge]: Deadzone: 6
 # ✅ 成功启动
 ```
 

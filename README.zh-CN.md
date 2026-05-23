@@ -6,6 +6,7 @@
 
 - GitHub：`herolch07`
 - 当前最终操作指南：[r1 final operation guide 1.0.md](r1%20final%20operation%20guide%201.0.md)
+- 系统架构说明：[ARCHITECTURE.md](ARCHITECTURE.md)
 - 底盘速度调参说明：[SPEED_TUNING.md](SPEED_TUNING.md)
 - 当前完整启动脚本：`./r1_start_base_1_0.sh`
 - 项目记录中的当前实机确认日期：2026-05-22

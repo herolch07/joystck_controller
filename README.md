@@ -6,6 +6,7 @@ This repository contains the current R1 robot control workspace developed by EdU
 
 - GitHub: `herolch07`
 - Current final operation guide: [r1 final operation guide 1.0.md](r1%20final%20operation%20guide%201.0.md)
+- System architecture: [ARCHITECTURE.md](ARCHITECTURE.md)
 - Chassis speed tuning notes: [SPEED_TUNING.md](SPEED_TUNING.md)
 - Main startup script: `./r1_start_base_1_0.sh`
 - Confirmed current date in the project notes: 2026-05-22

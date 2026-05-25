@@ -3,8 +3,8 @@
 本指南记录当前可用版本的 R1 底盘和机械臂启动流程。当前版本已确认：
 
 - 手柄必须使用 X 模式。
-- 手柄数据范围是 `-128 ~ 128`，比旧版 `8192` 更容易读。
-- `joystick_bridge` 默认最大平移速度是 `40 cm/s`。
+- 手柄数据范围是 `-512 ~ 512`，比旧版 `8192` 更容易读。
+- `joystick_bridge` 启动默认平移速度档是 `20 cm/s`，可用 START 逐级升到 `400 cm/s`。
 - 全向轮半径按 `63.5 mm` 换算电机速度。
 - Motor 5 是机械臂升降电机。
 - Motor 6 是机械臂水平移动电机。
@@ -221,8 +221,8 @@ ros2 topic echo /joystick_data
 现在手柄范围应是：
 
 ```text
-lx/ly/rx/ry: -128 ~ 128
-l2/r2: 0 ~ 128
+lx/ly/rx/ry: -512 ~ 512
+l2/r2: 0 ~ 512
 ```
 
 底盘运动指令：
@@ -284,9 +284,11 @@ ros2 topic echo /pneumatic_gripper_status
 默认：
 
 ```text
-max_speed_cm = 40.0
-max_rotation = 2.0
-deadzone = 6
+max_speed_cm = 20.0
+max_rotation = 0.5
+deadzone = 24
+speed_levels_cm = [10, 20, 60, 100, 200, 400]
+max_wheel_speed_rad_s = 64.0
 ```
 
 查看：
@@ -324,6 +326,8 @@ L2: 升降电机反向
 D-pad 左/右: 水平电机左/右移动
 D-pad 上: 水平电机加速档，0.2 -> 0.5 -> 1.0
 D-pad 下: 水平电机减速档，1.0 -> 0.5 -> 0.2
+START: 底盘平移速度升档，10 -> 20 -> 60 -> 100 -> 200 -> 400 cm/s
+SELECT: 底盘平移速度降档
 R1: 夹爪正向
 L1: 夹爪反向
 B: pneumatic gripper OPEN，保持当前 height
@@ -482,6 +486,8 @@ L2: Motor 5 elevator 反向
 D-pad 左/右: Motor 6 horizontal 左/右移动
 D-pad 上: Motor 6 horizontal power level 增加，0.2 -> 0.5 -> 1.0
 D-pad 下: Motor 6 horizontal power level 减少，1.0 -> 0.5 -> 0.2
+START: 底盘平移速度升档，10 -> 20 -> 60 -> 100 -> 200 -> 400 cm/s
+SELECT: 底盘平移速度降档
 R1: Motor 7 arm gripper 正向
 L1: Motor 7 arm gripper 反向
 B: pneumatic gripper OPEN，松开后 CLOSE

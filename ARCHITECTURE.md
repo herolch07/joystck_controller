@@ -109,7 +109,7 @@ flowchart TD
 flowchart LR
     Controller[8BitDo Controller]
     JoyNode[joystick_node]
-    JoyTopic[/joystick_data<br/>Joystick msg<br/>-128..128/]
+    JoyTopic[/joystick_data<br/>Joystick msg<br/>-512..512/]
     Bridge[joystick_bridge]
     LocalDriving[/local_driving<br/>Float32MultiArray<br/>direction, speed_cm_s, rotation/]
     Nav[local_navigation_node]
@@ -258,9 +258,9 @@ rate: 20 Hz
 Current message range:
 
 ```text
-lx/ly/rx/ry: -128 .. 128
-dx/dy: -128, 0, 128
-l2/r2: 0 .. 128
+lx/ly/rx/ry: -512 .. 512
+dx/dy: -512, 0, 512
+l2/r2: 0 .. 512
 buttons: bool
 ```
 
@@ -645,9 +645,9 @@ Otherwise multiple input sources will publish to the same command topics.
 ## 11. Current Important Defaults
 
 ```text
-Joystick axis range: -128 .. 128
-Joystick trigger range: 0 .. 128
-Joystick deadzone: 6
+Joystick axis range: -512 .. 512
+Joystick trigger range: 0 .. 512
+Joystick deadzone: 24
 
 joystick_bridge:
   max_speed_cm = 20.0
@@ -655,7 +655,7 @@ joystick_bridge:
   input_timeout_sec = 0.3
 
 local_navigation_node:
-  max_wheel_speed_rad_s = 3.0
+  max_wheel_speed_rad_s = 64.0
   max_wheel_accel_rad_s2 = 12.0
   command_timeout_sec = 0.3
   omniwheel_radius_m = 0.0635

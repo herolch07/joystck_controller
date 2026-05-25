@@ -33,6 +33,7 @@ Right stick left/right: base in-place rotation
 R2 / L2: Motor 5 elevator forward/reverse
 D-pad left/right: Motor 6 horizontal movement
 D-pad up/down: Motor 6 horizontal power level 0.2 / 0.5 / 1.0
+START / SELECT: base translation speed level up/down, 10 / 20 / 60 / 100 / 200 / 400 cm/s
 R1 / L1: Motor 7 arm gripper forward/reverse
 B: pneumatic gripper OPEN while held, CLOSE when released
 A: pneumatic height HIGH latch
@@ -42,11 +43,13 @@ X: pneumatic height LOW latch
 ## Important Current Defaults
 
 ```text
-Joystick axis range: -128 .. 128
-Trigger range: 0 .. 128
-Joystick deadzone: 6
+Joystick axis range: -512 .. 512
+Trigger range: 0 .. 512
+Joystick deadzone: 24
 joystick_bridge max_speed_cm: 20.0
 joystick_bridge max_rotation: 0.5
+joystick_bridge speed_levels_cm: [10, 20, 60, 100, 200, 400]
+local_navigation_node max_wheel_speed_rad_s: 64.0
 joystick_bridge input_timeout_sec: 0.3
 local_navigation_node command_timeout_sec: 0.3
 damiao_node command_timeout_sec: 0.5

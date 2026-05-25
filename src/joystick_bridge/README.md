@@ -2,6 +2,14 @@
 
 ## 📅 Changelog
 
+### v1.2.0 (2026-05-25)
+**手柄速度档位切换与 400 cm/s 最大速度准备**
+- 新增 `speed_levels_cm`，默认 `[10, 20, 60, 100, 200, 400]`
+- 新增 `speed_level_index`，默认 `0`，启动时从 `10 cm/s` 精细低速档开始
+- `START` 按键升高底盘平移速度档位
+- `SELECT` 按键降低底盘平移速度档位
+- `max_speed_cm` 仍是当前实际用于 `/local_driving` 的平移速度上限
+
 ### v1.1.0 (2026-05-16)
 **降低右摇杆默认旋转速度**
 - `max_speed_cm` 默认值从 `40.0 cm/s` 降到 `20.0 cm/s`
@@ -52,27 +60,35 @@
 |--------|------|--------|------|
 | `max_speed_cm` | float | 20.0 | 最大平移速度 (cm/s) |
 | `max_rotation` | float | 0.5 | 最大旋转速度 (rad/s) |
-| `deadzone` | int | 6 | 摇杆死区阈值 (对应 ±128 范围) |
+| `deadzone` | int | 24 | 摇杆死区阈值 (对应 ±512 范围) |
 | `input_timeout_sec` | float | 0.3 | `/joystick_data` 输入超时时间 (s) |
 | `watchdog_hz` | float | 20.0 | 输入 watchdog 检查频率 (Hz) |
+| `speed_levels_cm` | double[] | `[10, 20, 60, 100, 200, 400]` | START/SELECT 可切换的底盘速度档位 (cm/s) |
+| `speed_level_index` | int | 0 | 当前速度档位索引，0 表示最低档 |
 
 ---
 
 ## 🎮 控制映射
 
 ### 左摇杆 (lx, ly)
-- **X 轴 (lx)**: 控制运动方向（-128 到 128）
-- **Y 轴 (ly)**: 控制平移速度大小（-128 到 128）
+- **X 轴 (lx)**: 控制运动方向（-512 到 512）
+- **Y 轴 (ly)**: 控制平移速度大小（-512 到 512）
 - **映射关系**:
   - 方向角 = atan2(lx, -ly) （注意 Y 轴取反）
-  - 速度大小 = min(sqrt(lx² + ly²) / 128, 1.0) × max_speed
+  - 速度大小 = min(sqrt(lx² + ly²) / 512, 1.0) × max_speed
 
 ### 右摇杆 (rx)
-- **X 轴 (rx)**: 控制旋转速度（-128 到 128）
-- **映射关系**: rotation = rx / 128 × max_rotation
+- **X 轴 (rx)**: 控制旋转速度（-512 到 512）
+- **映射关系**: rotation = rx / 512 × max_rotation
+
+### START / SELECT
+- **START**: 升高底盘平移速度档位
+- **SELECT**: 降低底盘平移速度档位
+- 默认档位: `[10, 20, 60, 100, 200, 400] cm/s`
+- 当前档位会同步到参数 `max_speed_cm`，可用 `ros2 param get /joystick_bridge max_speed_cm` 查看
 
 ### 死区处理
-当摇杆值小于 `deadzone` 时，视为回中状态：
+当摇杆绝对值小于 `deadzone` 时，视为回中状态：
 - 平移速度置零
 - 仅保留旋转分量（如果有的话）
 
@@ -114,7 +130,7 @@ ros2 run joystick_bridge joystick_bridge
 ros2 run joystick_bridge joystick_bridge --ros-args \
   -p max_speed_cm:=150.0 \
   -p max_rotation:=1.0 \
-  -p deadzone:=500
+  -p deadzone:=24
 ```
 
 低速联调示例：
@@ -189,7 +205,7 @@ ros2 run joystick_bridge joystick_bridge --ros-args --log-level debug
 
 **日志输出：**
 ```text
-[DEBUG] Joy: lx=64, ly=-128, rx=0 -> Nav: dir=26.6deg, speed=20.0cm/s, rot=0.00rad/s
+[DEBUG] Joy: lx=256, ly=-512, rx=0 -> Nav: dir=26.6deg, speed=20.0cm/s, rot=0.00rad/s
 [WARN] Invalid joystick command: expected Joystick message fields
 ```
 
@@ -197,9 +213,11 @@ ros2 run joystick_bridge joystick_bridge --ros-args --log-level debug
 
 ## 📋 未来改进计划
 
+### 已完成功能
+- [x] 支持 START/SELECT 按键切换底盘速度档位
+- [x] 添加 10/20/60/100/200/400 cm/s 速度档位调节
+
 ### 已规划功能
-- [ ] 支持按键映射（如 A/B 键切换速度档位）
-- [ ] 添加速度档位调节（低/中/高速）
 - [ ] 支持紧急停止按钮映射
 - [ ] 添加手柄连接状态指示
 
@@ -262,3 +280,27 @@ ros2 param get /joystick_bridge input_timeout_sec
 ros2 param set /joystick_bridge input_timeout_sec 0.3
 ros2 param get /joystick_bridge watchdog_hz
 ```
+
+## 2026-05-25 - v1.2.0 速度档位操作说明
+
+当前手柄速度档位：
+
+```text
+10 cm/s -> 20 cm/s -> 60 cm/s -> 100 cm/s -> 200 cm/s -> 400 cm/s
+```
+
+操作：
+
+```text
+START: 升高一档
+SELECT: 降低一档
+```
+
+查看当前档位对应速度：
+
+```bash
+ros2 param get /joystick_bridge max_speed_cm
+ros2 param get /joystick_bridge speed_level_index
+```
+
+注意：`400 cm/s` 是目标最大速度档位。实际速度仍会受电机、电池、地面、载重、`local_navigation_node max_wheel_speed_rad_s` 和 `max_wheel_accel_rad_s2` 限制。

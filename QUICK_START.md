@@ -31,9 +31,9 @@ PY
 8BitDo 手柄需要使用 X 模式。当前手柄消息范围是：
 
 ```text
-lx/ly/rx/ry: -128 .. 128
-l2/r2: 0 .. 128
-deadzone: 6
+lx/ly/rx/ry: -512 .. 512
+l2/r2: 0 .. 512
+deadzone: 24
 ```
 
 ## 2. 编译
@@ -93,6 +93,7 @@ r1_control
 R2 / L2: Motor 5 升降正/反向
 D-pad 左/右: Motor 6 水平移动
 D-pad 上/下: Motor 6 水平移动速度档 0.2 / 0.5 / 1.0
+START/SELECT: 底盘平移速度档位升/降，10/20/60/100/200/400 cm/s
 R1 / L1: Motor 7 机械夹爪正/反向
 B: pneumatic gripper OPEN，松开 CLOSE
 A: pneumatic height HIGH latch
@@ -129,6 +130,7 @@ joystick_bridge max_speed_cm = 20.0
 joystick_bridge max_rotation = 0.5
 joystick_bridge input_timeout_sec = 0.3
 local_navigation_node command_timeout_sec = 0.3
+local_navigation_node max_wheel_speed_rad_s = 64.0
 damiao_node command_timeout_sec = 0.5
 pneumatic safe_state = [1,0]
 ```

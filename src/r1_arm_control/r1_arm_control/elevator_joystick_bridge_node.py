@@ -5,7 +5,7 @@ from std_msgs.msg import Float32MultiArray
 from my_joystick_msgs.msg import Joystick
 
 
-AXIS_MAX = 128.0
+AXIS_MAX = 512.0
 
 
 class ElevatorJoystickBridgeNode(Node):
@@ -15,14 +15,14 @@ class ElevatorJoystickBridgeNode(Node):
     Default mapping:
       R2 trigger: elevator positive speed
       L2 trigger: elevator negative speed
-      speed = (r2 - l2) / 128 * max_speed_rad_s
+      speed = (r2 - l2) / 512 * max_speed_rad_s
     """
 
     def __init__(self):
         super().__init__("elevator_joystick_bridge_node")
 
         self.declare_parameter("max_speed_rad_s", 3.0)
-        self.declare_parameter("deadzone", 6)
+        self.declare_parameter("deadzone", 24)
 
         self.joy_sub = self.create_subscription(
             Joystick,

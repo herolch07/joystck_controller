@@ -5,7 +5,7 @@ from std_msgs.msg import Float32MultiArray
 from my_joystick_msgs.msg import Joystick
 
 
-AXIS_MAX = 128.0
+AXIS_MAX = 512.0
 
 
 class HorizontalJoystickBridgeNode(Node):
@@ -17,14 +17,14 @@ class HorizontalJoystickBridgeNode(Node):
       D-pad left: negative horizontal speed
       D-pad up: increase power level
       D-pad down: decrease power level
-      speed = dx / 128 * max_speed_rad_s * power_level
+      speed = dx / 512 * max_speed_rad_s * power_level
     """
 
     def __init__(self):
         super().__init__("horizontal_joystick_bridge_node")
 
         self.declare_parameter("max_speed_rad_s", 20.0)
-        self.declare_parameter("deadzone", 6)
+        self.declare_parameter("deadzone", 24)
         self.declare_parameter("power_levels", [0.2, 0.5, 1.0])
         self.declare_parameter("default_power_index", 0)
 

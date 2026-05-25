@@ -72,16 +72,19 @@ tmux new-window -t "$SESSION:8" -n "gripper" \
 tmux new-window -t "$SESSION:9" -n "grip_bridge" \
     "$BASE_CMD && ros2 run r1_arm_control arm_gripper_joystick_bridge_node; exec bash"
 
-tmux new-window -t "$SESSION:10" -n "pneumatic" \
-    "$BASE_CMD && ros2 run arduino_pneumatic_driver pneumatic_relay_driver_node; exec bash"
+tmux new-window -t "$SESSION:10" -n "relay_panel" \
+    "$BASE_CMD && ros2 run kfs_staff_gripper kfs_staff_gripper_arduino_node; exec bash"
 
 tmux new-window -t "$SESSION:11" -n "pneu_bridge" \
     "$BASE_CMD && ros2 run arduino_pneumatic_driver pneumatic_gripper_joystick_bridge_node; exec bash"
 
-tmux new-window -t "$SESSION:12" -n "monitor" \
-    "$BASE_CMD && echo 'Monitor commands:' && echo 'ros2 node list' && echo 'ros2 topic echo /joystick_data' && echo 'ros2 topic echo /local_driving' && echo 'ros2 topic echo /elevator_speed_cmd' && echo 'ros2 topic echo /horizontal_speed_cmd' && echo 'ros2 topic echo /arm_gripper_speed_cmd' && echo 'ros2 topic echo /pneumatic_gripper_cmd' && echo 'ros2 topic echo /pneumatic_gripper_status' && echo 'ros2 topic echo /damiao_control' && echo 'ros2 param get /joystick_bridge max_speed_cm' && exec bash"
+tmux new-window -t "$SESSION:12" -n "kfs_bridge" \
+    "$BASE_CMD && ros2 run kfs_staff_gripper kfs_staff_gripper_joystick_bridge_node; exec bash"
 
-tmux select-window -t "$SESSION:12"
+tmux new-window -t "$SESSION:13" -n "monitor" \
+    "$BASE_CMD && echo 'Monitor commands:' && echo 'ros2 node list' && echo 'ros2 topic echo /joystick_data' && echo 'ros2 topic echo /local_driving' && echo 'ros2 topic echo /elevator_speed_cmd' && echo 'ros2 topic echo /horizontal_speed_cmd' && echo 'ros2 topic echo /arm_gripper_speed_cmd' && echo 'ros2 topic echo /pneumatic_gripper_cmd' && echo 'ros2 topic echo /kfs_staff_gripper_cmd' && echo 'ros2 topic echo /kfs_staff_gripper_status' && echo 'ros2 topic echo /damiao_control' && echo 'ros2 param get /joystick_bridge max_speed_cm' && exec bash"
+
+tmux select-window -t "$SESSION:13"
 
 echo "Started R1 control system in tmux session '$SESSION'."
 echo ""

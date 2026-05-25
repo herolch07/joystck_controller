@@ -24,18 +24,19 @@ from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
 from my_joystick_msgs.msg import Joystick
 from std_msgs.msg import Float32MultiArray
+from rclpy.parameter import Parameter
 import math
 import time
 
-AXIS_MAX = 128.0
+AXIS_MAX = 512.0
 
 class JoystickBridge(Node):
     """
     手柄到底盘控制的桥接节点
     
     订阅: /joystick_data (my_joystick_msgs/Joystick)
-        - lx, ly: 左摇杆坐标 (-128 到 128)
-        - rx: 右摇杆 X 坐标 (-128 到 128)
+        - lx, ly: 左摇杆坐标 (-512 到 512)
+        - rx: 右摇杆 X 坐标 (-512 到 512)
     
     发布: /local_driving (std_msgs/Float32MultiArray)
         - [direction_rad, plane_speed_cm/s, rotation_rad/s]
@@ -47,9 +48,19 @@ class JoystickBridge(Node):
         # 声明参数（符合 AGENTS.md 2.2.4 规范）
         self.declare_parameter('max_speed_cm', 20.0)
         self.declare_parameter('max_rotation', 0.5)
-        self.declare_parameter('deadzone', 6)
+        self.declare_parameter('deadzone', 24)
         self.declare_parameter('input_timeout_sec', 0.3)
         self.declare_parameter('watchdog_hz', 20.0)
+        self.declare_parameter('speed_levels_cm', [10.0, 20.0, 60.0, 100.0, 200.0, 400.0])
+        self.declare_parameter('speed_level_index', 0)
+
+        self.speed_levels_cm = self.load_speed_levels()
+        self.speed_level_index = self.clamp_speed_level_index(
+            int(self.get_parameter('speed_level_index').value)
+        )
+        self.last_start_pressed = False
+        self.last_select_pressed = False
+        self.sync_speed_level_parameters()
 
         self.last_joystick_time = 0.0
         self.joystick_seen = False
@@ -78,34 +89,125 @@ class JoystickBridge(Node):
         
         self.get_logger().info("Joystick bridge node initialized")
         self.get_logger().info(f"Max speed: {self.get_parameter('max_speed_cm').value} cm/s")
+        self.get_logger().info(f"Speed levels: {self.speed_levels_cm}, current index={self.speed_level_index}")
+        self.get_logger().info("Speed level buttons: START increases, SELECT decreases")
         self.get_logger().info(f"Max rotation: {self.get_parameter('max_rotation').value} rad/s")
         self.get_logger().info(f"Deadzone: {self.get_parameter('deadzone').value}")
         self.get_logger().info(f"Input timeout: {self.get_parameter('input_timeout_sec').value}s")
         self.get_logger().info("✓ Dynamic parameter updates enabled")
+
+    def load_speed_levels(self):
+        """Load and sanitize chassis speed levels in cm/s.
+
+        The list is intentionally parameterized so match-day tuning can change
+        the available speed steps without editing the joystick mapping logic.
+        """
+        raw_levels = list(self.get_parameter('speed_levels_cm').value)
+        levels = sorted({float(level) for level in raw_levels if float(level) > 0.0})
+        return levels if levels else [20.0]
+
+    def clamp_speed_level_index(self, index):
+        """Clamp a requested speed level index to the available level list."""
+        return max(0, min(index, len(self.speed_levels_cm) - 1))
+
+    def sync_speed_level_parameters(self):
+        """Expose the active speed level through ROS parameters.
+
+        `max_speed_cm` remains the value used by the movement calculation, while
+        `speed_level_index` records which controller-selectable step is active.
+        """
+        self.speed_level_index = self.clamp_speed_level_index(self.speed_level_index)
+        self.set_parameters([
+            Parameter('speed_level_index', Parameter.Type.INTEGER, self.speed_level_index),
+            Parameter('max_speed_cm', Parameter.Type.DOUBLE, self.current_speed_level()),
+        ])
+
+    def current_speed_level(self):
+        """Return the currently active chassis translation speed in cm/s."""
+        return float(self.speed_levels_cm[self.speed_level_index])
+
+    def update_speed_level_from_buttons(self, msg):
+        """Use START/SELECT rising edges to change chassis speed level.
+
+        START and SELECT are unused by the other current R1 controller mappings,
+        so they can adjust driving speed without interfering with mechanisms.
+        """
+        start_pressed = bool(msg.start)
+        select_pressed = bool(msg.select)
+
+        if start_pressed and not self.last_start_pressed:
+            self.change_speed_level(1)
+        if select_pressed and not self.last_select_pressed:
+            self.change_speed_level(-1)
+
+        self.last_start_pressed = start_pressed
+        self.last_select_pressed = select_pressed
+
+    def change_speed_level(self, delta):
+        """Move to a different speed level and publish it as max_speed_cm."""
+        old_index = self.speed_level_index
+        self.speed_level_index = self.clamp_speed_level_index(old_index + delta)
+        if self.speed_level_index == old_index:
+            return
+
+        self.sync_speed_level_parameters()
+        self.get_logger().info(
+            f"Base speed level: {self.speed_level_index + 1}/{len(self.speed_levels_cm)} "
+            f"= {self.current_speed_level():.1f} cm/s"
+        )
     
     def parameter_callback(self, params):
-        """
-        运行时参数更新回调
-        允许在节点运行时动态调整速度参数
+        """运行时参数更新回调。
+
+        START/SELECT 使用内部 speed_levels_cm 列表切换速度，所以当用户通过
+        ros2 param set 修改速度档位或索引时，也要同步内部状态。
         """
         from rcl_interfaces.msg import SetParametersResult
-        
+
         for param in params:
-            if param.name in ['max_speed_cm', 'max_rotation', 'deadzone', 'input_timeout_sec']:
+            if param.name == 'speed_levels_cm':
+                try:
+                    levels = sorted({float(level) for level in param.value if float(level) > 0.0})
+                except (TypeError, ValueError):
+                    return SetParametersResult(
+                        successful=False,
+                        reason='speed_levels_cm must be a list of positive numbers',
+                    )
+                if not levels:
+                    return SetParametersResult(
+                        successful=False,
+                        reason='speed_levels_cm must contain at least one positive speed',
+                    )
+                self.speed_levels_cm = levels
+                self.speed_level_index = self.clamp_speed_level_index(self.speed_level_index)
+
+            elif param.name == 'speed_level_index':
+                self.speed_level_index = self.clamp_speed_level_index(int(param.value))
+
+            if param.name in [
+                'max_speed_cm',
+                'max_rotation',
+                'deadzone',
+                'input_timeout_sec',
+                'speed_levels_cm',
+                'speed_level_index',
+            ]:
                 self.get_logger().info(f"Parameter updated: {param.name} = {param.value}")
-        
+
         return SetParametersResult(successful=True)
     
     def joystick_callback(self, msg):
         """
         处理手柄输入并转换为底盘指令
         
-        输入: Joystick 消息 (lx, ly, rx ∈ [-128, 128])
+        输入: Joystick 消息 (lx, ly, rx ∈ [-512, 512])
         输出: Float32MultiArray [direction_rad, speed_cm/s, rotation_rad/s]
         """
         self.last_joystick_time = time.monotonic()
         self.joystick_seen = True
         self.timeout_stop_sent = False
+
+        self.update_speed_level_from_buttons(msg)
 
         # 从手柄读取数据
         lx = msg.lx  # 左摇杆 X

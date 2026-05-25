@@ -32,9 +32,9 @@ tmux kill-session -t r1_control
 ## 手柄要求
 
 - 8BitDo 手柄使用 X 模式。
-- 当前 `Joystick.msg` 数值范围为 `-128 .. 128`。
-- L2/R2 trigger 范围为 `0 .. 128`。
-- 当前死区为 `6`。
+- 当前 `Joystick.msg` 数值范围为 `-512 .. 512`。
+- L2/R2 trigger 范围为 `0 .. 512`。
+- 当前死区为 `24`。
 
 检查手柄：
 
@@ -57,6 +57,7 @@ R2: Motor 5 elevator 正向
 L2: Motor 5 elevator 反向
 D-pad 左/右: Motor 6 horizontal 左/右移动
 D-pad 上/下: Motor 6 horizontal power level 增加/减少
+START/SELECT: 底盘平移速度档位升/降，10/20/60/100/200/400 cm/s
 R1: Motor 7 arm gripper 正向
 L1: Motor 7 arm gripper 反向
 B: pneumatic gripper OPEN，松开 CLOSE

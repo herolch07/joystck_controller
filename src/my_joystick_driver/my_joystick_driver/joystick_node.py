@@ -6,8 +6,8 @@ from rclpy.node import Node
 from my_joystick_msgs.msg import Joystick
 from evdev import InputDevice, ecodes, list_devices
 
-AXIS_MAX = 128
-DEADZONE = 6  # ~5% of 128
+AXIS_MAX = 512
+DEADZONE = 24  # ~5% of 512
 
 class JoystickPublisher(Node):
     def __init__(self):
@@ -37,7 +37,7 @@ class JoystickPublisher(Node):
             "dx": 0, "dy": 0, "l2": 0, "r2": 0,
         }
 
-        # Axis normalization parameters (raw min/max -> -128 to 128)
+        # Axis normalization parameters (raw min/max -> -512 to 512)
         # Adjust these based on your controller's calibration
         self.axis_ranges = {
             "lx": (-32768, 32767),
@@ -96,10 +96,10 @@ class JoystickPublisher(Node):
         self.get_logger().info("Joystick states reset to safety (all zeros)")
 
     def _normalize_axis(self, axis_name, raw_value):
-        """Normalize raw axis value to -128 ~ 128 range with deadzone."""
+        """Normalize raw axis value to -512 ~ 512 range with deadzone."""
         min_val, max_val = self.axis_ranges[axis_name]
         
-        # Special handling for triggers (0 to 128 instead of -128 to 128)
+        # Special handling for triggers (0 to 512 instead of -512 to 512)
         if axis_name in ["l2", "r2"]:
             normalized = int((raw_value - min_val) / (max_val - min_val) * AXIS_MAX)
             # Apply deadzone for triggers

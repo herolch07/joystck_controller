@@ -24,7 +24,7 @@ ROS 2 motor control package for R2 omniwheel base.
 
 ### 2026-05-16 - v5 轮速限幅与加速度保护
 - **Local Navigation Node**: 新增输出保护，降低调试时 CAN/电机驱动断连风险
-  - 新增 `max_wheel_speed_rad_s`，默认 `3.0 rad/s`
+  - 新增 `max_wheel_speed_rad_s`，当前默认 `64.0 rad/s`
   - 新增 `max_wheel_accel_rad_s2`，默认 `12.0 rad/s²`
   - 斜向移动或平移+旋转叠加时，如果某个轮速超过限制，会按比例缩放全部轮速，保持运动方向但降低强度
   - 摇杆突然大幅移动时，会限制每个轮子的速度变化率，减少瞬时电流冲击
@@ -148,7 +148,7 @@ Older notes mention `vesc_node` and `vesc_canbus_speed_control_node`. They are n
   - Use `-1.0` if left/right translation direction is reversed on another hardware setup
 - **rotation_axis_sign**: Rotation command sign (default: `1.0`)
   - Use `-1.0` if pure rotation direction is reversed on hardware
-- **max_wheel_speed_rad_s**: Per-wheel speed limit before publishing to `/damiao_control` (default: `3.0 rad/s`)
+- **max_wheel_speed_rad_s**: Per-wheel speed limit before publishing to `/damiao_control` (default: `64.0 rad/s`)
   - If any wheel exceeds this value, all four wheel speeds are scaled together
 - **max_wheel_accel_rad_s2**: Per-wheel acceleration limit (default: `12.0 rad/s²`)
   - Set to `0.0` to disable acceleration limiting
@@ -448,7 +448,7 @@ ros2 param set /local_navigation_node motor_direction_4 1.0
 默认参数：
 
 ```text
-max_wheel_speed_rad_s = 3.0 rad/s
+max_wheel_speed_rad_s = 64.0 rad/s
 max_wheel_accel_rad_s2 = 12.0 rad/s²
 ```
 
@@ -469,7 +469,7 @@ ros2 param set /local_navigation_node max_wheel_accel_rad_s2 6.0
 恢复当前默认：
 
 ```bash
-ros2 param set /local_navigation_node max_wheel_speed_rad_s 3.0
+ros2 param set /local_navigation_node max_wheel_speed_rad_s 64.0
 ros2 param set /local_navigation_node max_wheel_accel_rad_s2 12.0
 ```
 
@@ -639,3 +639,22 @@ rotation_coeff_1..4 = [1, -1, 1, -1]
 ```bash
 ros2 param set /local_navigation_node rotation_axis_sign -1.0
 ```
+
+## 2026-05-25 - v10 400 cm/s 轮速上限准备
+
+### 修改目标
+- 为底盘最高目标速度 `400 cm/s` 准备轮速上限。
+- `local_navigation_node` 默认 `max_wheel_speed_rad_s` 从 `3.0` 改为 `64.0`。
+
+### 计算依据
+```text
+wheel_radius_m = 0.0635
+64.0 rad/s * 0.0635 m = 4.064 m/s = 406.4 cm/s
+```
+
+因此 `64.0 rad/s` 理论上可以覆盖 `joystick_bridge` 的 `400 cm/s` 最高速度档位。
+
+### 安全说明
+- `max_wheel_speed_rad_s` 只是轮速上限，不代表实机一定能稳定达到该速度。
+- `max_wheel_accel_rad_s2` 当前仍为 `12.0 rad/s^2`，所以从低速加到高速会有加速度限制。
+- 20kg 载重下应逐级升档，并观察电流、温度、打滑和驱动器状态。

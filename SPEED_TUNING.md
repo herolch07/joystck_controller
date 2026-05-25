@@ -58,9 +58,9 @@ max_wheel_accel_rad_s2
 |---|---:|---|---|---|
 | `max_speed_cm` | `20.0` | `cm/s` | `/joystick_bridge` | 左摇杆推到底时的目标最大平移速度 |
 | `max_rotation` | `0.5` | `rad/s` | `/joystick_bridge` | 右摇杆推到底时的目标最大旋转角速度 |
-| `deadzone` | `6` | joystick units | `/joystick_bridge` | 摇杆小幅漂移过滤，当前摇杆范围是 `-128..128` |
+| `deadzone` | `24` | joystick units | `/joystick_bridge` | 摇杆小幅漂移过滤，当前摇杆范围是 `-512..512` |
 | `input_timeout_sec` | `0.3` | `s` | `/joystick_bridge` | `/joystick_data` 超时后发布底盘停止指令 |
-| `max_wheel_speed_rad_s` | `3.0` | `rad/s` | `/local_navigation_node` | 单个轮子的角速度上限 |
+| `max_wheel_speed_rad_s` | `64.0` | `rad/s` | `/local_navigation_node` | 单个轮子的角速度上限 |
 | `max_wheel_accel_rad_s2` | `12.0` | `rad/s^2` | `/local_navigation_node` | 单个轮子的角加速度上限 |
 | `omniwheel_radius_m` | `0.0635` | `m` | `/local_navigation_node` | 全向轮半径，用于线速度/角速度换算 |
 | `command_timeout_sec` | `0.3` | `s` | `/local_navigation_node` | `/local_driving` 超时后 Motor 1-4 归零 |
@@ -71,9 +71,9 @@ max_wheel_accel_rad_s2
 ```text
 max_speed_cm = 20.0
 max_rotation = 0.5
-deadzone = 6
+deadzone = 24
 input_timeout_sec = 0.3
-max_wheel_speed_rad_s = 3.0
+max_wheel_speed_rad_s = 64.0
 max_wheel_accel_rad_s2 = 12.0
 omniwheel_radius_m = 0.0635
 local_navigation_node command_timeout_sec = 0.3

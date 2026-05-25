@@ -33,6 +33,7 @@
 R2 / L2：Motor 5 升降正/反向
 D-pad 左/右：Motor 6 水平移動
 D-pad 上/下：Motor 6 水平移動速度檔位 0.2 / 0.5 / 1.0
+START / SELECT：底盤平移速度檔位升/降，10 / 20 / 60 / 100 / 200 / 400 cm/s
 R1 / L1：Motor 7 機械夾爪正/反向
 B：按住 pneumatic gripper OPEN，放開 CLOSE
 A：pneumatic height HIGH 鎖定
@@ -42,11 +43,13 @@ X：pneumatic height LOW 鎖定
 ## 目前重要預設值
 
 ```text
-手掣搖桿範圍：-128 .. 128
-扳機範圍：0 .. 128
-手掣死區：6
+手掣搖桿範圍：-512 .. 512
+扳機範圍：0 .. 512
+手掣死區：24
 joystick_bridge max_speed_cm：20.0
 joystick_bridge max_rotation：0.5
+joystick_bridge speed_levels_cm：[10, 20, 60, 100, 200, 400]
+local_navigation_node max_wheel_speed_rad_s：64.0
 joystick_bridge input_timeout_sec：0.3
 local_navigation_node command_timeout_sec：0.3
 damiao_node command_timeout_sec：0.5

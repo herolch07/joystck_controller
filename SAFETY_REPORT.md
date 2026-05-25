@@ -5,10 +5,10 @@
 ## 当前输入范围
 
 ```text
-Joystick lx/ly/rx/ry: -128 .. 128
-Joystick dx/dy: -128, 0, 128
-Joystick l2/r2: 0 .. 128
-Joystick deadzone: 6
+Joystick lx/ly/rx/ry: -512 .. 512
+Joystick dx/dy: -512, 0, 512
+Joystick l2/r2: 0 .. 512
+Joystick deadzone: 24
 ```
 
 相关代码：
@@ -22,7 +22,7 @@ Joystick deadzone: 6
 ```text
 joystick_bridge max_speed_cm = 20.0
 joystick_bridge max_rotation = 0.5
-local_navigation_node max_wheel_speed_rad_s = 3.0
+local_navigation_node max_wheel_speed_rad_s = 64.0
 local_navigation_node max_wheel_accel_rad_s2 = 12.0
 ```
 

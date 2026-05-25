@@ -8,7 +8,7 @@
 flowchart TD
     Controller[8BitDo Controller]
     JoyNode["/joystick_node<br/>my_joystick_driver"]
-    JoyTopic["/joystick_data<br/>my_joystick_msgs/msg/Joystick<br/>lx ly rx ry: -128..128<br/>l2 r2: 0..128<br/>buttons: bool"]
+    JoyTopic["/joystick_data<br/>my_joystick_msgs/msg/Joystick<br/>lx ly rx ry: -512..512<br/>l2 r2: 0..512<br/>buttons: bool"]
 
     BaseBridge["/joystick_bridge<br/>joystick_bridge"]
     LocalDriving["/local_driving<br/>std_msgs/Float32MultiArray<br/>[direction_rad, speed_cm_s, rotation_rad_s]"]
@@ -310,7 +310,7 @@ flowchart TD
 
 | Topic | Type | Publisher | Subscriber | Data |
 |---|---|---|---|---|
-| `/joystick_data` | `my_joystick_msgs/msg/Joystick` | `/joystick_node` | `/joystick_bridge`, `/elevator_joystick_bridge_node`, `/horizontal_joystick_bridge_node`, `/arm_gripper_joystick_bridge_node`, `/pneumatic_gripper_joystick_bridge_node` | 手柄轴和按键，轴范围 `-128..128` |
+| `/joystick_data` | `my_joystick_msgs/msg/Joystick` | `/joystick_node` | `/joystick_bridge`, `/elevator_joystick_bridge_node`, `/horizontal_joystick_bridge_node`, `/arm_gripper_joystick_bridge_node`, `/pneumatic_gripper_joystick_bridge_node` | 手柄轴和按键，轴范围 `-512..512` |
 | `/local_driving` | `std_msgs/msg/Float32MultiArray` | `/joystick_bridge` 或 `/keyboard_teleop_node` | `/local_navigation_node` | `[direction_rad, speed_cm_s, rotation_rad_s]` |
 | `/damiao_control` | `std_msgs/msg/Float32MultiArray` | `/local_navigation_node`, `/elevator_controller_node`, `/horizontal_controller_node`, `/arm_gripper_controller_node` | `/motor_controller_node` | `[motor_id, mode, speed_rad_s, duration]` |
 | `/elevator_speed_cmd` | `std_msgs/msg/Float32MultiArray` | `/elevator_joystick_bridge_node` 或 `/keyboard_teleop_node` | `/elevator_controller_node` | `[speed_rad_s]` |

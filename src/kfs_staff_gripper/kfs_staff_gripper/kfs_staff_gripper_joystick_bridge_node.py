@@ -18,12 +18,12 @@ class KfsStaffGripperJoystickBridgeNode(Node):
     """
     Convert joystick buttons into staff gripper relay commands.
 
-    Default mapping:
-      Y: hold relay 3 ON
-      R3: hold relay 4 ON
+    Default mapping after real-machine check:
+      Y: hold staff gripper OPEN; release to CLOSE
+      R3: reserved relay 4 channel, currently no visible mechanism action
 
-    The mapping is intentionally simple and parameterized because the final KFS
-    staff gripper pneumatic sequence still needs real mechanism verification.
+    The mapping remains parameterized so relay 4 can be assigned to a future
+    pneumatic function without changing the Arduino aggregator.
     """
 
     def __init__(self):
@@ -53,7 +53,7 @@ class KfsStaffGripperJoystickBridgeNode(Node):
         self.get_logger().info(
             "Mapping: "
             f"{self.get_parameter('relay3_button').value} -> staff relay 3, "
-            f"{self.get_parameter('relay4_button').value} -> staff relay 4"
+            f"{self.get_parameter('relay4_button').value} -> reserved staff relay 4"
         )
 
     def get_safe_state(self):

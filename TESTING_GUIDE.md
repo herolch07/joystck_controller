@@ -176,3 +176,16 @@ damiao_node: 0.5s 后对应连续 VEL 电机归零
 | Motor 7 | L1/R1 有响应 | | | |
 | Pneumatic | A/B/X 状态正确 | | | |
 | Timeout | 停止输入后自动归零 | | | |
+
+## ROS2 domain isolation check
+
+测试前确认 R1 已隔离：
+
+```bash
+echo $ROS_DOMAIN_ID
+echo $ROS_LOCALHOST_ONLY
+ros2 node list
+ros2 topic list
+```
+
+R1 不应看到 R2 的 `/damiao_motor_controller`、`/global_navigation_node`、`/base/dummy_control`。如果看到，先不要测试底盘，按 `ROS_DOMAIN_ISOLATION.md` 处理。

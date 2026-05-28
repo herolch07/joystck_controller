@@ -4,6 +4,10 @@ set -e
 WS_DIR="/home/robotics/robocon/new_ws"
 SESSION="r1_control"
 
+# Keep R1 isolated from R2 or other ROS2 robots on the same network.
+export ROS_DOMAIN_ID=1
+export ROS_LOCALHOST_ONLY=1
+
 if ! command -v tmux >/dev/null 2>&1; then
     echo "tmux is not installed. Install it first:"
     echo "sudo apt install tmux"
@@ -87,6 +91,8 @@ tmux new-window -t "$SESSION:13" -n "monitor" \
 tmux select-window -t "$SESSION:13"
 
 echo "Started R1 control system in tmux session '$SESSION'."
+echo "ROS_DOMAIN_ID=$ROS_DOMAIN_ID"
+echo "ROS_LOCALHOST_ONLY=$ROS_LOCALHOST_ONLY"
 echo ""
 echo "Attach:"
 echo "tmux attach -t $SESSION"

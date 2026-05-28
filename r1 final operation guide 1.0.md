@@ -4,7 +4,7 @@
 
 - 手柄必须使用 X 模式。
 - 手柄数据范围是 `-512 ~ 512`，比旧版 `8192` 更容易读。
-- `joystick_bridge` 启动默认平移速度档是 `20 cm/s`，可用 START 逐级升到 `400 cm/s`。
+- `joystick_bridge` 启动默认平移速度档是 `20 cm/s`，可用 START 逐级升到 `150 cm/s`。
 - 全向轮半径按 `63.5 mm` 换算电机速度。
 - Motor 5 是机械臂升降电机。
 - Motor 6 是机械臂水平移动电机。
@@ -287,7 +287,7 @@ ros2 topic echo /pneumatic_gripper_status
 max_speed_cm = 20.0
 max_rotation = 0.5
 deadzone = 24
-speed_levels_cm = [10, 20, 60, 100, 200, 400]
+speed_levels_cm = [10, 20, 40, 60, 100, 150]
 max_wheel_speed_rad_s = 64.0
 ```
 
@@ -326,7 +326,7 @@ L2: 升降电机反向
 D-pad 左/右: 水平电机左/右移动
 D-pad 上: 水平电机加速档，0.2 -> 0.5 -> 1.0
 D-pad 下: 水平电机减速档，1.0 -> 0.5 -> 0.2
-START: 底盘平移速度升档，10 -> 20 -> 60 -> 100 -> 200 -> 400 cm/s
+START: 底盘平移速度升档，10 -> 20 -> 40 -> 60 -> 100 -> 150 cm/s
 SELECT: 底盘平移速度降档
 R1: 夹爪正向
 L1: 夹爪反向
@@ -486,7 +486,7 @@ L2: Motor 5 elevator 反向
 D-pad 左/右: Motor 6 horizontal 左/右移动
 D-pad 上: Motor 6 horizontal power level 增加，0.2 -> 0.5 -> 1.0
 D-pad 下: Motor 6 horizontal power level 减少，1.0 -> 0.5 -> 0.2
-START: 底盘平移速度升档，10 -> 20 -> 60 -> 100 -> 200 -> 400 cm/s
+START: 底盘平移速度升档，10 -> 20 -> 40 -> 60 -> 100 -> 150 cm/s
 SELECT: 底盘平移速度降档
 R1: Motor 7 arm gripper 正向
 L1: Motor 7 arm gripper 反向
@@ -536,3 +536,14 @@ rotation_coeff_1..4 = [1, -1, 1, -1]
 ```bash
 ros2 param set /local_navigation_node rotation_axis_sign -1.0
 ```
+
+## ROS2 domain isolation note
+
+R1 当前启动脚本固定使用：
+
+```bash
+ROS_DOMAIN_ID=1
+ROS_LOCALHOST_ONLY=1
+```
+
+这表示 R1 只看自己本机的 ROS2 node/topic，不会再看到 R2 的 `/damiao_motor_controller`、`/global_navigation_node`、`/base/dummy_control`。如果通过 SSH 登录 R1 查看 topic，此设置不影响使用。详细说明见 `ROS_DOMAIN_ISOLATION.md`。

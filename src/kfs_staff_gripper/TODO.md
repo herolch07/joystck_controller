@@ -16,9 +16,10 @@
 
 ## 待实机确认
 
-- [ ] 确认 KFS staff gripper relay 3/4 的真实高低电平触发方式
-- [ ] 确认 staff relay 3/4 分别对应哪一个 pneumatic 动作
-- [ ] 确认默认手柄映射 `Y/R3` 是否符合操作习惯
+- [ ] R3 relay 4 预留通道当前无明显动作，后续确认是否接入第二个 pneumatic function
+- [x] 确认 Y 控制的 KFS staff gripper 通道：按住 OPEN，松开 CLOSE
+- [x] 确认 safe/default state `[0,0]` 对应 staff gripper CLOSE
+- [x] 确认 `Y` 作为 staff gripper hold-to-open 按键可用
 - [ ] 根据实机动作决定是否需要 latch 模式，而不是 hold-to-enable 模式
 - [ ] 给 Arduino sketch 增加 millis watchdog，避免 USB 断线后 relay 保持最后状态
 

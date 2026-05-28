@@ -57,7 +57,7 @@ R2: Motor 5 elevator 正向
 L2: Motor 5 elevator 反向
 D-pad 左/右: Motor 6 horizontal 左/右移动
 D-pad 上/下: Motor 6 horizontal power level 增加/减少
-START/SELECT: 底盘平移速度档位升/降，10/20/60/100/200/400 cm/s
+START/SELECT: 底盘平移速度档位升/降，10/20/40/60/100/150 cm/s
 R1: Motor 7 arm gripper 正向
 L1: Motor 7 arm gripper 反向
 B: pneumatic gripper OPEN，松开 CLOSE
@@ -140,3 +140,14 @@ ros2 topic echo /pneumatic_gripper_status
 4. `ros2 topic echo /local_driving` 确认底盘指令变化。
 5. 查看 `motors` 窗口确认达妙驱动已连接。
 6. 确认 `/dev/ttyACM0` 是达妙 USB-CAN，Arduino relay 在 `/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0`。
+
+## ROS2 domain isolation
+
+`r1_start_base_1_0.sh` now isolates R1 from R2 by exporting:
+
+```bash
+ROS_DOMAIN_ID=1
+ROS_LOCALHOST_ONLY=1
+```
+
+Use SSH into R1 to run `ros2 node list` / `ros2 topic echo`. Do not remove this isolation unless remote ROS2 debugging from another computer is required.

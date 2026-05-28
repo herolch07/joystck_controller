@@ -33,7 +33,7 @@ Right stick left/right: base in-place rotation
 R2 / L2: Motor 5 elevator forward/reverse
 D-pad left/right: Motor 6 horizontal movement
 D-pad up/down: Motor 6 horizontal power level 0.2 / 0.5 / 1.0
-START / SELECT: base translation speed level up/down, 10 / 20 / 60 / 100 / 200 / 400 cm/s
+START / SELECT: base translation speed level up/down, 10 / 20 / 40 / 60 / 100 / 150 cm/s
 R1 / L1: Motor 7 arm gripper forward/reverse
 B: pneumatic gripper OPEN while held, CLOSE when released
 A: pneumatic height HIGH latch
@@ -48,7 +48,7 @@ Trigger range: 0 .. 512
 Joystick deadzone: 24
 joystick_bridge max_speed_cm: 20.0
 joystick_bridge max_rotation: 0.5
-joystick_bridge speed_levels_cm: [10, 20, 60, 100, 200, 400]
+joystick_bridge speed_levels_cm: [10, 20, 40, 60, 100, 150]
 local_navigation_node max_wheel_speed_rad_s: 64.0
 joystick_bridge input_timeout_sec: 0.3
 local_navigation_node command_timeout_sec: 0.3
@@ -125,3 +125,14 @@ The current control chain contains multiple watchdogs:
 Some reports in this workspace are historical records. If a document mentions `±8192`, `410` joystick deadzone, `100 cm/s` default base speed, `start_all_nodes.sh`, `start_full_control_chain.sh`, VESC nodes, or the old `Robocon2026_r2/2026R2_ws` path, treat that section as legacy unless it is explicitly marked as current.
 
 For the current robot operation flow, use this README and [r1 final operation guide 1.0.md](r1%20final%20operation%20guide%201.0.md).
+
+## ROS2 Network Isolation
+
+R1 startup uses an isolated ROS2 environment by default:
+
+```bash
+ROS_DOMAIN_ID=1
+ROS_LOCALHOST_ONLY=1
+```
+
+This prevents R1 from discovering R2 nodes such as `/damiao_motor_controller`, `/global_navigation_node`, and `/base/dummy_control`. See `ROS_DOMAIN_ISOLATION.md` before changing these values.

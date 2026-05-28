@@ -119,3 +119,14 @@ status topic 中 timeout_active = 1.0
 - 调试时先保留低速默认值：`max_speed_cm = 20.0`、`max_rotation = 0.5`。
 - 只在实机方向确认后再逐步提高速度。
 - 不建议关闭 timeout；如需调试，只做小范围增大。
+
+## ROS2 domain isolation safety item
+
+R1/R2 必须使用不同 ROS2 domain，避免同一网络内 DDS discovery 导致 node/topic 混线。R1 默认：
+
+```bash
+ROS_DOMAIN_ID=1
+ROS_LOCALHOST_ONLY=1
+```
+
+如果 R1 看到 `/damiao_motor_controller`、`/base/dummy_control` 或 `/global_navigation_node`，应视为 ROS graph 被其它机器人污染，禁止继续底盘测试。

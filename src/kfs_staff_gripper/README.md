@@ -12,6 +12,12 @@ serial command = [1,0,0,1]
 
 ## 更新记录 / Changelog
 
+### v0.2.0 实机按键确认（2026-05-28）
+
+- 实机确认 `Y` 为 KFS staff gripper 有效控制：按住 OPEN，松开 CLOSE。
+- 当前 safe/default state 为 `[0, 0]`，实机表现为 staff gripper CLOSE。
+- `R3` 对应 staff relay 4 channel，当前实机无明显动作，作为预留通道保留。
+
 ### v0.1.0 初始版本（2026-05-25）
 
 - 新增 `kfs_staff_gripper_arduino_node`
@@ -95,19 +101,27 @@ example: [1,0,0,1]
 |---|---|---|---|
 | `/kfs_staff_gripper_cmd` | `std_msgs/msg/Int32MultiArray` | `[staff_relay3_state, staff_relay4_state]` | 默认 20 Hz |
 
-默认手柄映射：
+默认手柄映射（2026-05-28 实机确认）：
 
 ```text
-Y  : 按住时 staff relay 3 = ON，松开 OFF
-R3 : 按住时 staff relay 4 = ON，松开 OFF
+Y  : KFS staff gripper OPEN while held，松开后 CLOSE
+R3 : staff relay 4 预留通道，当前实机无明显动作
+```
+
+实机状态约定：
+
+```text
+/kfs_staff_gripper_cmd = [0, 0] -> staff gripper CLOSE
+/kfs_staff_gripper_cmd = [1, 0] -> staff gripper OPEN
+/kfs_staff_gripper_cmd = [0, 1] -> relay 4 channel ON，当前无明显机构动作
 ```
 
 参数：
 
 | 参数 | 默认值 | 单位 | 作用 |
 |---|---:|---|---|
-| `relay3_button` | `y` | - | 控制 staff relay 3 的手柄按键字段名 |
-| `relay4_button` | `r3` | - | 控制 staff relay 4 的手柄按键字段名 |
+| `relay3_button` | `y` | - | 控制有效 KFS staff gripper open/close 的按键字段名 |
+| `relay4_button` | `r3` | - | 控制 staff relay 4 预留通道的按键字段名，当前实机无明显动作 |
 | `publish_hz` | `20.0` | Hz | command 发布频率 |
 | `input_timeout_sec` | `0.3` | s | 手柄输入超时时间 |
 | `safe_state` | `[0, 0]` | - | 手柄超时后的 staff gripper 安全状态 |
@@ -158,7 +172,7 @@ serial 断开时：
 
 ```text
 发布 /kfs_staff_gripper_cmd = [0,0]
-staff relay 3/4 全 OFF
+staff gripper CLOSE，relay 4 预留通道 OFF
 ```
 
 ## 启动方式

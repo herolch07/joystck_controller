@@ -66,5 +66,27 @@
 
 - [x] 将 `max_wheel_speed_rad_s` 默认值改为 `64.0`，理论覆盖约 `406 cm/s` 轮子线速度
 - [x] README 追加 v10 速度上限说明
-- [ ] 实机逐级测试 10/20/60/100/200/400 cm/s 档位稳定性
+- [ ] 实机逐级测试 10/20/40/60/100/150 cm/s 档位稳定性
 - [ ] 根据实机电流、温度、打滑情况决定是否提高或降低 `max_wheel_accel_rad_s2`
+
+## 2026-05-27 200 cm/s 保护问题
+
+- [x] 记录 `200 cm/s` 档位导致底盘突然断反应的问题
+- [x] 曾临时将 controller 默认最高档改为 `150 cm/s`
+- [x] 按用户要求保持 `max_wheel_speed_rad_s = 64.0 rad/s` 不变
+- [ ] 检查 200 cm/s 时电池电压是否瞬间下跌
+- [ ] 检查 DM 驱动器状态灯/保护码
+- [ ] 检查 CAN 是否断连或 damiao_node 是否报错
+
+## 2026-05-27 恢复速度档位复测
+
+- [x] 曾按用户要求恢复 joystick_bridge 默认速度档位到 10/20/60/100/200/400 cm/s 用于对比测试
+- [x] 保持 `max_wheel_speed_rad_s = 64.0 rad/s` 不变
+- [ ] 复测更换 board 后持续 hold 左摇杆的问题
+
+## 2026-05-28 ROS domain 隔离确认
+
+- [x] 确认 R1 曾经看到 R2 的 `/damiao_motor_controller`、`/base/dummy_control` 等 node/topic
+- [x] R1 启动脚本固定 `ROS_DOMAIN_ID=1`、`ROS_LOCALHOST_ONLY=1`
+- [x] controller 默认最高档设置为 `150 cm/s` 路线
+- [ ] 隔离环境下复测底盘持续 hold 左摇杆稳定性

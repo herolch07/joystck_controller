@@ -373,3 +373,15 @@ ros2 param get /local_navigation_node max_wheel_speed_rad_s
 ros2 param get /local_navigation_node max_wheel_accel_rad_s2
 ros2 param get /local_navigation_node omniwheel_radius_m
 ```
+
+## Domain isolation before speed testing
+
+Before any speed test, confirm R1 is not seeing R2 topics:
+
+```bash
+echo $ROS_DOMAIN_ID
+echo $ROS_LOCALHOST_ONLY
+ros2 topic list
+```
+
+R1 speed tests must not be run while `/base/dummy_control` or `/damiao_motor_controller` from R2 is visible. Current controller speed levels are `10/20/40/60/100/150 cm/s`.

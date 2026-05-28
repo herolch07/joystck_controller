@@ -2,6 +2,24 @@
 
 ## 📅 Changelog
 
+### v1.5.0 (2026-05-28)
+**确认 R1/R2 ROS domain 混线后恢复 150 cm/s 默认最高档**
+- 已确认异常根因是 R1 能看到 R2 的 ROS2 node / topic，而不是 joystick `128/512` 映射。
+- R1 启动脚本已固定 `ROS_DOMAIN_ID=1` 与 `ROS_LOCALHOST_ONLY=1`，避免再次被 R2 graph 影响。
+- 默认 `speed_levels_cm` 设置为 `[10, 20, 40, 60, 100, 150]`，继续按较安全速度路线测试。
+- `local_navigation_node max_wheel_speed_rad_s` 保持 `64.0 rad/s` 不变。
+
+### v1.4.0 (2026-05-27)
+**恢复上一版速度档位用于复测**
+- 用户更换 board 后问题仍存在，因此恢复 `speed_levels_cm` 到 `[10, 20, 60, 100, 200, 400]` 用于对比测试。
+- 本次未修改 `local_navigation_node max_wheel_speed_rad_s`、watchdog、左摇杆映射或运动学参数。
+
+### v1.3.0 (2026-05-27)
+**200 cm/s 实机触发保护后的速度档位调整**
+- 实机测试中 `200 cm/s` 档位导致底盘突然断反应，疑似触发电源或驱动器保护。
+- 不修改 `local_navigation_node max_wheel_speed_rad_s`，仍保持 `64.0 rad/s`。
+- 默认 `speed_levels_cm` 改为 `[10, 20, 40, 60, 100, 150]`，controller 最高档暂定 `150 cm/s`。
+
 ### v1.2.0 (2026-05-25)
 **手柄速度档位切换与 400 cm/s 最大速度准备**
 - 新增 `speed_levels_cm`，默认 `[10, 20, 60, 100, 200, 400]`
@@ -63,7 +81,7 @@
 | `deadzone` | int | 24 | 摇杆死区阈值 (对应 ±512 范围) |
 | `input_timeout_sec` | float | 0.3 | `/joystick_data` 输入超时时间 (s) |
 | `watchdog_hz` | float | 20.0 | 输入 watchdog 检查频率 (Hz) |
-| `speed_levels_cm` | double[] | `[10, 20, 60, 100, 200, 400]` | START/SELECT 可切换的底盘速度档位 (cm/s) |
+| `speed_levels_cm` | double[] | `[10, 20, 40, 60, 100, 150]` | START/SELECT 可切换的底盘速度档位 (cm/s) |
 | `speed_level_index` | int | 0 | 当前速度档位索引，0 表示最低档 |
 
 ---
@@ -84,7 +102,7 @@
 ### START / SELECT
 - **START**: 升高底盘平移速度档位
 - **SELECT**: 降低底盘平移速度档位
-- 默认档位: `[10, 20, 60, 100, 200, 400] cm/s`
+- 默认档位: `[10, 20, 40, 60, 100, 150] cm/s`
 - 当前档位会同步到参数 `max_speed_cm`，可用 `ros2 param get /joystick_bridge max_speed_cm` 查看
 
 ### 死区处理
@@ -215,7 +233,7 @@ ros2 run joystick_bridge joystick_bridge --ros-args --log-level debug
 
 ### 已完成功能
 - [x] 支持 START/SELECT 按键切换底盘速度档位
-- [x] 添加 10/20/60/100/200/400 cm/s 速度档位调节
+- [x] 添加 10/20/40/60/100/150 cm/s 速度档位调节
 
 ### 已规划功能
 - [ ] 支持紧急停止按钮映射
@@ -286,7 +304,7 @@ ros2 param get /joystick_bridge watchdog_hz
 当前手柄速度档位：
 
 ```text
-10 cm/s -> 20 cm/s -> 60 cm/s -> 100 cm/s -> 200 cm/s -> 400 cm/s
+10 cm/s -> 20 cm/s -> 40 cm/s -> 60 cm/s -> 100 cm/s -> 150 cm/s
 ```
 
 操作：
@@ -303,4 +321,4 @@ ros2 param get /joystick_bridge max_speed_cm
 ros2 param get /joystick_bridge speed_level_index
 ```
 
-注意：`400 cm/s` 是目标最大速度档位。实际速度仍会受电机、电池、地面、载重、`local_navigation_node max_wheel_speed_rad_s` 和 `max_wheel_accel_rad_s2` 限制。
+注意：`150 cm/s` 是当前 controller 默认最高档。`200/400 cm/s` 仍可通过参数临时测试，但不再作为默认按钮档位；`local_navigation_node max_wheel_speed_rad_s` 保持 `64.0 rad/s`。

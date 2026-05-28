@@ -393,3 +393,14 @@ Subscriber:
 Arduino pneumatic 不经过 /damiao_control。
 它走 /pneumatic_gripper_cmd -> serial -> Arduino -> relay。
 ```
+
+## Domain Isolation
+
+The R1 node graph is only valid after ROS2 domain isolation is applied. The R1 startup script exports:
+
+```bash
+ROS_DOMAIN_ID=1
+ROS_LOCALHOST_ONLY=1
+```
+
+If `/damiao_motor_controller`, `/global_navigation_node`, `/base/dummy_control`, or `/arm/damiao_control` appears on R1, those entries are from another ROS2 graph and must be isolated before testing.

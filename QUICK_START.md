@@ -93,7 +93,7 @@ r1_control
 R2 / L2: Motor 5 升降正/反向
 D-pad 左/右: Motor 6 水平移动
 D-pad 上/下: Motor 6 水平移动速度档 0.2 / 0.5 / 1.0
-START/SELECT: 底盘平移速度档位升/降，10/20/60/100/200/400 cm/s
+START/SELECT: 底盘平移速度档位升/降，10/20/40/60/100/150 cm/s
 R1 / L1: Motor 7 机械夹爪正/反向
 B: pneumatic gripper OPEN，松开 CLOSE
 A: pneumatic height HIGH latch
@@ -143,3 +143,14 @@ ros2 param set /joystick_bridge max_rotation 1.0
 ```
 
 先低速确认方向，再逐步提高速度。
+
+## ROS2 domain check
+
+R1 startup script now sets:
+
+```bash
+ROS_DOMAIN_ID=1
+ROS_LOCALHOST_ONLY=1
+```
+
+Before driving, confirm R1 cannot see R2-only topics such as `/base/dummy_control` or `/damiao_motor_controller`. Details: `ROS_DOMAIN_ISOLATION.md`.

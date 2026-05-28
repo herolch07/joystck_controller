@@ -51,7 +51,7 @@ class JoystickBridge(Node):
         self.declare_parameter('deadzone', 24)
         self.declare_parameter('input_timeout_sec', 0.3)
         self.declare_parameter('watchdog_hz', 20.0)
-        self.declare_parameter('speed_levels_cm', [10.0, 20.0, 60.0, 100.0, 200.0, 400.0])
+        self.declare_parameter('speed_levels_cm', [10.0, 20.0, 40.0, 60.0, 100.0, 150.0])
         self.declare_parameter('speed_level_index', 0)
 
         self.speed_levels_cm = self.load_speed_levels()

@@ -33,7 +33,7 @@
 R2 / L2：Motor 5 升降正/反向
 D-pad 左/右：Motor 6 水平移动
 D-pad 上/下：Motor 6 水平移动速度档位 0.2 / 0.5 / 1.0
-START / SELECT：底盘平移速度档位升/降，10 / 20 / 60 / 100 / 200 / 400 cm/s
+START / SELECT：底盘平移速度档位升/降，10 / 20 / 40 / 60 / 100 / 150 cm/s
 R1 / L1：Motor 7 机械夹爪正/反向
 B：按住 pneumatic gripper OPEN，松开 CLOSE
 A：pneumatic height HIGH 锁定
@@ -48,7 +48,7 @@ X：pneumatic height LOW 锁定
 手柄死区：24
 joystick_bridge max_speed_cm：20.0
 joystick_bridge max_rotation：0.5
-joystick_bridge speed_levels_cm：[10, 20, 60, 100, 200, 400]
+joystick_bridge speed_levels_cm：[10, 20, 40, 60, 100, 150]
 local_navigation_node max_wheel_speed_rad_s：64.0
 joystick_bridge input_timeout_sec：0.3
 local_navigation_node command_timeout_sec：0.3
@@ -125,3 +125,14 @@ src/keyboard_teleop           键盘低速调试遥控
 本工作区里有一些历史报告。如果某段内容提到 `±8192`、`410` 手柄死区、`100 cm/s` 默认底盘速度、`start_all_nodes.sh`、`start_full_control_chain.sh`、VESC 节点，或旧路径 `Robocon2026_r2/2026R2_ws`，除非该段明确标成当前状态，否则应视为旧版记录。
 
 当前操作以本 README 和 [r1 final operation guide 1.0.md](r1%20final%20operation%20guide%201.0.md) 为准。
+
+## ROS2 网络隔离
+
+R1 启动脚本默认使用独立 ROS2 环境：
+
+```bash
+ROS_DOMAIN_ID=1
+ROS_LOCALHOST_ONLY=1
+```
+
+这样可以避免 R1 发现 R2 的 `/damiao_motor_controller`、`/global_navigation_node`、`/base/dummy_control` 等 node/topic。修改前请先阅读 `ROS_DOMAIN_ISOLATION.md`。

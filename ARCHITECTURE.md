@@ -668,3 +668,14 @@ arduino_pneumatic_driver:
   safe_state = [1,0]
   command_timeout_sec = 0.5
 ```
+
+## ROS2 Domain Boundary
+
+R1 control graph must run inside its own ROS2 domain:
+
+```bash
+ROS_DOMAIN_ID=1
+ROS_LOCALHOST_ONLY=1
+```
+
+R2 should use a different domain, for example `ROS_DOMAIN_ID=2`. This prevents R1 from discovering R2-only nodes such as `/damiao_motor_controller` and topics such as `/base/dummy_control`. See `ROS_DOMAIN_ISOLATION.md`.

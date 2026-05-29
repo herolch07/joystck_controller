@@ -14,7 +14,7 @@ setup(
     zip_safe=True,
     maintainer="EdUHK Robocon Team",
     maintainer_email="robotics@example.com",
-    description="Arduino Mega four-relay driver and joystick bridge for the KFS staff gripper",
+    description="Arduino Mega three-relay driver and joystick bridge for the KFS staff gripper",
     license="Apache License 2.0",
     entry_points={
         "console_scripts": [

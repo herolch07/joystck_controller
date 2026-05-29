@@ -71,9 +71,10 @@ r1_control
 7 horiz_bridge 手柄到水平控制
 8 gripper    夹爪电机控制
 9 grip_bridge 手柄到夹爪控制
-10 pneumatic Arduino pneumatic relay driver
-11 pneu_bridge 手柄到 pneumatic gripper
-12 monitor   监控命令窗口
+10 relay_panel KFS/arm pneumatic 共用 Arduino relay aggregator
+11 pneu_bridge 手柄到 arm pneumatic gripper
+12 kfs_bridge 手柄到 KFS staff gripper
+13 monitor   监控命令窗口
 ```
 
 tmux 常用操作：
@@ -174,7 +175,7 @@ Terminal 11:
 ```bash
 cd /home/robotics/robocon/new_ws
 source install/setup.bash
-ros2 run arduino_pneumatic_driver pneumatic_relay_driver_node
+ros2 run kfs_staff_gripper kfs_staff_gripper_arduino_node
 ```
 
 Terminal 12:
@@ -183,6 +184,14 @@ Terminal 12:
 cd /home/robotics/robocon/new_ws
 source install/setup.bash
 ros2 run arduino_pneumatic_driver pneumatic_gripper_joystick_bridge_node
+```
+
+Terminal 13:
+
+```bash
+cd /home/robotics/robocon/new_ws
+source install/setup.bash
+ros2 run kfs_staff_gripper kfs_staff_gripper_joystick_bridge_node
 ```
 
 ## 3. 验证节点
@@ -206,8 +215,9 @@ ros2 node list
 /horizontal_joystick_bridge_node
 /arm_gripper_controller_node
 /arm_gripper_joystick_bridge_node
-/pneumatic_relay_driver_node
+/kfs_staff_gripper_arduino_node
 /pneumatic_gripper_joystick_bridge_node
+/kfs_staff_gripper_joystick_bridge_node
 ```
 
 ## 4. 验证话题
@@ -276,6 +286,8 @@ Pneumatic gripper 命令和状态：
 
 ```bash
 ros2 topic echo /pneumatic_gripper_cmd
+ros2 topic echo /kfs_staff_gripper_cmd
+ros2 topic echo /kfs_staff_gripper_status
 ros2 topic echo /pneumatic_gripper_status
 ```
 
@@ -333,6 +345,8 @@ L1: 夹爪反向
 B: pneumatic gripper OPEN，保持当前 height
 A: pneumatic height HIGH，并保持到按 X
 X: pneumatic height LOW，并保持到按 A
+Y: KFS staff gripper OPEN，松开后 CLOSE
+R3: 当前不使用
 启动默认 / A 之前: gripper CLOSE + height LOW -> [1,0]
 A 之后松开 B: gripper CLOSE + height HIGH -> [1,1]
 ```
@@ -416,6 +430,8 @@ arduino_pneumatic_driver:
   A 按下后 height 锁定为 HIGH
   X 按下后 height 锁定为 LOW
   超过 0.5s 没收到 /pneumatic_gripper_cmd
+ros2 topic echo /kfs_staff_gripper_cmd
+ros2 topic echo /kfs_staff_gripper_status
   -> driver 向 Arduino 发送 safe_state
 ```
 
@@ -428,8 +444,8 @@ ros2 param get /motor_controller_node command_timeout_sec
 ros2 param get /elevator_controller_node timeout_sec
 ros2 param get /horizontal_controller_node timeout_sec
 ros2 param get /arm_gripper_controller_node timeout_sec
-ros2 param get /pneumatic_relay_driver_node command_timeout_sec
-ros2 param get /pneumatic_relay_driver_node safe_state
+ros2 param get /kfs_staff_gripper_arduino_node command_timeout_sec
+ros2 param get /kfs_staff_gripper_arduino_node safe_state
 ros2 param get /pneumatic_gripper_joystick_bridge_node open_state
 ```
 

@@ -71,9 +71,10 @@ r1_control
 7 horiz_bridge
 8 gripper
 9 grip_bridge
-10 pneumatic
+10 relay_panel
 11 pneu_bridge
-12 monitor
+12 kfs_bridge
+13 monitor
 ```
 
 ## 4. 常用 tmux 操作
@@ -98,6 +99,8 @@ R1 / L1: Motor 7 机械夹爪正/反向
 B: pneumatic gripper OPEN，松开 CLOSE
 A: pneumatic height HIGH latch
 X: pneumatic height LOW latch
+Y: KFS staff gripper OPEN，松开 CLOSE
+R3: 当前不使用
 ```
 
 ## 6. 快速验证
@@ -108,6 +111,8 @@ ros2 topic echo /joystick_data
 ros2 topic echo /local_driving
 ros2 topic echo /damiao_control
 ros2 topic echo /pneumatic_gripper_cmd
+ros2 topic echo /kfs_staff_gripper_cmd
+ros2 topic echo /kfs_staff_gripper_status
 ```
 
 应至少看到：
@@ -120,7 +125,9 @@ ros2 topic echo /pneumatic_gripper_cmd
 /elevator_controller_node
 /horizontal_controller_node
 /arm_gripper_controller_node
-/pneumatic_relay_driver_node
+/kfs_staff_gripper_arduino_node
+/pneumatic_gripper_joystick_bridge_node
+/kfs_staff_gripper_joystick_bridge_node
 ```
 
 ## 7. 当前重要默认值

@@ -16,12 +16,22 @@
 
 ## 待实机确认
 
-- [ ] R3 relay 4 预留通道当前无明显动作，后续确认是否接入第二个 pneumatic function
+- [x] R3 relay 4 预留通道已取消：Arduino sketch 已改为三路 relay，当前 controller 不再使用 R3 控制 KFS
 - [x] 确认 Y 控制的 KFS staff gripper 通道：按住 OPEN，松开 CLOSE
 - [x] 确认 safe/default state `[0,0]` 对应 staff gripper CLOSE
 - [x] 确认 `Y` 作为 staff gripper hold-to-open 按键可用
 - [ ] 根据实机动作决定是否需要 latch 模式，而不是 hold-to-enable 模式
 - [ ] 给 Arduino sketch 增加 millis watchdog，避免 USB 断线后 relay 保持最后状态
+
+## v0.3.0 三路 relay sketch 适配
+
+- [x] Arduino protocol 从四路 `[r1,r2,r3,r4]` 更新为三路 `[r1,r2,r3]`
+- [x] relay pin 约定更新为 D8/D9/D10，三路均为高电平触发
+- [x] `/pneumatic_gripper_cmd` 继续映射 relay 1-2
+- [x] `/kfs_staff_gripper_cmd` 改为单值 `[staff_gripper_state]`，映射 relay 3
+- [x] `kfs_staff_gripper_joystick_bridge_node` 改为只使用 `Y`，按住 OPEN，松开 CLOSE
+- [x] `R3` 不再由 KFS staff gripper node 使用
+- [x] ROS 侧 watchdog safe_state 更新为 `[0,0,0]`
 
 ## 后续优化
 

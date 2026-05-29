@@ -2,8 +2,8 @@
 """
 Joystick bridge for the KFS staff gripper.
 
-This node contains only controller mapping. It publishes a two-channel command to
-/kfs_staff_gripper_cmd, which the Arduino aggregator maps to relay 3-4.
+This node contains only controller mapping. It publishes a one-channel command to
+/kfs_staff_gripper_cmd, which the Arduino aggregator maps to relay 3.
 """
 
 import rclpy
@@ -20,20 +20,18 @@ class KfsStaffGripperJoystickBridgeNode(Node):
 
     Default mapping after real-machine check:
       Y: hold staff gripper OPEN; release to CLOSE
-      R3: reserved relay 4 channel, currently no visible mechanism action
 
-    The mapping remains parameterized so relay 4 can be assigned to a future
-    pneumatic function without changing the Arduino aggregator.
+    R3 is intentionally not used by this node after the Arduino panel was changed
+    to a three-relay sketch.
     """
 
     def __init__(self):
         super().__init__("kfs_staff_gripper_joystick_bridge_node")
 
-        self.declare_parameter("relay3_button", "y")
-        self.declare_parameter("relay4_button", "r3")
+        self.declare_parameter("staff_button", "y")
         self.declare_parameter("publish_hz", 20.0)
         self.declare_parameter("input_timeout_sec", 0.3)
-        self.declare_parameter("safe_state", [0, 0])
+        self.declare_parameter("safe_state", [0])
 
         self.last_joystick_time = None
         self.current_state = self.get_safe_state()
@@ -52,26 +50,23 @@ class KfsStaffGripperJoystickBridgeNode(Node):
         self.get_logger().info("KFS staff gripper joystick bridge initialized")
         self.get_logger().info(
             "Mapping: "
-            f"{self.get_parameter('relay3_button').value} -> staff relay 3, "
-            f"{self.get_parameter('relay4_button').value} -> reserved staff relay 4"
+            f"{self.get_parameter('staff_button').value} -> staff gripper open while held"
         )
 
     def get_safe_state(self):
-        """Return the two-channel staff gripper safe state."""
+        """Return the one-channel staff gripper safe state."""
         raw = list(self.get_parameter("safe_state").value)
-        safe = [0, 0]
-        for index, value in enumerate(raw[:2]):
+        safe = [0]
+        for index, value in enumerate(raw[:1]):
             safe[index] = 1 if int(value) else 0
         return safe
 
     def joystick_callback(self, msg):
         """Update staff gripper state from the configured joystick buttons."""
         self.last_joystick_time = self.get_clock().now()
-        relay3_button = str(self.get_parameter("relay3_button").value)
-        relay4_button = str(self.get_parameter("relay4_button").value)
+        staff_button = str(self.get_parameter("staff_button").value)
         self.current_state = [
-            1 if self.get_button(msg, relay3_button) else 0,
-            1 if self.get_button(msg, relay4_button) else 0,
+            1 if self.get_button(msg, staff_button) else 0,
         ]
 
     def get_button(self, msg, button_name):
@@ -96,9 +91,9 @@ class KfsStaffGripperJoystickBridgeNode(Node):
         return elapsed > float(self.get_parameter("input_timeout_sec").value)
 
     def publish_state(self, state):
-        """Publish [staff_relay3_state, staff_relay4_state]."""
+        """Publish [staff_gripper_state]."""
         cmd = Int32MultiArray()
-        cmd.data = [int(state[0]), int(state[1])]
+        cmd.data = [int(state[0])]
         self.cmd_pub.publish(cmd)
 
 

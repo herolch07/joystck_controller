@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-ROS2 four-relay Arduino Mega driver for the KFS staff gripper panel.
+ROS2 three-relay Arduino Mega driver for the KFS staff gripper panel.
 
 This node is designed for the Arduino sketch that accepts serial commands in the
-exact format "[1,0,0,1]". Because the staff gripper shares the same Arduino Mega
+exact format "[1,0,1]". Because the staff gripper shares the same Arduino Mega
 panel as the existing pneumatic arm system, this node aggregates both command
 sources and opens the serial port only once.
 """
@@ -27,13 +27,13 @@ class KfsStaffGripperArduinoNode(Node):
 
     Subscribes:
       /pneumatic_gripper_cmd: Int32MultiArray, default mapped to relay 1-2
-      /kfs_staff_gripper_cmd: Int32MultiArray, default mapped to relay 3-4
+      /kfs_staff_gripper_cmd: Int32MultiArray, default mapped to relay 3
 
     Publishes:
       /kfs_staff_gripper_status: String status and Arduino serial feedback
 
     Output to Arduino:
-      [relay1,relay2,relay3,relay4]\n, where each value is 0 or 1.
+      [relay1,relay2,relay3]\n, where each value is 0 or 1.
     """
 
     def __init__(self):
@@ -48,9 +48,9 @@ class KfsStaffGripperArduinoNode(Node):
         self.declare_parameter("command_timeout_sec", 0.5)
         self.declare_parameter("watchdog_hz", 20.0)
         self.declare_parameter("reconnect_sec", 1.0)
-        self.declare_parameter("safe_state", [0, 0, 0, 0])
+        self.declare_parameter("safe_state", [0, 0, 0])
         self.declare_parameter("arm_relay_indices", [0, 1])
-        self.declare_parameter("staff_relay_indices", [2, 3])
+        self.declare_parameter("staff_relay_indices", [2])
         self.declare_parameter("arm_cmd_topic", "/pneumatic_gripper_cmd")
         self.declare_parameter("staff_cmd_topic", "/kfs_staff_gripper_cmd")
 
@@ -86,10 +86,10 @@ class KfsStaffGripperArduinoNode(Node):
         self.get_logger().info(f"KFS staff topic: {staff_topic}")
 
     def get_safe_state(self):
-        """Return a four-relay safe state, clamped to 0/1 values."""
+        """Return a three-relay safe state, clamped to 0/1 values."""
         raw = list(self.get_parameter("safe_state").value)
-        safe = [0, 0, 0, 0]
-        for index, value in enumerate(raw[:4]):
+        safe = [0, 0, 0]
+        for index, value in enumerate(raw[:3]):
             safe[index] = 1 if int(value) else 0
         return safe
 
@@ -98,7 +98,7 @@ class KfsStaffGripperArduinoNode(Node):
         return [
             int(index)
             for index in list(self.get_parameter(parameter_name).value)
-            if 0 <= int(index) < 4
+            if 0 <= int(index) < 3
         ]
 
     def connect_serial(self):
@@ -136,7 +136,7 @@ class KfsStaffGripperArduinoNode(Node):
         self.arm_timeout_safe_sent = False
 
     def staff_command_callback(self, msg):
-        """Update relay 3-4 from the KFS staff gripper command topic."""
+        """Update relay 3 from the KFS staff gripper command topic."""
         self.apply_partial_command(
             msg.data,
             self.get_indices("staff_relay_indices"),
@@ -146,7 +146,7 @@ class KfsStaffGripperArduinoNode(Node):
         self.staff_timeout_safe_sent = False
 
     def apply_partial_command(self, data, indices, source):
-        """Merge a shorter command into the four-relay Arduino state."""
+        """Merge a shorter command into the three-relay Arduino state."""
         if len(data) < len(indices):
             self.get_logger().warn(
                 f"Invalid {source} command: expected {len(indices)} values, got {len(data)}"
@@ -159,8 +159,8 @@ class KfsStaffGripperArduinoNode(Node):
         self.send_state(state, reason=source)
 
     def send_state(self, state, reason, force=False):
-        """Send the four-relay state using the Arduino sketch list protocol."""
-        self.current_state = [1 if int(value) else 0 for value in state[:4]]
+        """Send the three-relay state using the Arduino sketch list protocol."""
+        self.current_state = [1 if int(value) else 0 for value in state[:3]]
         if not force and self.last_serial_state == self.current_state:
             return
 

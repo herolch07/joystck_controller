@@ -38,6 +38,8 @@ R1 / L1：Motor 7 機械夾爪正/反向
 B：按住 pneumatic gripper OPEN，放開 CLOSE
 A：pneumatic height HIGH 鎖定
 X：pneumatic height LOW 鎖定
+Y：KFS staff gripper OPEN，放開 CLOSE
+R3：目前不使用
 ```
 
 ## 目前重要預設值
@@ -106,7 +108,8 @@ src/my_joystick_driver        evdev 手掣驅動，發布 /joystick_data
 src/joystick_bridge           手掣到底盤 /local_driving 的橋接
 src/base_omniwheel_r2_700     全向底盤運動學與達妙馬達驅動
 src/r1_arm_control            Motor 5/6/7 速度控制與手掣橋接
-src/arduino_pneumatic_driver  Arduino relay 氣動夾爪驅動
+src/kfs_staff_gripper       KFS/arm pneumatic 三路 Arduino relay aggregator
+src/arduino_pneumatic_driver  Arduino relay 氣動夾爪 joystick bridge
 src/keyboard_teleop           鍵盤低速調試遙控
 ```
 

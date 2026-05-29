@@ -38,6 +38,8 @@ R1 / L1: Motor 7 arm gripper forward/reverse
 B: pneumatic gripper OPEN while held, CLOSE when released
 A: pneumatic height HIGH latch
 X: pneumatic height LOW latch
+Y: KFS staff gripper OPEN while held, CLOSE when released
+R3: currently unused
 ```
 
 ## Important Current Defaults
@@ -106,7 +108,8 @@ src/my_joystick_driver        evdev joystick driver, publishes /joystick_data
 src/joystick_bridge           joystick to /local_driving bridge
 src/base_omniwheel_r2_700     omni base kinematics and DM motor driver
 src/r1_arm_control            Motor 5/6/7 speed controllers and joystick bridges
-src/arduino_pneumatic_driver  Arduino relay pneumatic gripper driver
+src/kfs_staff_gripper         KFS/arm pneumatic three-relay Arduino aggregator
+src/arduino_pneumatic_driver  Arduino relay pneumatic gripper joystick bridge
 src/keyboard_teleop           keyboard debugging teleoperation
 ```
 

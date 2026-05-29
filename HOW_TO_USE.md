@@ -63,6 +63,8 @@ L1: Motor 7 arm gripper 反向
 B: pneumatic gripper OPEN，松开 CLOSE
 A: pneumatic height HIGH latch
 X: pneumatic height LOW latch
+Y: KFS staff gripper OPEN，松开 CLOSE
+R3: 当前不使用
 ```
 
 ## 调整底盘速度

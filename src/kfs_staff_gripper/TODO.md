@@ -38,3 +38,27 @@
 - [ ] 如确认接线固定，增加 launch 文件统一启动 arm pneumatic bridge、KFS bridge 和 Arduino aggregator
 - [ ] 根据比赛流程增加明确的 staff gripper safe_state 命名参数
 - [ ] 增加 relay 状态到更结构化的 status topic
+
+## v0.3.1 arm pneumatic 新接线 safe state
+
+- [x] aggregator `safe_state` 改为 `[1,1,0]`
+- [x] arm pneumatic timeout 后回到 gripper CLOSE + height HIGH
+- [x] 保持 KFS staff gripper `Y` 控制不变
+
+## v0.3.2 arm height 启动默认 LOW
+
+- [x] aggregator `safe_state` 改为 `[0,1,0]`
+- [x] arm pneumatic startup/reconnect/shutdown 默认 height LOW
+- [x] 保持 KFS staff gripper `Y` 控制不变
+
+## v0.3.3 arm pneumatic 实机按键确认
+
+- [x] `B` 控 arm gripper：按住 OPEN，松开 CLOSE
+- [x] `A` 控 arm height LOW
+- [x] `X` 控 arm height HIGH
+- [x] v0.3.3 当时记录为 `[1,0,0]`，v0.3.4 已修正为 `[0,1,0]`
+
+## v0.3.4 arm relay 顺序实机确认
+
+- [x] arm relay 顺序确认并记录为 `[height_state, gripper_state]`
+- [x] aggregator safe_state 改为 `[0,1,0]`

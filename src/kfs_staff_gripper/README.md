@@ -13,6 +13,31 @@ D8/D9/D10 均为高电平触发
 
 ## 更新记录 / Changelog
 
+### v0.3.4 arm relay 顺序实机确认（2026-05-30）
+
+- arm pneumatic 在三路 aggregator 中的 relay 顺序为 `[height_state, gripper_state]`。
+- 完整 safe state 改为 `[0,1,0]`：arm height LOW + arm gripper CLOSE + KFS CLOSE。
+
+### v0.3.3 arm pneumatic 实机按键确认（2026-05-30）
+
+- `B` 控 arm gripper：按住 OPEN，松开 CLOSE。
+- `A` 控 arm height LOW。
+- `X` 控 arm height HIGH。
+- aggregator `safe_state` 保持 `[0,1,0]`：arm height LOW + arm CLOSE + KFS CLOSE。
+
+### v0.3.2 arm height 启动默认 LOW（2026-05-30）
+
+- aggregator 默认 `safe_state` 改为 `[0,1,0]`：arm gripper CLOSE + arm height LOW + KFS staff gripper CLOSE。
+- 启动 `r1_start_base_1_0.sh` 后 arm height 默认保持 LOW。
+- `B` 控 arm gripper，按住 OPEN、松开 CLOSE；`A` 控 height LOW；`X` 控 height HIGH。
+
+### v0.3.1 arm pneumatic 新接线 safe state（2026-05-30，历史记录，已被 v0.3.3 覆盖）
+
+- arm pneumatic 的 `/pneumatic_gripper_cmd` 当前语义为 `[arm_gripper_state, arm_height_state]`。
+- 当时假设 `A/X` 控 gripper、`B` 控 height；v0.3.3 后实机确认该假设错误。
+- v0.3.1 曾把 aggregator 默认 `safe_state` 改为 `[1,1,0]`；v0.3.2 后曾按当时假设改为 `[1,0,0]`；v0.3.4 实机确认 relay 顺序后改为 `[0,1,0]`。
+- KFS staff gripper 仍由 `Y` 控制，按住 OPEN，松开 CLOSE。
+
 ### v0.3.0 三路 relay sketch 适配（2026-05-29）
 
 - Arduino sketch 已改为三路 relay：D8/D9/D10。
@@ -22,7 +47,7 @@ D8/D9/D10 均为高电平触发
 - relay 3 给 KFS staff gripper 使用，对应 `/kfs_staff_gripper_cmd = [staff_gripper_state]`。
 - controller 只使用 `Y` 控制 KFS：按住 `Y` OPEN，松开 CLOSE。
 - `R3` 当前不再由 KFS staff gripper node 使用。
-- ROS 侧 safe/default state 为 `[0,0,0]`，即三路 relay 全 OFF。
+- ROS 侧 KFS v0.3.0 初始 safe/default state 曾为 `[0,0,0]`；v0.3.1 后因 arm pneumatic 新接线改为 `[1,1,0]`。
 
 ### v0.2.0 实机按键确认（2026-05-28，历史记录，已被 v0.3.0 覆盖）
 
@@ -84,7 +109,7 @@ kfs_staff_gripper_arduino_node          -> Arduino serial [r1,r2,r3]
 | `command_timeout_sec` | `0.5` | s | 超过此时间未收到新 command 后进入 safe state |
 | `watchdog_hz` | `20.0` | Hz | timeout/reconnect 检查频率 |
 | `reconnect_sec` | `1.0` | s | serial 断开后的重连间隔 |
-| `safe_state` | `[0, 0, 0]` | - | 安全状态，三路 relay 全 OFF |
+| `safe_state` | `[0, 1, 0]` | - | 安全状态：arm height LOW + arm gripper CLOSE + KFS CLOSE |
 | `arm_relay_indices` | `[0, 1]` | - | `/pneumatic_gripper_cmd` 映射到三路 relay 的位置 |
 | `staff_relay_indices` | `[2]` | - | `/kfs_staff_gripper_cmd` 映射到 relay 3 的位置 |
 | `arm_cmd_topic` | `/pneumatic_gripper_cmd` | - | arm pneumatic command topic |
@@ -153,7 +178,7 @@ R3 : 当前不使用
 - arm pneumatic timeout：默认 relay 1-2 回 safe
 - KFS staff timeout：默认 relay 3 回 safe
 
-如果 serial 断开、重连或 node 关闭，则发送完整 safe_state = [0,0,0]。
+如果 serial 断开、重连或 node 关闭，则发送完整 safe_state = [0,1,0]。
 ```
 
 serial 断开时：

@@ -16,16 +16,15 @@ from my_joystick_msgs.msg import Joystick
 
 class PneumaticGripperJoystickBridgeNode(Node):
     """
-    Convert joystick buttons into gripper open and height latch commands.
+    Convert joystick buttons into gripper hold and height latch commands.
 
-    Default mapping:
-      B: gripper open, D9 = 0, keep current height
-      A: latch height high, D8 = 1
-      X: latch height low, D8 = 0
+    Current real-machine mapping:
+      B: hold arm gripper OPEN, release to CLOSE
+      A: latch arm height LOW
+      X: latch arm height HIGH
 
-    Initial state is [1, 0]: gripper close, height low. After A is pressed,
-    height stays high until X is pressed. After X is pressed, height stays low
-    until A is pressed again.
+    Relay command order is [height_state, gripper_state] on the current wiring.
+    Initial and timeout output is [0, 1]: height low, gripper close.
     """
 
     def __init__(self):
@@ -39,7 +38,6 @@ class PneumaticGripperJoystickBridgeNode(Node):
             self.get_parameter("initial_height_state").value
         )
         self.gripper_state = 1
-        self.height_latched = False
         self.b_pressed = False
         self.last_joystick_time = None
 
@@ -55,23 +53,21 @@ class PneumaticGripperJoystickBridgeNode(Node):
         self.publish_timer = self.create_timer(1.0 / publish_hz, self.publish_timer_callback)
 
         self.get_logger().info("Pneumatic gripper joystick bridge initialized")
-        self.get_logger().info("Mapping: B open gripper, A height high, X height low")
+        self.get_logger().info("Mapping: B gripper open while held, A height low, X height high; startup height low")
 
     def joystick_callback(self, msg):
         """
         Update pneumatic state from joystick buttons.
 
-        A latches height high. X latches height low. B opens the gripper while
-        it is held; releasing B closes the gripper while preserving height.
+        B directly controls the arm gripper: pressed means OPEN, released means
+        CLOSE. A and X latch height LOW/HIGH. Startup height remains LOW.
         """
         self.last_joystick_time = self.get_clock().now()
 
         if msg.a:
-            self.height_state = 1
-            self.height_latched = True
-        if msg.x:
             self.height_state = 0
-            self.height_latched = True
+        if msg.x:
+            self.height_state = 1
 
         self.b_pressed = bool(msg.b)
         self.gripper_state = 0 if self.b_pressed else 1
@@ -85,19 +81,20 @@ class PneumaticGripperJoystickBridgeNode(Node):
 
     def publish_timer_callback(self):
         """
-        Keep refreshing the latched height state after A or X is pressed.
+        Keep refreshing the current gripper latch and height hold state.
 
-        This prevents the lower-level driver timeout from returning D8 to the
-        startup safe state once the match flow has selected a height state.
+        If joystick input is lost, the bridge closes the gripper and returns
+        height to the startup LOW state.
         """
         if self.is_joystick_timed_out():
             self.b_pressed = False
             self.gripper_state = 1
+            self.height_state = 0
 
-        self.publish_state([self.gripper_state, self.height_state])
+        self.publish_state([self.height_state, self.gripper_state])
 
     def is_joystick_timed_out(self):
-        """Return true when joystick updates stop, so B cannot stay open forever."""
+        """Return true when joystick updates stop, so the node can return to startup safe state."""
         if self.last_joystick_time is None:
             return True
 
@@ -105,7 +102,7 @@ class PneumaticGripperJoystickBridgeNode(Node):
         return elapsed > float(self.get_parameter("input_timeout_sec").value)
 
     def publish_state(self, state):
-        """Publish [D9_gripper_state, D8_height_state] to the serial driver node."""
+        """Publish [height_state, gripper_state] for the current relay wiring."""
         cmd = Int32MultiArray()
         cmd.data = [int(state[0]), int(state[1])]
         self.cmd_pub.publish(cmd)

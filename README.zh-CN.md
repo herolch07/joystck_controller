@@ -35,9 +35,9 @@ D-pad 左/右：Motor 6 水平移动
 D-pad 上/下：Motor 6 水平移动速度档位 0.2 / 0.5 / 1.0
 START / SELECT：底盘平移速度档位升/降，10 / 20 / 40 / 60 / 100 / 150 cm/s
 R1 / L1：Motor 7 机械夹爪正/反向
-B：按住 pneumatic gripper OPEN，松开 CLOSE
-A：pneumatic height HIGH 锁定
-X：pneumatic height LOW 锁定
+B：按住 arm pneumatic gripper OPEN，松开 CLOSE
+A：arm pneumatic height LOW 锁定
+X：arm pneumatic height HIGH 锁定
 Y：KFS staff gripper OPEN，松开 CLOSE
 R3：当前不使用
 ```
@@ -55,7 +55,7 @@ local_navigation_node max_wheel_speed_rad_s：64.0
 joystick_bridge input_timeout_sec：0.3
 local_navigation_node command_timeout_sec：0.3
 damiao_node command_timeout_sec：0.5
-pneumatic safe_state：[1, 0] = CLOSE + LOW
+pneumatic safe_state：[0, 1] = LOW + CLOSE
 ```
 
 底盘运动学默认值：
@@ -121,7 +121,7 @@ src/keyboard_teleop           键盘低速调试遥控
 - `local_navigation_node`：`/local_driving` 超时后让 Motor 1-4 归零。
 - `damiao_node`：连续 VEL 命令超时后只让对应电机归零。
 - `r1_arm_control` controllers：对应 speed command 超时后执行机构速度归零。
-- `arduino_pneumatic_driver`：命令超时、重连、关闭时发送 `safe_state = [1, 0]`。
+- `arduino_pneumatic_driver`：命令超时、重连、关闭时发送 `safe_state = [0, 1]`。
 
 ## 旧文档说明
 

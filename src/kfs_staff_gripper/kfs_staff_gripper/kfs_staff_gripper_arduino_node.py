@@ -48,7 +48,7 @@ class KfsStaffGripperArduinoNode(Node):
         self.declare_parameter("command_timeout_sec", 0.5)
         self.declare_parameter("watchdog_hz", 20.0)
         self.declare_parameter("reconnect_sec", 1.0)
-        self.declare_parameter("safe_state", [0, 0, 0])
+        self.declare_parameter("safe_state", [0, 1, 0])
         self.declare_parameter("arm_relay_indices", [0, 1])
         self.declare_parameter("staff_relay_indices", [2])
         self.declare_parameter("arm_cmd_topic", "/pneumatic_gripper_cmd")

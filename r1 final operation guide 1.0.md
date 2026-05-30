@@ -342,13 +342,16 @@ START: 底盘平移速度升档，10 -> 20 -> 40 -> 60 -> 100 -> 150 cm/s
 SELECT: 底盘平移速度降档
 R1: 夹爪正向
 L1: 夹爪反向
-B: pneumatic gripper OPEN，保持当前 height
-A: pneumatic height HIGH，并保持到按 X
-X: pneumatic height LOW，并保持到按 A
+B: arm pneumatic gripper OPEN，松开后 CLOSE
+A: arm pneumatic height LOW
+X: arm pneumatic height HIGH
 Y: KFS staff gripper OPEN，松开后 CLOSE
 R3: 当前不使用
-启动默认 / A 之前: gripper CLOSE + height LOW -> [1,0]
-A 之后松开 B: gripper CLOSE + height HIGH -> [1,1]
+启动默认: height LOW + gripper CLOSE -> [0,1]
+B 按住: gripper OPEN -> [current_height,0]
+B 松开: gripper CLOSE -> [current_height,1]
+A: height LOW -> [0,current_gripper]
+X: height HIGH -> [1,current_gripper]
 ```
 
 所有操作建议先小幅推动摇杆。
@@ -425,7 +428,7 @@ r1_arm_control controllers:
   -> 对应电机发布 0 rad/s
 
 arduino_pneumatic_driver:
-  启动默认 safe_state = [1,0]，即 CLOSE + LOW
+  启动默认 safe_state = [0,1]，即 LOW + CLOSE
   B 按下时发布 /pneumatic_gripper_cmd = [0,current_height]
   A 按下后 height 锁定为 HIGH
   X 按下后 height 锁定为 LOW
@@ -506,9 +509,9 @@ START: 底盘平移速度升档，10 -> 20 -> 40 -> 60 -> 100 -> 150 cm/s
 SELECT: 底盘平移速度降档
 R1: Motor 7 arm gripper 正向
 L1: Motor 7 arm gripper 反向
-B: pneumatic gripper OPEN，松开后 CLOSE
-A: pneumatic height HIGH，并保持到按 X
-X: pneumatic height LOW，并保持到按 A
+B: arm pneumatic gripper OPEN，松开后 CLOSE
+A: arm pneumatic height LOW
+X: arm pneumatic height HIGH
 ```
 
 ### 最终底盘运动学参数

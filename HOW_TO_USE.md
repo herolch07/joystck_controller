@@ -60,9 +60,9 @@ D-pad 上/下: Motor 6 horizontal power level 增加/减少
 START/SELECT: 底盘平移速度档位升/降，10/20/40/60/100/150 cm/s
 R1: Motor 7 arm gripper 正向
 L1: Motor 7 arm gripper 反向
-B: pneumatic gripper OPEN，松开 CLOSE
-A: pneumatic height HIGH latch
-X: pneumatic height LOW latch
+B: arm pneumatic gripper OPEN while held，松开 CLOSE
+A: arm pneumatic height LOW latch
+X: arm pneumatic height HIGH latch
 Y: KFS staff gripper OPEN，松开 CLOSE
 R3: 当前不使用
 ```
@@ -115,7 +115,7 @@ r1_arm_control:
 
 arduino_pneumatic_driver:
   /pneumatic_gripper_cmd 超过 0.5s 未刷新
-  -> safe_state = [1,0] = CLOSE + LOW
+  -> safe_state = [0,1] = LOW + CLOSE
 ```
 
 ## 常用检查

@@ -35,9 +35,9 @@ D-pad left/right: Motor 6 horizontal movement
 D-pad up/down: Motor 6 horizontal power level 0.2 / 0.5 / 1.0
 START / SELECT: base translation speed level up/down, 10 / 20 / 40 / 60 / 100 / 150 cm/s
 R1 / L1: Motor 7 arm gripper forward/reverse
-B: pneumatic gripper OPEN while held, CLOSE when released
-A: pneumatic height HIGH latch
-X: pneumatic height LOW latch
+B: arm pneumatic gripper OPEN while held, CLOSE when released
+A: arm pneumatic height LOW latch
+X: arm pneumatic height HIGH latch
 Y: KFS staff gripper OPEN while held, CLOSE when released
 R3: currently unused
 ```
@@ -55,7 +55,7 @@ local_navigation_node max_wheel_speed_rad_s: 64.0
 joystick_bridge input_timeout_sec: 0.3
 local_navigation_node command_timeout_sec: 0.3
 damiao_node command_timeout_sec: 0.5
-pneumatic safe_state: [1, 0] = CLOSE + LOW
+pneumatic safe_state: [0, 1] = LOW + CLOSE
 ```
 
 Base kinematics defaults:
@@ -121,7 +121,7 @@ The current control chain contains multiple watchdogs:
 - `local_navigation_node`: sends zero speed to Motor 1-4 if `/local_driving` times out.
 - `damiao_node`: sends zero velocity to timed-out motors for continuous VEL commands.
 - `r1_arm_control` controllers: zero their actuator speed when command topics time out.
-- `arduino_pneumatic_driver`: sends `safe_state = [1, 0]` on command timeout, reconnect, and shutdown.
+- `arduino_pneumatic_driver`: sends `safe_state = [0, 1]` on command timeout, reconnect, and shutdown.
 
 ## Notes About Older Documents
 

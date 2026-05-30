@@ -96,9 +96,9 @@ D-pad 左/右: Motor 6 水平移动
 D-pad 上/下: Motor 6 水平移动速度档 0.2 / 0.5 / 1.0
 START/SELECT: 底盘平移速度档位升/降，10/20/40/60/100/150 cm/s
 R1 / L1: Motor 7 机械夹爪正/反向
-B: pneumatic gripper OPEN，松开 CLOSE
-A: pneumatic height HIGH latch
-X: pneumatic height LOW latch
+B: arm pneumatic gripper OPEN while held，松开 CLOSE
+A: arm pneumatic height LOW latch
+X: arm pneumatic height HIGH latch
 Y: KFS staff gripper OPEN，松开 CLOSE
 R3: 当前不使用
 ```
@@ -139,7 +139,7 @@ joystick_bridge input_timeout_sec = 0.3
 local_navigation_node command_timeout_sec = 0.3
 local_navigation_node max_wheel_speed_rad_s = 64.0
 damiao_node command_timeout_sec = 0.5
-pneumatic safe_state = [1,0]
+pneumatic safe_state = [0,1]
 ```
 
 如需临时调高底盘速度：

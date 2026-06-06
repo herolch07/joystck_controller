@@ -129,7 +129,7 @@ flowchart TD
     DamiaoCmd[/damiao_control/]
     Driver[motor_controller_node / damiao_node]
 
-    ElevBridge[elevator_joystick_bridge_node<br/>R2/L2]
+    ElevBridge[elevator_joystick_bridge_node<br/>R1/L1]
     ElevCmd[/elevator_speed_cmd/]
     ElevCtrl[elevator_controller_node]
     M5[Motor 5 Elevator]
@@ -139,7 +139,7 @@ flowchart TD
     HorizCtrl[horizontal_controller_node]
     M6[Motor 6 Horizontal]
 
-    GripBridge[arm_gripper_joystick_bridge_node<br/>R1/L1]
+    GripBridge[arm_gripper_joystick_bridge_node<br/>R2/L2]
     GripCmd[/arm_gripper_speed_cmd/]
     GripCtrl[arm_gripper_controller_node]
     M7[Motor 7 Arm Gripper]
@@ -393,8 +393,9 @@ data = [target_speed, commanded_speed, timeout_active, motor_id]
 Control mapping:
 
 ```text
-R2: positive elevator speed
-L2: negative elevator speed
+R1: positive elevator fixed speed
+L1: negative elevator fixed speed
+R1 + L1: stop
 ```
 
 ### Motor 6 Horizontal
@@ -459,9 +460,9 @@ data = [target_speed, commanded_speed, timeout_active, motor_id]
 Control mapping:
 
 ```text
-R1: positive gripper motor speed
-L1: negative gripper motor speed
-R1 + L1: stop
+R2: positive gripper motor speed, analog
+L2: negative gripper motor speed, analog
+R2/L2 equal depth: stop
 ```
 
 ## 7. Pneumatic Gripper Control Chain

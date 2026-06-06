@@ -30,11 +30,11 @@
 左搖桿上/下：底盤前進/後退
 左搖桿左/右：底盤左/右橫移
 右搖桿左/右：底盤原地旋轉
-R2 / L2：Motor 5 升降正/反向
+R1 / L1：Motor 5 升降正/反向，固定速度
 D-pad 左/右：Motor 6 水平移動
 D-pad 上/下：Motor 6 水平移動速度檔位 0.2 / 0.5 / 1.0
 START / SELECT：目前不用于底盤調速
-R1 / L1：Motor 7 機械夾爪正/反向
+R2 / L2：Motor 7 機械夾爪正/反向，按壓深度調速
 B：按住 arm pneumatic gripper OPEN，放開 CLOSE
 A：arm pneumatic height LOW 鎖定
 X：arm pneumatic height HIGH 鎖定

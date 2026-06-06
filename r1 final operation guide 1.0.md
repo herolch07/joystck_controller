@@ -321,14 +321,14 @@ START/SELECT 当前不用于调速。平移目标上限固定默认为 `150 cm/s
 左摇杆上/下: 前进/后退
 左摇杆左/右: 左右平移
 右摇杆左/右: 原地旋转
-R2: 升降电机正向
-L2: 升降电机反向
+R1: 升降电机正向，固定速度
+L1: 升降电机反向，固定速度
 D-pad 左/右: 水平电机左/右移动
 D-pad 上: 水平电机加速档，0.2 -> 0.5 -> 1.0
 D-pad 下: 水平电机减速档，1.0 -> 0.5 -> 0.2
 START/SELECT: 当前不用于底盘调速
-R1: 夹爪正向
-L1: 夹爪反向
+R2: 夹爪正向，按压深度调速
+L2: 夹爪反向，按压深度调速
 B: arm pneumatic gripper OPEN，松开后 CLOSE
 A: arm pneumatic height LOW
 X: arm pneumatic height HIGH
@@ -487,14 +487,14 @@ Joystick driver / bridge / monitor
 左摇杆上/下: 底盘前进/后退
 左摇杆左/右: 底盘左/右横移
 右摇杆左/右: 底盘原地旋转
-R2: Motor 5 elevator 正向
-L2: Motor 5 elevator 反向
+R1: Motor 5 elevator 正向，固定速度
+L1: Motor 5 elevator 反向，固定速度
 D-pad 左/右: Motor 6 horizontal 左/右移动
 D-pad 上: Motor 6 horizontal power level 增加，0.2 -> 0.5 -> 1.0
 D-pad 下: Motor 6 horizontal power level 减少，1.0 -> 0.5 -> 0.2
 START/SELECT: 当前不用于底盘调速
-R1: Motor 7 arm gripper 正向
-L1: Motor 7 arm gripper 反向
+R2: Motor 7 arm gripper 正向，按压深度调速
+L2: Motor 7 arm gripper 反向，按压深度调速
 B: arm pneumatic gripper OPEN，松开后 CLOSE
 A: arm pneumatic height LOW
 X: arm pneumatic height HIGH

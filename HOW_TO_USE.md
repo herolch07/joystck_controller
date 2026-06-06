@@ -53,15 +53,13 @@ PY
 左摇杆上/下: 底盘前进/后退
 左摇杆左/右: 底盘左/右横移
 右摇杆左/右: 底盘原地旋转
-R2: Motor 5 elevator 正向
-L2: Motor 5 elevator 反向
+R1: Motor 5 elevator 正向，固定速度
+L1: Motor 5 elevator 反向，固定速度
 D-pad 左/右: Motor 6 horizontal 左/右移动
 D-pad 上/下: Motor 6 horizontal power level 增加/减少
 START/SELECT: 当前不用于底盘调速
-R1: Motor 7 arm gripper 正向，前 0.5s 为 0.3 rad/s，之后进入高速档
-L1: Motor 7 arm gripper 反向，前 0.5s 为 0.3 rad/s，之后进入高速档
-START (+): Motor 7 高速档增加 0.1 rad/s
-SELECT (-): Motor 7 高速档降低 0.1 rad/s
+R2: Motor 7 arm gripper 正向，按压深度调速
+L2: Motor 7 arm gripper 反向，按压深度调速
 B: arm pneumatic gripper OPEN while held，松开 CLOSE
 A: arm pneumatic height LOW latch
 X: arm pneumatic height HIGH latch

@@ -4,6 +4,15 @@ R1 机械臂控制 package。当前用于控制速度型达妙电机执行机构
 
 ## 更新记录
 
+### 2026-06-07 v3 升降与机械夹爪按键交换
+
+- Motor 5 升降改为 `R1/L1` 数字按钮固定速度控制。
+- `R1` 为升降正向，`L1` 为升降反向，同时按下或同时松开时停止。
+- Motor 7 机械夹爪改为 `R2/L2` 模拟扳机控制。
+- `R2` 为夹爪正向，`L2` 为夹爪反向，按压深度决定速度。
+- Motor 7 旧的 0.5 s 两段速度与 START/SELECT 调速逻辑已移除。
+- Motor ID、command topic 和 controller timeout 均不变。
+
 ### 2026-05-14 v1 安全版本
 
 - 新增并确认三个执行机构 controller：
@@ -17,7 +26,7 @@ R1 机械臂控制 package。当前用于控制速度型达妙电机执行机构
 - 所有 controller 均包含 `timeout_sec` 失效保护。
 - 夹爪默认速度降为 `1.0 rad/s`，避免动作过快。
 
-### 2026-06-07 v2 Motor 7 两段式速度
+### 2026-06-07 v2 Motor 7 两段式速度（历史记录，已被 v3 覆盖）
 
 - `R1/L1` 按住前 `0.5 s` 使用 `0.3 rad/s`。
 - 持续按住超过 `0.5 s` 后切换到高速档，默认 `1.3 rad/s`。
@@ -116,9 +125,16 @@ max_accel_rad_s2 = 0.0
 ### elevator_joystick_bridge_node
 
 ```text
-R2: 升降正向
-L2: 升降反向
+R1: 升降正向，固定速度
+L1: 升降反向，固定速度
+R1 + L1: 停止
 发布: /elevator_speed_cmd
+```
+
+参数：
+
+```text
+command_speed_rad_s = 3.0
 ```
 
 ### horizontal_joystick_bridge_node
@@ -133,23 +149,18 @@ D-pad 下: 降低速度档 1.0 -> 0.5 -> 0.2
 ### arm_gripper_joystick_bridge_node
 
 ```text
-R1: 夹爪正向，前 0.5s 为 0.3 rad/s，之后进入高速档
-L1: 夹爪反向，前 0.5s 为 0.3 rad/s，之后进入高速档
-R1 + L1: 停止
-START (+): 高速档增加 0.1 rad/s
-SELECT (-): 高速档降低 0.1 rad/s
+R2: 夹爪正向，按压越深速度越高
+L2: 夹爪反向，按压越深速度越高
+R2 + L2: 输出两者差值；相同深度时停止
 发布: /arm_gripper_speed_cmd
 ```
 
 参数：
 
 ```text
-slow_speed_rad_s = 0.3
-fast_speed_rad_s = 1.3
-hold_threshold_sec = 0.5
-speed_adjust_step_rad_s = 0.1
-min_fast_speed_rad_s = 0.3
-max_fast_speed_rad_s = 1.3
+max_speed_rad_s = 1.3
+trigger_deadzone = 24
+trigger range = 0..512
 ```
 
 ## 超时保护

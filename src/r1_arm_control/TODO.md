@@ -20,3 +20,13 @@
 - [ ] 为 joystick bridge 增加可配置按键映射
 - [ ] 增加无硬件 topic 级测试
 - [ ] 根据真实机械限位加入软限位或 limit switch 输入
+
+## 2026-06-07 升降与夹爪按键交换
+
+- [x] Motor 5 升降改为 R1/L1 固定速度控制
+- [x] Motor 7 机械夹爪改为 R2/L2 模拟调速
+- [x] 移除 Motor 7 旧两段式速度逻辑
+- [x] 移除 Motor 7 START/SELECT 高速档调节
+- [x] 保持 Motor 5/7 controller timeout 与 Motor ID 不变
+- [ ] 离地确认 Motor 5 与 Motor 7 正反方向
+- [ ] 实机确认 Motor 7 扳机低速控制手感

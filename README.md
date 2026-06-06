@@ -30,11 +30,11 @@ The workspace is a ROS 2 control system for the Robocon R1 robot:
 Left stick up/down: base forward/backward
 Left stick left/right: base left/right strafe
 Right stick left/right: base in-place rotation
-R2 / L2: Motor 5 elevator forward/reverse
+R1 / L1: Motor 5 elevator forward/reverse at fixed speed
 D-pad left/right: Motor 6 horizontal movement
 D-pad up/down: Motor 6 horizontal power level 0.2 / 0.5 / 1.0
 START / SELECT: currently unused for chassis speed
-R1 / L1: Motor 7 arm gripper forward/reverse
+R2 / L2: Motor 7 arm gripper analog forward/reverse
 B: arm pneumatic gripper OPEN while held, CLOSE when released
 A: arm pneumatic height LOW latch
 X: arm pneumatic height HIGH latch

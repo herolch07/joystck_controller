@@ -103,7 +103,7 @@ flowchart LR
 flowchart TD
     Joy["/joystick_data"]
 
-    EBridge["/elevator_joystick_bridge_node<br/>R2/L2"]
+    EBridge["/elevator_joystick_bridge_node<br/>R1/L1"]
     ECmd["/elevator_speed_cmd<br/>[speed_rad_s]"]
     ECtrl["/elevator_controller_node"]
     EStatus["/elevator_status"]
@@ -115,7 +115,7 @@ flowchart TD
     HStatus["/horizontal_status"]
     M6["Motor 6 Horizontal"]
 
-    GBridge["/arm_gripper_joystick_bridge_node<br/>R1/L1"]
+    GBridge["/arm_gripper_joystick_bridge_node<br/>R2/L2"]
     GCmd["/arm_gripper_speed_cmd<br/>[speed_rad_s]"]
     GCtrl["/arm_gripper_controller_node"]
     GStatus["/arm_gripper_status"]
@@ -274,11 +274,11 @@ flowchart TD
 | `/joystick_bridge` | `joystick_bridge` | 手柄摇杆到底盘 `/local_driving` |
 | `/local_navigation_node` | `base_omniwheel_r2_700` | 底盘运动学，计算 Motor 1-4 轮速 |
 | `/motor_controller_node` | `base_omniwheel_r2_700` | 达妙电机 driver，控制 Motor 1-7 |
-| `/elevator_joystick_bridge_node` | `r1_arm_control` | R2/L2 -> `/elevator_speed_cmd` |
+| `/elevator_joystick_bridge_node` | `r1_arm_control` | R1/L1 fixed speed -> `/elevator_speed_cmd` |
 | `/elevator_controller_node` | `r1_arm_control` | 控制 Motor 5 |
 | `/horizontal_joystick_bridge_node` | `r1_arm_control` | D-pad -> `/horizontal_speed_cmd` |
 | `/horizontal_controller_node` | `r1_arm_control` | 控制 Motor 6 |
-| `/arm_gripper_joystick_bridge_node` | `r1_arm_control` | R1/L1 -> `/arm_gripper_speed_cmd` |
+| `/arm_gripper_joystick_bridge_node` | `r1_arm_control` | R2/L2 -> `/arm_gripper_speed_cmd` |
 | `/arm_gripper_controller_node` | `r1_arm_control` | 控制 Motor 7 |
 | `/pneumatic_gripper_joystick_bridge_node` | `arduino_pneumatic_driver` | B/A/X -> `/pneumatic_gripper_cmd` |
 | `/pneumatic_relay_driver_node` | `arduino_pneumatic_driver` | ROS topic -> USB Serial -> Arduino |
@@ -294,11 +294,11 @@ flowchart TD
 | `/joystick_bridge` | `/joystick_data` | `/local_driving` | 把左/右摇杆变成底盘目标移动指令 |
 | `/local_navigation_node` | `/local_driving` | `/damiao_control` | 把底盘目标移动换算成 Motor 1-4 轮速 |
 | `/motor_controller_node` | `/damiao_control` | 无主要控制 topic；直接写 USB-CAN | 达妙电机 driver，控制 Motor 1-7 |
-| `/elevator_joystick_bridge_node` | `/joystick_data` | `/elevator_speed_cmd` | R2/L2 转升降速度命令 |
+| `/elevator_joystick_bridge_node` | `/joystick_data` | `/elevator_speed_cmd` | R1/L1 转升降速度命令 |
 | `/elevator_controller_node` | `/elevator_speed_cmd` | `/damiao_control`, `/elevator_status` | 控制 Motor 5 elevator |
 | `/horizontal_joystick_bridge_node` | `/joystick_data` | `/horizontal_speed_cmd` | D-pad 转水平移动速度命令 |
 | `/horizontal_controller_node` | `/horizontal_speed_cmd` | `/damiao_control`, `/horizontal_status` | 控制 Motor 6 horizontal |
-| `/arm_gripper_joystick_bridge_node` | `/joystick_data` | `/arm_gripper_speed_cmd` | R1/L1 转机械夹爪电机速度命令 |
+| `/arm_gripper_joystick_bridge_node` | `/joystick_data` | `/arm_gripper_speed_cmd` | R2/L2 模拟扳机转机械夹爪电机速度命令 |
 | `/arm_gripper_controller_node` | `/arm_gripper_speed_cmd` | `/damiao_control`, `/arm_gripper_status` | 控制 Motor 7 arm gripper motor |
 | `/pneumatic_gripper_joystick_bridge_node` | `/joystick_data` | `/pneumatic_gripper_cmd` | B/A/X 转 Arduino relay command |
 | `/pneumatic_relay_driver_node` | `/pneumatic_gripper_cmd` | `/pneumatic_gripper_status`，并写 USB Serial | 把 ROS command 变成 Arduino serial 字符串 |

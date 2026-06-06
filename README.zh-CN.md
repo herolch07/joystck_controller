@@ -30,11 +30,11 @@
 左摇杆上/下：底盘前进/后退
 左摇杆左/右：底盘左/右横移
 右摇杆左/右：底盘原地旋转
-R2 / L2：Motor 5 升降正/反向
+R1 / L1：Motor 5 升降正/反向，固定速度
 D-pad 左/右：Motor 6 水平移动
 D-pad 上/下：Motor 6 水平移动速度档位 0.2 / 0.5 / 1.0
 START / SELECT：当前不用于底盘调速
-R1 / L1：Motor 7 机械夹爪正/反向
+R2 / L2：Motor 7 机械夹爪正/反向，按压深度调速
 B：按住 arm pneumatic gripper OPEN，松开 CLOSE
 A：arm pneumatic height LOW 锁定
 X：arm pneumatic height HIGH 锁定

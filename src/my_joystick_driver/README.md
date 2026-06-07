@@ -162,3 +162,9 @@ Apache License 2.0
 ## 👥 维护者
 
 EdUHK Robocon Robotics Team
+
+## 2026-06-07 摇杆 Deadzone 更新
+
+- 四个摇杆轴归一化范围保持 `-512..512`。
+- 默认 deadzone 从 `24` 改为 `15`，即约 `2.93%`。
+- L2/R2 虽经过 driver 的基础过滤，但 Motor 7 bridge 仍使用独立 `trigger_deadzone = 24`。

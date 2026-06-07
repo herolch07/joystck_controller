@@ -298,7 +298,7 @@ flowchart TD
 | `/elevator_controller_node` | `/elevator_speed_cmd` | `/damiao_control`, `/elevator_status` | 控制 Motor 5 elevator |
 | `/horizontal_joystick_bridge_node` | `/joystick_data` | `/horizontal_speed_cmd` | D-pad 转水平移动速度命令 |
 | `/horizontal_controller_node` | `/horizontal_speed_cmd` | `/damiao_control`, `/horizontal_status` | 控制 Motor 6 horizontal |
-| `/arm_gripper_joystick_bridge_node` | `/joystick_data` | `/arm_gripper_speed_cmd` | R2/L2 模拟扳机转机械夹爪电机速度命令 |
+| `/arm_gripper_joystick_bridge_node` | `/joystick_data` | `/arm_gripper_speed_cmd` | R2/L2 净输入经 `0.1x + 0.9x³` 转 Motor 7 速度命令 |
 | `/arm_gripper_controller_node` | `/arm_gripper_speed_cmd` | `/damiao_control`, `/arm_gripper_status` | 控制 Motor 7 arm gripper motor |
 | `/pneumatic_gripper_joystick_bridge_node` | `/joystick_data` | `/pneumatic_gripper_cmd` | B/A/X 转 Arduino relay command |
 | `/pneumatic_relay_driver_node` | `/pneumatic_gripper_cmd` | `/pneumatic_gripper_status`，并写 USB Serial | 把 ROS command 变成 Arduino serial 字符串 |
@@ -407,4 +407,4 @@ If `/damiao_motor_controller`, `/global_navigation_node`, `/base/dummy_control`,
 
 ## 2026-06-06 控制输入更新
 
-`/joystick_bridge` 将左摇杆幅度通过 `0.2x + 0.8x³` 映射到 `0..150 cm/s`。START/SELECT 当前不参与底盘调速。
+`/joystick_bridge` 将左摇杆平移映射到 `0..150 cm/s`，右摇杆旋转映射到 `-1.2..1.2 rad/s`；两者均使用 `0.1x + 0.9x³`。START/SELECT 当前不参与底盘调速。

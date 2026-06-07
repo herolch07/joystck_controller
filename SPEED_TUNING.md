@@ -56,9 +56,12 @@ max_wheel_accel_rad_s2
 
 | 参数 | 默认值 | 单位 | 所属节点 | 作用 |
 |---|---:|---|---|---|
-| `max_speed_cm` | `20.0` | `cm/s` | `/joystick_bridge` | 左摇杆推到底时的目标最大平移速度 |
-| `max_rotation` | `0.5` | `rad/s` | `/joystick_bridge` | 右摇杆推到底时的目标最大旋转角速度 |
-| `deadzone` | `24` | joystick units | `/joystick_bridge` | 摇杆小幅漂移过滤，当前摇杆范围是 `-512..512` |
+| `max_speed_cm` | `150.0` | `cm/s` | `/joystick_bridge` | 左摇杆推到底时的目标最大平移速度 |
+| `max_rotation` | `1.2` | `rad/s` | `/joystick_bridge` | 右摇杆推到底时的目标最大旋转角速度 |
+| `translation_linear_weight` | `0.1` | ratio | `/joystick_bridge` | 平移混合曲线线性权重 |
+| `rotation_linear_weight` | `0.1` | ratio | `/joystick_bridge` | 旋转混合曲线线性权重 |
+| `gripper_linear_weight` | `0.1` | ratio | `/arm_gripper_joystick_bridge_node` | Motor 7 扳机混合曲线线性权重 |
+| `deadzone` | `15` | joystick units | `/joystick_bridge` | 摇杆小幅漂移过滤，当前摇杆范围是 `-512..512` |
 | `input_timeout_sec` | `0.3` | `s` | `/joystick_bridge` | `/joystick_data` 超时后发布底盘停止指令 |
 | `max_wheel_speed_rad_s` | `64.0` | `rad/s` | `/local_navigation_node` | 单个轮子的角速度上限 |
 | `max_wheel_accel_rad_s2` | `12.0` | `rad/s^2` | `/local_navigation_node` | 单个轮子的角加速度上限 |
@@ -69,9 +72,13 @@ max_wheel_accel_rad_s2
 源码当前默认值摘要：
 
 ```text
-max_speed_cm = 20.0
-max_rotation = 0.5
-deadzone = 24
+max_speed_cm = 150.0
+translation_linear_weight = 0.1
+max_rotation = 1.2
+rotation_linear_weight = 0.1
+gripper max_speed_rad_s = 1.3
+gripper_linear_weight = 0.1
+deadzone = 15
 input_timeout_sec = 0.3
 max_wheel_speed_rad_s = 64.0
 max_wheel_accel_rad_s2 = 12.0
@@ -388,4 +395,4 @@ R1 speed tests must not be run while `/base/dummy_control` or `/damiao_motor_con
 
 ## 2026-06-06 当前平移控制策略
 
-当前默认 `max_speed_cm = 150.0`，左摇杆采用 `y = 0.2x + 0.8x³`。START/SELECT 速度档已取消。本文较早章节中的 20/40/60/100/400 cm/s 手动调速命令属于历史调试记录。
+当前默认平移上限为 `150 cm/s`、旋转上限为 `1.2 rad/s`、Motor 7 上限为 `1.3 rad/s`；三者均采用 `y = 0.1x + 0.9x³`。START/SELECT 底盘速度档已取消。本文较早章节中的调速命令属于历史调试记录。

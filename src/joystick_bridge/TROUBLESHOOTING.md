@@ -180,9 +180,11 @@ joystick_bridge joystick_bridge  # ✅ 能够找到
 # 测试运行
 $ ros2 run joystick_bridge joystick_bridge
 [INFO] [joystick_bridge]: Joystick bridge node initialized
-[INFO] [joystick_bridge]: Max speed: 20.0 cm/s
-[INFO] [joystick_bridge]: Max rotation: 0.5 rad/s
-[INFO] [joystick_bridge]: Deadzone: 6
+[INFO] [joystick_bridge]: Max speed: 150.0 cm/s
+[INFO] [joystick_bridge]: Translation curve: y = a*x + (1-a)*x^3, a=0.1
+[INFO] [joystick_bridge]: Rotation curve: y = a*x + (1-a)*x^3, a=0.1
+[INFO] [joystick_bridge]: Max rotation: 1.2 rad/s
+[INFO] [joystick_bridge]: Deadzone: 15
 # ✅ 成功启动
 ```
 

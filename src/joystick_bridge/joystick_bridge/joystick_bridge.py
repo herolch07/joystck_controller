@@ -46,11 +46,12 @@ class JoystickBridge(Node):
         
         # 声明参数（符合 AGENTS.md 2.2.4 规范）
         self.declare_parameter('max_speed_cm', 150.0)
-        self.declare_parameter('max_rotation', 0.5)
-        self.declare_parameter('deadzone', 24)
+        self.declare_parameter('max_rotation', 1.2)
+        self.declare_parameter('deadzone', 15)
         self.declare_parameter('input_timeout_sec', 0.3)
         self.declare_parameter('watchdog_hz', 20.0)
-        self.declare_parameter('translation_linear_weight', 0.2)
+        self.declare_parameter('translation_linear_weight', 0.1)
+        self.declare_parameter('rotation_linear_weight', 0.1)
 
         self.last_joystick_time = 0.0
         self.joystick_seen = False
@@ -83,6 +84,10 @@ class JoystickBridge(Node):
             "Translation curve: y = a*x + (1-a)*x^3, "
             f"a={self.get_parameter('translation_linear_weight').value}"
         )
+        self.get_logger().info(
+            "Rotation curve: y = a*x + (1-a)*x^3, "
+            f"a={self.get_parameter('rotation_linear_weight').value}"
+        )
         self.get_logger().info("START/SELECT chassis speed switching disabled")
         self.get_logger().info(f"Max rotation: {self.get_parameter('max_rotation').value} rad/s")
         self.get_logger().info(f"Deadzone: {self.get_parameter('deadzone').value}")
@@ -94,17 +99,17 @@ class JoystickBridge(Node):
         from rcl_interfaces.msg import SetParametersResult
 
         for param in params:
-            if param.name == 'max_speed_cm' and float(param.value) <= 0.0:
+            if param.name in ['max_speed_cm', 'max_rotation'] and float(param.value) <= 0.0:
                 return SetParametersResult(
                     successful=False,
-                    reason='max_speed_cm must be greater than 0',
+                    reason=f'{param.name} must be greater than 0',
                 )
-            if param.name == 'translation_linear_weight':
+            if param.name in ['translation_linear_weight', 'rotation_linear_weight']:
                 weight = float(param.value)
                 if not 0.0 <= weight <= 1.0:
                     return SetParametersResult(
                         successful=False,
-                        reason='translation_linear_weight must be in [0.0, 1.0]',
+                        reason=f'{param.name} must be in [0.0, 1.0]',
                     )
             if param.name in [
                 'max_speed_cm',
@@ -112,6 +117,7 @@ class JoystickBridge(Node):
                 'deadzone',
                 'input_timeout_sec',
                 'translation_linear_weight',
+                'rotation_linear_weight',
             ]:
                 self.get_logger().info(f"Parameter updated: {param.name} = {param.value}")
 
@@ -138,6 +144,9 @@ class JoystickBridge(Node):
         max_rotation = self.get_parameter('max_rotation').value
         deadzone = self.get_parameter('deadzone').value
         linear_weight = float(self.get_parameter('translation_linear_weight').value)
+        rotation_linear_weight = float(
+            self.get_parameter('rotation_linear_weight').value
+        )
         
         # 应用死区过滤
         if abs(lx) < deadzone:
@@ -162,15 +171,19 @@ class JoystickBridge(Node):
             magnitude = min(math.sqrt(lx*lx + ly*ly) / AXIS_MAX, 1.0)
 
             # 混合三次曲线在中心区域提供低速精细控制，同时保留满杆最高速度。
-            # linear_weight=1.0 为线性；0.0 为纯三次；默认 0.2。
+            # linear_weight=1.0 为线性；0.0 为纯三次；默认 0.1。
             curved_magnitude = (
                 linear_weight * magnitude
                 + (1.0 - linear_weight) * magnitude ** 3
             )
             speed_cm = curved_magnitude * max_speed_cm
         
-        # 计算旋转速度
-        rotation = (rx / AXIS_MAX) * max_rotation
+        # 右摇杆旋转使用独立混合三次曲线，保留方向和满杆最大速度。
+        normalized_rotation = max(-1.0, min(float(rx) / AXIS_MAX, 1.0))
+        rotation = (
+            rotation_linear_weight * normalized_rotation
+            + (1.0 - rotation_linear_weight) * normalized_rotation ** 3
+        ) * max_rotation
         
         # 构造导航消息
         nav_msg = Float32MultiArray()

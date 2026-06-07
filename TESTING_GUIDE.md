@@ -60,8 +60,10 @@ ros2 param get /joystick_bridge max_rotation
 当前默认应为：
 
 ```text
-max_speed_cm = 20.0
-max_rotation = 0.5
+max_speed_cm = 150.0
+translation_linear_weight = 0.1
+max_rotation = 1.2
+rotation_linear_weight = 0.1
 ```
 
 手动发布小速度测试：
@@ -192,4 +194,4 @@ R1 不应看到 R2 的 `/damiao_motor_controller`、`/global_navigation_node`、
 
 ## 2026-06-06 混合曲线测试补充
 
-当前平移上限为 `150 cm/s`，曲线为 `0.2x + 0.8x³`。测试顺序应为离地检查，再在安全区域逐步测试 10%/25%/50%/75%/100% 推杆。START/SELECT 不再改变速度。
+当前平移上限为 `150 cm/s`，旋转上限为 `1.2 rad/s`，两者曲线均为 `0.1x + 0.9x³`。Motor 7 最大 `1.3 rad/s`，R2/L2 也使用同一曲线。测试顺序应为离地检查，再在安全区域逐步测试 10%/25%/50%/75%/100% 输入。START/SELECT 不再改变底盘速度。

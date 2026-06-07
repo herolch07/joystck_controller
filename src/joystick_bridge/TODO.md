@@ -70,3 +70,27 @@
 - [x] 保持 joystick input watchdog 与轮速 acceleration limit 不变
 - [ ] R1 离地测试 10%/25%/50%/75%/100% 摇杆幅度
 - [ ] R1 落地低风险区域测试起步摩擦和中段手感
+
+## 2026-06-07 Deadzone 调整
+
+- [x] `joystick_bridge deadzone` 从 `24` 改为 `15`
+- [x] 与 `my_joystick_driver` 上游 deadzone 同步
+- [x] 保持 Motor 7 `trigger_deadzone = 24` 不变
+- [ ] 实机确认摇杆回中时底盘不会自行漂移
+
+## 2026-06-07 混合曲线权重调整
+
+- [x] `translation_linear_weight` 默认从 `0.2` 改为 `0.1`
+- [x] 当前平移曲线更新为 `y = 0.1x + 0.9x³`
+- [x] 保持 `max_speed_cm = 150.0 cm/s` 与 `deadzone = 15` 不变
+- [x] 保持右摇杆旋转、watchdog 和底层轮速限制不变
+- [ ] 实机确认 10% 至 50% 推杆范围的低速微操效果
+
+## 2026-06-07 右摇杆旋转混合曲线
+
+- [x] `max_rotation` 当前默认改为 `1.2 rad/s`
+- [x] 新增 `rotation_linear_weight = 0.1`
+- [x] 旋转曲线实现 `y = 0.1x + 0.9x³`
+- [x] 保持 `deadzone = 15` 和 `input_timeout_sec = 0.3 s` watchdog 不变
+- [ ] 离地确认右摇杆旋转方向和满杆速度
+- [ ] 落地确认低速旋转微操效果

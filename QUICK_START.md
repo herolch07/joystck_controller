@@ -33,7 +33,7 @@ PY
 ```text
 lx/ly/rx/ry: -512 .. 512
 l2/r2: 0 .. 512
-deadzone: 24
+deadzone: 15
 ```
 
 ## 2. 编译
@@ -134,7 +134,10 @@ ros2 topic echo /kfs_staff_gripper_status
 
 ```text
 joystick_bridge max_speed_cm = 150.0
-joystick_bridge max_rotation = 0.5
+joystick_bridge max_rotation = 1.2
+joystick_bridge rotation_linear_weight = 0.1
+arm gripper max_speed_rad_s = 1.3
+arm gripper gripper_linear_weight = 0.1
 joystick_bridge input_timeout_sec = 0.3
 local_navigation_node command_timeout_sec = 0.3
 local_navigation_node max_wheel_speed_rad_s = 64.0
@@ -147,9 +150,11 @@ pneumatic safe_state = [0,1]
 ```bash
 ros2 param get /joystick_bridge max_speed_cm
 ros2 param get /joystick_bridge translation_linear_weight
+ros2 param get /joystick_bridge rotation_linear_weight
+ros2 param get /arm_gripper_joystick_bridge_node gripper_linear_weight
 ```
 
-默认应为 `150.0` 和 `0.2`。首次实机测试仍应小幅推动摇杆。
+平移上限应为 `150.0`，旋转上限应为 `1.2`，三个曲线权重均应为 `0.1`。首次实机测试仍应小幅推动摇杆或扳机。
 
 ## ROS2 domain check
 

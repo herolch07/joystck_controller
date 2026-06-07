@@ -7,7 +7,7 @@ from my_joystick_msgs.msg import Joystick
 from evdev import InputDevice, ecodes, list_devices
 
 AXIS_MAX = 512
-DEADZONE = 24  # ~5% of 512
+DEADZONE = 15  # 15 / 512 = 2.93%
 
 class JoystickPublisher(Node):
     def __init__(self):

@@ -648,11 +648,13 @@ Otherwise multiple input sources will publish to the same command topics.
 ```text
 Joystick axis range: -512 .. 512
 Joystick trigger range: 0 .. 512
-Joystick deadzone: 24
+Joystick deadzone: 15
 
 joystick_bridge:
-  max_speed_cm = 20.0
-  max_rotation = 0.5
+  max_speed_cm = 150.0
+  translation_linear_weight = 0.1
+  max_rotation = 1.2
+  rotation_linear_weight = 0.1
   input_timeout_sec = 0.3
 
 local_navigation_node:
@@ -683,4 +685,4 @@ R2 should use a different domain, for example `ROS_DOMAIN_ID=2`. This prevents R
 
 ## 2026-06-06 Joystick Bridge 更新
 
-左摇杆平移链路当前使用固定默认上限 `150 cm/s` 和 `0.2x + 0.8x³` 混合曲线。START/SELECT 速度档逻辑已移除；右摇杆旋转和 watchdog 接口不变。
+左摇杆平移链路使用 `150 cm/s` 上限，右摇杆旋转链路使用 `1.2 rad/s` 上限；两者均采用 `0.1x + 0.9x³`。Motor 7 的 R2/L2 净输入同样采用该曲线，最大 `1.3 rad/s`。START/SELECT 不参与底盘调速，watchdog 接口不变。

@@ -34,7 +34,7 @@ tmux kill-session -t r1_control
 - 8BitDo 手柄使用 X 模式。
 - 当前 `Joystick.msg` 数值范围为 `-512 .. 512`。
 - L2/R2 trigger 范围为 `0 .. 512`。
-- 当前死区为 `24`。
+- 当前死区为 `15`（约满量程 2.93%）。
 
 检查手柄：
 
@@ -73,9 +73,11 @@ R3: 当前不使用
 
 ```text
 max_speed_cm = 150.0
-translation_linear_weight = 0.2
-translation curve = 0.2x + 0.8x^3
-max_rotation = 0.5
+translation_linear_weight = 0.1
+translation curve = 0.1x + 0.9x^3
+max_rotation = 1.2
+rotation_linear_weight = 0.1
+rotation curve = 0.1x + 0.9x^3
 ```
 
 查看：
@@ -84,9 +86,11 @@ max_rotation = 0.5
 ros2 param get /joystick_bridge max_speed_cm
 ros2 param get /joystick_bridge translation_linear_weight
 ros2 param get /joystick_bridge max_rotation
+ros2 param get /joystick_bridge rotation_linear_weight
+ros2 param get /arm_gripper_joystick_bridge_node gripper_linear_weight
 ```
 
-START/SELECT 当前不用于底盘调速。左摇杆小幅推动由混合三次曲线产生低速输出，推满时达到 `150 cm/s` 目标上限。
+START/SELECT 当前不用于底盘调速。左摇杆平移与右摇杆旋转都使用 `0.1x + 0.9x³`；满杆分别达到 `150 cm/s` 和 `1.2 rad/s`。Motor 7 的 R2/L2 也使用同一曲线，满按达到 `1.3 rad/s`。
 
 ## 安全保护
 

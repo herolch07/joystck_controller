@@ -8,7 +8,7 @@
 Joystick lx/ly/rx/ry: -512 .. 512
 Joystick dx/dy: -512, 0, 512
 Joystick l2/r2: 0 .. 512
-Joystick deadzone: 24
+Joystick deadzone: 15
 ```
 
 相关代码：
@@ -20,8 +20,10 @@ Joystick deadzone: 24
 ## 当前速度默认值
 
 ```text
-joystick_bridge max_speed_cm = 20.0
-joystick_bridge max_rotation = 0.5
+joystick_bridge max_speed_cm = 150.0
+joystick_bridge translation_linear_weight = 0.1
+joystick_bridge max_rotation = 1.2
+joystick_bridge rotation_linear_weight = 0.1
 local_navigation_node max_wheel_speed_rad_s = 64.0
 local_navigation_node max_wheel_accel_rad_s2 = 12.0
 ```
@@ -116,7 +118,7 @@ status topic 中 timeout_active = 1.0
 
 ## 建议
 
-- 调试时先保留低速默认值：`max_speed_cm = 20.0`、`max_rotation = 0.5`。
+- 当前源码默认值为 `150 cm/s` 和 `1.2 rad/s`。首次离地调试可临时设置 `max_speed_cm = 20.0`、`max_rotation = 0.5`，重启后恢复源码默认值。
 - 只在实机方向确认后再逐步提高速度。
 - 不建议关闭 timeout；如需调试，只做小范围增大。
 
@@ -133,4 +135,4 @@ ROS_LOCALHOST_ONLY=1
 
 ## 2026-06-06 平移曲线更新
 
-当前 `joystick_bridge` 默认上限为 `150 cm/s`，使用 `0.2x + 0.8x³` 混合三次曲线。输入 watchdog 和 `local_navigation_node` 轮速加速度限制不变。START/SELECT 不再切换速度档。
+当前 `joystick_bridge` 平移上限为 `150 cm/s`、旋转上限为 `1.2 rad/s`，两者均使用 `0.1x + 0.9x³`。Motor 7 最大 `1.3 rad/s`，R2/L2 净输入也使用同一曲线。输入 watchdog 和 `local_navigation_node` 轮速加速度限制不变。

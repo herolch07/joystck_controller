@@ -9,6 +9,7 @@
   <license>Apache License 2.0</license>
 
   <depend>rclpy</depend>
+  <depend>rcl_interfaces</depend>
   <depend>std_msgs</depend>
   <depend>my_joystick_msgs</depend>
 

@@ -47,10 +47,13 @@ R3：目前不使用
 ```text
 手掣搖桿範圍：-512 .. 512
 扳機範圍：0 .. 512
-手掣死區：24
+手掣死區：15
 joystick_bridge max_speed_cm：150.0
-joystick_bridge max_rotation：0.5
-joystick_bridge translation_linear_weight：0.2
+joystick_bridge max_rotation：1.2
+joystick_bridge translation_linear_weight：0.1
+joystick_bridge rotation_linear_weight：0.1
+機械夾爪 max_speed_rad_s：1.3
+機械夾爪 gripper_linear_weight：0.1
 local_navigation_node max_wheel_speed_rad_s：64.0
 joystick_bridge input_timeout_sec：0.3
 local_navigation_node command_timeout_sec：0.3

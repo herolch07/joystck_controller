@@ -2,6 +2,27 @@
 
 ## 📅 Changelog
 
+### v1.9.0 (2026-06-07)
+**右摇杆旋转加入混合三次曲线并提高最大速度**
+- `max_rotation` 当前默认从 `0.5` 改为 `1.2 rad/s`。
+- 新增 `rotation_linear_weight = 0.1`。
+- 右摇杆使用 `y = 0.1x + 0.9x³`，小推杆便于微操，满杆仍达到 `1.2 rad/s`。
+- topic、`deadzone = 15` 和 `input_timeout_sec = 0.3 s` watchdog 均保持不变。
+
+### v1.8.0 (2026-06-07)
+**提高底盘低速微操精度**
+- `translation_linear_weight` 默认从 `0.2` 改为 `0.1`。
+- 左摇杆平移曲线更新为 `y = 0.1x + 0.9x³`。
+- `max_speed_cm = 150.0 cm/s`、`deadzone = 15`、右摇杆旋转和 watchdog 均保持不变。
+- 旧版 `0.2` 曲线说明作为历史设计记录保留。
+
+### v1.7.0 (2026-06-07)
+**底盘摇杆 deadzone 降至约 3%**
+- `deadzone` 默认从 `24` 改为 `15`。
+- 摇杆范围保持 `-512..512`，因此实际比例为 `15/512 = 2.93%`。
+- `my_joystick_driver` 与 `joystick_bridge` 两层同步修改，避免上游仍过滤 `±24`。
+- Motor 7 的 L2/R2 使用独立 `trigger_deadzone = 24`，本次不变。
+
 ### v1.6.0 (2026-06-06)
 **固定 150 cm/s + 混合三次平移曲线**
 - `max_speed_cm` 默认改为 `150.0 cm/s`。
@@ -86,11 +107,12 @@
 | 参数名 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
 | `max_speed_cm` | float | 150.0 | 满杆最大平移目标速度 (cm/s) |
-| `max_rotation` | float | 0.5 | 最大旋转速度 (rad/s) |
-| `deadzone` | int | 24 | 摇杆死区阈值 (对应 ±512 范围) |
+| `max_rotation` | float | 1.2 | 右摇杆满杆最大旋转速度 (rad/s) |
+| `deadzone` | int | 15 | 摇杆死区阈值，约为 ±512 满量程的 2.93% |
 | `input_timeout_sec` | float | 0.3 | `/joystick_data` 输入超时时间 (s) |
 | `watchdog_hz` | float | 20.0 | 输入 watchdog 检查频率 (Hz) |
-| `translation_linear_weight` | float | 0.2 | 混合曲线线性权重，范围 `0.0..1.0` |
+| `translation_linear_weight` | float | 0.1 | 平移混合曲线线性权重，范围 `0.0..1.0` |
+| `rotation_linear_weight` | float | 0.1 | 旋转混合曲线线性权重，范围 `0.0..1.0` |
 
 ---
 
@@ -102,17 +124,17 @@
 - **映射关系**:
   - 方向角 = atan2(lx, -ly) （注意 Y 轴取反）
   - 原始幅度 `x = min(sqrt(lx² + ly²) / 512, 1.0)`
-  - 曲线幅度 `y = 0.2x + 0.8x³`
+  - 曲线幅度 `y = 0.1x + 0.9x³`
   - 速度 `speed = y × 150 cm/s`
 
 ### 右摇杆 (rx)
 - **X 轴 (rx)**: 控制旋转速度（-512 到 512）
-- **映射关系**: rotation = rx / 512 × max_rotation
+- **映射关系**：`x = clamp(rx / 512, -1, 1)`，`rotation = (0.1x + 0.9x³) × 1.2 rad/s`
 
 ### START / SELECT
 - 当前不用于底盘速度切换。
 - 底盘平移上限默认固定为 `150 cm/s`。
-- 低速精细控制由左摇杆混合三次曲线提供。
+- 低速精细控制由左、右摇杆各自的混合三次曲线提供。
 
 ### 死区处理
 当摇杆绝对值小于 `deadzone` 时，视为回中状态：
@@ -156,15 +178,17 @@ ros2 run joystick_bridge joystick_bridge
 ```bash
 ros2 run joystick_bridge joystick_bridge --ros-args \
   -p max_speed_cm:=150.0 \
-  -p translation_linear_weight:=0.2 \
-  -p max_rotation:=0.5 \
-  -p deadzone:=24
+  -p translation_linear_weight:=0.1 \
+  -p max_rotation:=1.2 \
+  -p rotation_linear_weight:=0.1 \
+  -p deadzone:=15
 ```
 
 曲线调节示例（`1.0` 为完全线性，`0.0` 为纯三次）：
 
 ```bash
 ros2 param set /joystick_bridge translation_linear_weight 0.3
+ros2 param set /joystick_bridge rotation_linear_weight 0.3
 ```
 
 ### 方法 3：与其它节点一起启动
@@ -331,7 +355,7 @@ ros2 param get /joystick_bridge speed_level_index
 
 注意：`150 cm/s` 是当前 controller 默认最高档。`200/400 cm/s` 仍可通过参数临时测试，但不再作为默认按钮档位；`local_navigation_node max_wheel_speed_rad_s` 保持 `64.0 rad/s`。
 
-## 2026-06-06 - v1.6.0 当前控制方式
+## 2026-06-06 - v1.6.0 历史控制方式
 
 ```text
 max_speed_cm = 150.0 cm/s
@@ -340,7 +364,7 @@ translation_linear_weight = 0.2
 START/SELECT: 不再调整底盘速度
 ```
 
-摇杆幅度和目标速度示例：
+当时的摇杆幅度和目标速度示例：
 
 | 摇杆幅度 | 输出速度 |
 |---:|---:|
@@ -349,5 +373,53 @@ START/SELECT: 不再调整底盘速度
 | 50% | 30.00 cm/s |
 | 75% | 73.13 cm/s |
 | 100% | 150.00 cm/s |
+
+`input_timeout_sec = 0.3 s` watchdog 不变；超时后仍发布 `/local_driving = [0,0,0]`。
+
+## 2026-06-07 当前 Deadzone
+
+```text
+joystick axis range = -512..512
+deadzone = 15（约 2.93%）
+abs(axis) < 15 -> 视为 0
+abs(axis) >= 15 -> 进入控制计算
+```
+
+## 2026-06-07 - v1.8.0 当前平移曲线
+
+```text
+max_speed_cm = 150.0 cm/s
+translation_linear_weight = 0.1
+曲线: y = 0.1x + 0.9x^3
+START/SELECT: 不调整底盘速度
+```
+
+理论目标速度：
+
+| 摇杆幅度 | 输出速度 |
+|---:|---:|
+| 10% | 1.64 cm/s |
+| 25% | 5.86 cm/s |
+| 50% | 24.38 cm/s |
+| 75% | 68.20 cm/s |
+| 100% | 150.00 cm/s |
+
+`input_timeout_sec = 0.3 s` watchdog 不变；超时后仍发布 `/local_driving = [0,0,0]`。
+
+## 2026-06-07 - v1.9.0 当前旋转曲线
+
+```text
+max_rotation = 1.2 rad/s
+rotation_linear_weight = 0.1
+曲线: y = 0.1x + 0.9x^3
+```
+
+| 右摇杆幅度 | 旋转速度 |
+|---:|---:|
+| 10% | 0.013 rad/s |
+| 25% | 0.047 rad/s |
+| 50% | 0.195 rad/s |
+| 75% | 0.546 rad/s |
+| 100% | 1.200 rad/s |
 
 `input_timeout_sec = 0.3 s` watchdog 不变；超时后仍发布 `/local_driving = [0,0,0]`。

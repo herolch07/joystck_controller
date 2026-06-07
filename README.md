@@ -47,10 +47,13 @@ R3: currently unused
 ```text
 Joystick axis range: -512 .. 512
 Trigger range: 0 .. 512
-Joystick deadzone: 24
+Joystick deadzone: 15
 joystick_bridge max_speed_cm: 150.0
-joystick_bridge max_rotation: 0.5
-joystick_bridge translation_linear_weight: 0.2
+joystick_bridge max_rotation: 1.2
+joystick_bridge translation_linear_weight: 0.1
+joystick_bridge rotation_linear_weight: 0.1
+arm gripper max_speed_rad_s: 1.3
+arm gripper gripper_linear_weight: 0.1
 local_navigation_node max_wheel_speed_rad_s: 64.0
 joystick_bridge input_timeout_sec: 0.3
 local_navigation_node command_timeout_sec: 0.3

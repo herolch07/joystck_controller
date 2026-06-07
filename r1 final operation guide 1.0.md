@@ -4,7 +4,7 @@
 
 - 手柄必须使用 X 模式。
 - 手柄数据范围是 `-512 ~ 512`，比旧版 `8192` 更容易读。
-- `joystick_bridge` 默认最大平移速度为 `150 cm/s`，使用 `0.2x + 0.8x³` 混合曲线；START/SELECT 不再调速。
+- `joystick_bridge` 默认平移上限为 `150 cm/s`、旋转上限为 `1.2 rad/s`；左、右摇杆均使用 `0.1x + 0.9x³`，START/SELECT 不再调速。Motor 7 最大 `1.3 rad/s`，R2/L2 也使用同一曲线。
 - 全向轮半径按 `63.5 mm` 换算电机速度。
 - Motor 5 是机械臂升降电机。
 - Motor 6 是机械臂水平移动电机。
@@ -297,10 +297,14 @@ ros2 topic echo /pneumatic_gripper_status
 
 ```text
 max_speed_cm = 150.0
-translation_linear_weight = 0.2
-translation curve = 0.2x + 0.8x^3
-max_rotation = 0.5
-deadzone = 24
+translation_linear_weight = 0.1
+translation curve = 0.1x + 0.9x^3
+max_rotation = 1.2
+rotation_linear_weight = 0.1
+rotation curve = 0.1x + 0.9x^3
+arm gripper max_speed_rad_s = 1.3
+gripper_linear_weight = 0.1
+deadzone = 15
 max_wheel_speed_rad_s = 64.0
 ```
 
@@ -310,10 +314,12 @@ max_wheel_speed_rad_s = 64.0
 ros2 param get /joystick_bridge max_speed_cm
 ros2 param get /joystick_bridge translation_linear_weight
 ros2 param get /joystick_bridge max_rotation
+ros2 param get /joystick_bridge rotation_linear_weight
+ros2 param get /arm_gripper_joystick_bridge_node gripper_linear_weight
 ros2 param get /joystick_bridge deadzone
 ```
 
-START/SELECT 当前不用于调速。平移目标上限固定默认为 `150 cm/s`；左摇杆小幅推动时由混合三次曲线降低输出，满杆仍达到目标上限。第一次实机测试应先离地检查，再在安全区域小幅推杆。
+START/SELECT 当前不用于调速。平移、旋转和 Motor 7 扳机输入均使用 `0.1x + 0.9x³`。第一次实机测试应先离地检查，再在安全区域小幅推杆或按压扳机。
 
 ## 6. 控制方式
 

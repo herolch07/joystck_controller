@@ -30,3 +30,12 @@
 - [x] 保持 Motor 5/7 controller timeout 与 Motor ID 不变
 - [ ] 离地确认 Motor 5 与 Motor 7 正反方向
 - [ ] 实机确认 Motor 7 扳机低速控制手感
+
+## 2026-06-07 Motor 7 混合曲线
+
+- [x] 新增 `gripper_linear_weight = 0.1`
+- [x] R2/L2 净输入使用 `y = 0.1x + 0.9x³`
+- [x] 保持 `max_speed_rad_s = 1.3` 与 `trigger_deadzone = 24` 不变
+- [x] 保持 controller `timeout_sec = 0.3 s` 安全归零
+- [ ] 实机确认小扳机输入足以克服夹爪机械摩擦
+- [ ] 实机确认满按 R2/L2 的正反方向与最高速度

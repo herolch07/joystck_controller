@@ -62,3 +62,9 @@
 
 - [x] arm relay 顺序确认并记录为 `[height_state, gripper_state]`
 - [x] aggregator safe_state 改为 `[0,1,0]`
+
+## v0.3.5 Arduino serial auto-detect
+
+- [x] 新 Arduino Mega by-id 不同时自动扫描 Arduino/CH340 serial path
+- [x] 自动扫描时排除达妙 USB-CAN `HDSC`
+- [x] README 记录换 Arduino Mega 后的串口排查方式

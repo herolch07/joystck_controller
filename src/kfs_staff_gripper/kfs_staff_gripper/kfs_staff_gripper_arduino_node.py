@@ -8,6 +8,7 @@ panel as the existing pneumatic arm system, this node aggregates both command
 sources and opens the serial port only once.
 """
 
+import os
 import time
 
 import rclpy
@@ -108,9 +109,20 @@ class KfsStaffGripperArduinoNode(Node):
             self.get_logger().error("pyserial is not available")
             return
 
-        port = str(self.get_parameter("serial_port").value)
+        configured_port = str(self.get_parameter("serial_port").value)
+        port = self.resolve_serial_port(configured_port)
         baud_rate = int(self.get_parameter("baud_rate").value)
         timeout = float(self.get_parameter("serial_timeout_sec").value)
+
+        if port is None:
+            self.connected = False
+            self.serial_handle = None
+            self.publish_status(f"DISCONNECTED no_arduino_serial_port configured={configured_port}")
+            self.get_logger().warn(
+                "No Arduino serial port found. Close Arduino IDE Serial Monitor "
+                "and check /dev/serial/by-id/."
+            )
+            return
 
         try:
             self.serial_handle = serial.Serial(port, baud_rate, timeout=timeout)
@@ -124,6 +136,27 @@ class KfsStaffGripperArduinoNode(Node):
             self.serial_handle = None
             self.publish_status(f"DISCONNECTED {port} {exc}")
             self.get_logger().warn(f"Failed to open Arduino serial port {port}: {exc}")
+
+    def resolve_serial_port(self, configured_port):
+        """Return configured port if valid, otherwise auto-detect Arduino by-id."""
+        if configured_port and os.path.exists(configured_port):
+            return configured_port
+
+        by_id_dir = "/dev/serial/by-id"
+        try:
+            entries = sorted(os.listdir(by_id_dir))
+        except FileNotFoundError:
+            return None
+
+        # Prefer Arduino/CH340 USB serial adapters and avoid the Damiao USB-CAN.
+        preferred_keywords = ("Arduino", "arduino", "1a86", "CH340", "ch340")
+        excluded_keywords = ("HDSC", "CDC_Device_00000000050C")
+        for entry in entries:
+            if any(keyword in entry for keyword in excluded_keywords):
+                continue
+            if any(keyword in entry for keyword in preferred_keywords):
+                return os.path.realpath(os.path.join(by_id_dir, entry))
+        return None
 
     def arm_command_callback(self, msg):
         """Update relay 1-2 from the existing arm pneumatic command topic."""

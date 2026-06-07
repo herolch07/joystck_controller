@@ -13,6 +13,12 @@ D8/D9/D10 均为高电平触发
 
 ## 更新记录 / Changelog
 
+### v0.3.5 Arduino serial auto-detect（2026-06-07）
+
+- 换 Arduino Mega 后，官方 Mega 的 by-id 路径可能从旧 CH340 `usb-1a86...` 变成 `usb-Arduino__www.arduino.cc__0042...`。
+- `kfs_staff_gripper_arduino_node` 现在会优先使用 `serial_port` 参数；如果该路径不存在，会自动扫描 `/dev/serial/by-id/` 中的 Arduino/CH340 路径，并排除达妙 USB-CAN `HDSC`。
+- 如果 Arduino IDE Serial Monitor 正在占用串口，ROS node 仍然无法打开，需要先关闭 Serial Monitor。
+
 ### v0.3.4 arm relay 顺序实机确认（2026-05-30）
 
 - arm pneumatic 在三路 aggregator 中的 relay 顺序为 `[height_state, gripper_state]`。
@@ -103,7 +109,7 @@ kfs_staff_gripper_arduino_node          -> Arduino serial [r1,r2,r3]
 
 | 参数 | 默认值 | 单位 | 作用 |
 |---|---:|---|---|
-| `serial_port` | `/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0` | - | Arduino Mega serial 设备路径 |
+| `serial_port` | `/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0` | - | 首选 Arduino Mega serial 设备路径；如果不存在，会自动扫描 Arduino/CH340 by-id 路径 |
 | `baud_rate` | `9600` | baud | 必须与 Arduino sketch `Serial.begin(9600)` 一致 |
 | `serial_timeout_sec` | `0.1` | s | serial read timeout |
 | `command_timeout_sec` | `0.5` | s | 超过此时间未收到新 command 后进入 safe state |
@@ -294,8 +300,17 @@ ros2 topic echo /kfs_staff_gripper_status
 
 ```bash
 ros2 param get /kfs_staff_gripper_arduino_node serial_port
-ls /dev/serial/by-id/
+ls -l /dev/serial/by-id/
+ros2 topic echo /kfs_staff_gripper_status
 ```
+
+换成官方 Arduino Mega 后，正常 by-id 可能类似：
+
+```text
+/dev/serial/by-id/usb-Arduino__www.arduino.cc__0042_... -> ../../ttyACM0
+```
+
+如果 Arduino IDE Serial Monitor 正在打开这个 port，ROS node 会显示打不开串口；先关闭 Serial Monitor 再重启 `relay_panel`。
 
 如果旧 arm pneumatic 不动作：
 

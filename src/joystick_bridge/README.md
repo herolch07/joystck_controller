@@ -166,7 +166,7 @@
 ### 方法 1：直接运行
 ```bash
 # 确保已编译工作空间
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 colcon build --packages-select joystick_bridge
 source install/setup.bash
 

@@ -151,7 +151,7 @@ export ROS_LOCALHOST_ONLY=1
 然后启动 R1：
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 source install/setup.bash
 ./r1_start_base_1_0.sh
 ```

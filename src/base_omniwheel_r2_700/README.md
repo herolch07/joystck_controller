@@ -308,11 +308,11 @@ Script: `test_local_navigation.sh`
 Run:
 ```bash
 # Terminal 1: Start damiao_node
-source ~/robotics/robocon/new_ws/install/setup.bash
+source /home/robotics/robocon2026_r1/r1_control_ws/install/setup.bash
 ros2 run base_omniwheel_r2_700 damiao_node
 
 # Terminal 2: Start local_navigation_node
-source ~/robotics/robocon/new_ws/install/setup.bash
+source /home/robotics/robocon2026_r1/r1_control_ws/install/setup.bash
 ros2 run base_omniwheel_r2_700 local_navigation_node
 
 # Terminal 3: Run test
@@ -327,7 +327,7 @@ Script: `test_damiao_vel.sh`
 
 Run on host:
 ```bash
-bash /home/robotics/robocon/new_ws/src/base_omniwheel_r2_700/test_damiao_vel.sh
+bash /home/robotics/robocon2026_r1/r1_control_ws/src/base_omniwheel_r2_700/test_damiao_vel.sh
 ```
 
 ### Single Motor Test
@@ -338,7 +338,7 @@ Script: `test_single_motor.sh`
 
 Run on host:
 ```bash
-bash /home/robotics/robocon/new_ws/src/base_omniwheel_r2_700/test_single_motor.sh
+bash /home/robotics/robocon2026_r1/r1_control_ws/src/base_omniwheel_r2_700/test_single_motor.sh
 ```
 
 ### Diagnostic Tools
@@ -361,7 +361,7 @@ bash test_damiao.sh
 
 ## Legacy Docker Notes
 
-Docker was used in older R2 notes. The current R1 verified workflow runs directly from `/home/robotics/robocon/new_ws` and uses `./r1_start_base_1_0.sh`. The Docker paths below are historical references and may not exist in this workspace:
+Docker was used in older R2 notes. The current R1 verified workflow runs directly from `/home/robotics/robocon2026_r1/r1_control_ws` and uses `./r1_start_base_1_0.sh`. The Docker paths below are historical references and may not exist in this workspace:
 
 - `Robocon2026_r2/Dockerfile`
 - `2026R2_ws/src/base_omniwheel_r2_700/run_r2_base_docker.sh`
@@ -369,7 +369,7 @@ Docker was used in older R2 notes. The current R1 verified workflow runs directl
 Historical build/enter command:
 
 ```bash
-sudo bash /home/robotics/robocon/new_ws/src/base_omniwheel_r2_700/run_r2_base_docker.sh
+sudo bash /home/robotics/robocon2026_r1/r1_control_ws/src/base_omniwheel_r2_700/run_r2_base_docker.sh
 ```
 
 The script automatically sources ROS Jazzy and workspace setup, so you can run ROS commands immediately.
@@ -377,7 +377,7 @@ The script automatically sources ROS Jazzy and workspace setup, so you can run R
 Inside the container:
 
 ```bash
-bash /home/robotics/robocon/new_ws/src/base_omniwheel_r2_700/test_damiao.sh
+bash /home/robotics/robocon2026_r1/r1_control_ws/src/base_omniwheel_r2_700/test_damiao.sh
 ```
 
 Notes:
@@ -556,7 +556,7 @@ ros2 param set /motor_controller_node command_timeout_sec 0.5
 
 ### 最小测试命令
 ```bash
-source /home/robotics/robocon/new_ws/install/setup.bash
+source /home/robotics/robocon2026_r1/r1_control_ws/install/setup.bash
 ros2 topic pub --once /local_driving std_msgs/msg/Float32MultiArray "{data: [1.5708, 10.0, 0.0]}"
 ros2 topic pub --once /local_driving std_msgs/msg/Float32MultiArray "{data: [-1.5708, 10.0, 0.0]}"
 ```
@@ -635,7 +635,7 @@ X: pneumatic height LOW latch
 完整手柄控制系统使用根目录脚本：
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 ./r1_start_base_1_0.sh
 ```
 

@@ -5,7 +5,7 @@
 ## 1. Workspace Overview
 
 ```text
-new_ws/
+r1_control_ws/
   src/
     my_joystick_msgs
     my_joystick_driver

@@ -226,7 +226,7 @@ Ctrl+C 或 ROS shutdown
 ## 最小可运行示例
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 colcon build --symlink-install --packages-select keyboard_teleop
 source install/setup.bash
 ros2 run keyboard_teleop keyboard_teleop_node

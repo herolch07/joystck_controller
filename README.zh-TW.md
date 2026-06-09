@@ -82,7 +82,7 @@ motor_direction_1..4 = [-1, 1, -1, 1]
 在機器人主機上執行：
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 colcon build --symlink-install
 source install/setup.bash
 chmod +x r1_start_base_1_0.sh

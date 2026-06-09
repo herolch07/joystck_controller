@@ -25,7 +25,7 @@ No executable found
 - **ROS2 发行版**：Jazzy
 - **操作系统**：Ubuntu 24.04 / Linux 6.8.0-1044-raspi
 - **Python 版本**：3.12
-- **工作空间**：`/home/robotics/robocon/new_ws`
+- **工作空间**：`/home/robotics/robocon2026_r1/r1_control_ws`
 
 ---
 
@@ -160,7 +160,7 @@ setup(
 #### 3. 重新编译
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 rm -rf build/joystick_bridge install/joystick_bridge
 colcon build --packages-select joystick_bridge
 source install/setup.bash

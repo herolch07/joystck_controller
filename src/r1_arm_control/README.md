@@ -217,7 +217,7 @@ ros2 param set /arm_gripper_controller_node timeout_sec 0.3
 ## 最小启动示例
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 source install/setup.bash
 ros2 run r1_arm_control arm_gripper_controller_node
 ```

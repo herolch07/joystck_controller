@@ -201,7 +201,7 @@ command_timeout_sec = 0.5 s
 启动 driver：
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 source install/setup.bash
 ros2 run arduino_pneumatic_driver pneumatic_relay_driver_node
 ```

@@ -107,7 +107,7 @@ motor.isEnable 状态永远是 False
 
 **文件路径：**
 ```
-/home/robotics/robocon/new_ws/src/base_omniwheel_r2_700/base_omniwheel_r2_700/DM_CAN.py
+/home/robotics/robocon2026_r1/r1_control_ws/src/base_omniwheel_r2_700/base_omniwheel_r2_700/DM_CAN.py
 ```
 
 **修改位置：** 第 114-118 行
@@ -206,7 +206,7 @@ is_enabled = (data[3] >> 4) & 0x0F
 
 ### 1. 重新编译
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 colcon build --packages-select base_omniwheel_r2_700
 source install/setup.bash
 ```
@@ -234,9 +234,9 @@ ros2 run base_omniwheel_r2_700 damiao_node
 
 ## 📚 相关文档
 
-- **测试指南：** `/home/robotics/robocon/new_ws/TESTING_GUIDE.md`
-- **快速启动：** `/home/robotics/robocon/new_ws/QUICK_START.md`
-- **当前一键启动脚本：** `/home/robotics/robocon/new_ws/r1_start_base_1_0.sh`
+- **测试指南：** `/home/robotics/robocon2026_r1/r1_control_ws/TESTING_GUIDE.md`
+- **快速启动：** `/home/robotics/robocon2026_r1/r1_control_ws/QUICK_START.md`
+- **当前一键启动脚本：** `/home/robotics/robocon2026_r1/r1_control_ws/r1_start_base_1_0.sh`
 
 ---
 

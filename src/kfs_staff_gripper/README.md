@@ -221,7 +221,7 @@ staff gripper CLOSE
 编译：
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 colcon build --packages-select kfs_staff_gripper --symlink-install
 source install/setup.bash
 ```
@@ -246,7 +246,7 @@ ros2 run kfs_staff_gripper kfs_staff_gripper_arduino_node
 使用 R1 总启动脚本：
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 ./r1_start_base_1_0.sh
 ```
 

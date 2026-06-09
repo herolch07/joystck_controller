@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-WS_DIR="/home/robotics/robocon/new_ws"
+WS_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SESSION="r1_control"
 
 # Keep R1 isolated from R2 or other ROS2 robots on the same network.

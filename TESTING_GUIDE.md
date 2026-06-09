@@ -5,7 +5,7 @@
 ## 1. 编译检查
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 colcon build --symlink-install
 source install/setup.bash
 ```

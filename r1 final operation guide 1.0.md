@@ -24,7 +24,7 @@ ls -l /dev/ttyACM0
 手柄需要能在 evdev 里看到：
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 source install/setup.bash
 python3 - <<'PY'
 from evdev import InputDevice, list_devices
@@ -47,7 +47,7 @@ PY
 使用新的 tmux 启动脚本：
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 chmod +x r1_start_base_1_0.sh
 ./r1_start_base_1_0.sh
 ```
@@ -93,7 +93,7 @@ tmux 常用操作：
 Terminal 1:
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 source install/setup.bash
 ros2 run my_joystick_driver joystick_node
 ```
@@ -101,7 +101,7 @@ ros2 run my_joystick_driver joystick_node
 Terminal 2:
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 source install/setup.bash
 ros2 run joystick_bridge joystick_bridge
 ```
@@ -109,7 +109,7 @@ ros2 run joystick_bridge joystick_bridge
 Terminal 3:
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 source install/setup.bash
 ros2 run base_omniwheel_r2_700 damiao_node
 ```
@@ -117,7 +117,7 @@ ros2 run base_omniwheel_r2_700 damiao_node
 Terminal 4:
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 source install/setup.bash
 ros2 run base_omniwheel_r2_700 local_navigation_node
 ```
@@ -125,7 +125,7 @@ ros2 run base_omniwheel_r2_700 local_navigation_node
 Terminal 5:
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 source install/setup.bash
 ros2 run r1_arm_control elevator_controller_node
 ```
@@ -133,7 +133,7 @@ ros2 run r1_arm_control elevator_controller_node
 Terminal 6:
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 source install/setup.bash
 ros2 run r1_arm_control elevator_joystick_bridge_node
 ```
@@ -141,7 +141,7 @@ ros2 run r1_arm_control elevator_joystick_bridge_node
 Terminal 7:
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 source install/setup.bash
 ros2 run r1_arm_control horizontal_controller_node
 ```
@@ -149,7 +149,7 @@ ros2 run r1_arm_control horizontal_controller_node
 Terminal 8:
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 source install/setup.bash
 ros2 run r1_arm_control horizontal_joystick_bridge_node
 ```
@@ -157,7 +157,7 @@ ros2 run r1_arm_control horizontal_joystick_bridge_node
 Terminal 9:
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 source install/setup.bash
 ros2 run r1_arm_control arm_gripper_controller_node
 ```
@@ -165,7 +165,7 @@ ros2 run r1_arm_control arm_gripper_controller_node
 Terminal 10:
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 source install/setup.bash
 ros2 run r1_arm_control arm_gripper_joystick_bridge_node
 ```
@@ -173,7 +173,7 @@ ros2 run r1_arm_control arm_gripper_joystick_bridge_node
 Terminal 11:
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 source install/setup.bash
 ros2 run kfs_staff_gripper kfs_staff_gripper_arduino_node
 ```
@@ -181,7 +181,7 @@ ros2 run kfs_staff_gripper kfs_staff_gripper_arduino_node
 Terminal 12:
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 source install/setup.bash
 ros2 run arduino_pneumatic_driver pneumatic_gripper_joystick_bridge_node
 ```
@@ -189,7 +189,7 @@ ros2 run arduino_pneumatic_driver pneumatic_gripper_joystick_bridge_node
 Terminal 13:
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 source install/setup.bash
 ros2 run kfs_staff_gripper kfs_staff_gripper_joystick_bridge_node
 ```
@@ -197,7 +197,7 @@ ros2 run kfs_staff_gripper kfs_staff_gripper_joystick_bridge_node
 ## 3. 验证节点
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 source install/setup.bash
 ros2 node list
 ```
@@ -363,7 +363,7 @@ Motor 3 之前出现过反向响应慢的问题：
 如果需要单独测试电机：
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 source install/setup.bash
 python3 motor_reversal_test.py --motor 3 --speed 10 --hold 2.0 --repeat 3
 ```
@@ -456,7 +456,7 @@ ros2 param set /motor_controller_node command_timeout_sec 0.8
 ## 10. 上传 GitHub
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 git status --short
 git add .
 git commit -m "Add R1 final operation guide and startup script"
@@ -472,7 +472,7 @@ git push origin main
 完整 controller 控制系统使用：
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 ./r1_start_base_1_0.sh
 ```
 

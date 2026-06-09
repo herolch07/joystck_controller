@@ -5,7 +5,7 @@
 ## 1. 启动前检查
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 source install/setup.bash
 ```
 
@@ -39,7 +39,7 @@ deadzone: 15
 ## 2. 编译
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 colcon build --symlink-install
 source install/setup.bash
 ```
@@ -47,7 +47,7 @@ source install/setup.bash
 ## 3. 一键启动
 
 ```bash
-cd /home/robotics/robocon/new_ws
+cd /home/robotics/robocon2026_r1/r1_control_ws
 chmod +x r1_start_base_1_0.sh
 ./r1_start_base_1_0.sh
 ```

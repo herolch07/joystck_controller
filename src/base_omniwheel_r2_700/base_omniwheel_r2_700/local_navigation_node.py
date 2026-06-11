@@ -328,8 +328,9 @@ class LocalNavigationNode(Node):
         Diagonal and combined translate+rotate commands can produce a larger wheel
         command than pure forward/sideways motion. Scaling all wheels together
         preserves the requested direction while keeping the motor driver inside a
-        safer test range. The acceleration limiter reduces current spikes that can
-        trip the motor driver or CAN adapter during sudden joystick movement.
+        safer test range. The acceleration limiter moves the complete four-wheel
+        command with one shared scale, preserving the chassis motion relationship
+        while reducing current spikes during sudden joystick movement.
         """
         max_speed = abs(float(self.get_parameter("max_wheel_speed_rad_s").value))
         if max_speed > 0.0:
@@ -352,17 +353,44 @@ class LocalNavigationNode(Node):
         now = time.monotonic()
         dt = max(now - self.last_speed_time, 1e-3)
         max_delta = max_accel * dt
-        limited = {}
-        for motor_id, target in wheel_speeds.items():
-            current = self.last_wheel_speeds.get(motor_id, 0.0)
-            delta = target - current
-            if abs(delta) > max_delta:
-                target = current + max_delta * (1.0 if delta > 0.0 else -1.0)
-            limited[motor_id] = target
+        limited, alpha = self.limit_wheel_vector_delta(
+            self.last_wheel_speeds,
+            wheel_speeds,
+            max_delta,
+        )
+        if alpha < 1.0:
+            self.get_logger().debug(
+                f"Wheel vector acceleration scaled by {alpha:.3f}; "
+                f"max delta {max_delta:.3f} rad/s"
+            )
 
         self.last_wheel_speeds = dict(limited)
         self.last_speed_time = now
         return limited
+
+    @staticmethod
+    def limit_wheel_vector_delta(current_speeds, target_speeds, max_delta):
+        """Move the complete wheel vector toward target with one shared scale.
+
+        A shared alpha keeps the command inside the chassis kinematic subspace.
+        Independent per-wheel clipping can alter the intended translation/rotation
+        mix and create transient yaw during acceleration at arbitrary directions.
+        """
+        deltas = {
+            motor_id: target - current_speeds.get(motor_id, 0.0)
+            for motor_id, target in target_speeds.items()
+        }
+        peak_delta = max((abs(delta) for delta in deltas.values()), default=0.0)
+        if max_delta <= 0.0 or peak_delta <= max_delta:
+            alpha = 1.0
+        else:
+            alpha = max_delta / peak_delta
+
+        limited = {
+            motor_id: current_speeds.get(motor_id, 0.0) + alpha * delta
+            for motor_id, delta in deltas.items()
+        }
+        return limited, alpha
 
     def motor_direction(self, motor_id):
         """

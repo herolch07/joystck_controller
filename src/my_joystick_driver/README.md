@@ -193,3 +193,27 @@ ros2 run my_joystick_driver joystick_node
 ```bash
 sudo usermod -aG input "$USER"
 ```
+
+## 2026-06-11 8BitDo 主/后备手柄自动检测白名单
+
+RSP 实机确认支持以下两个 evdev 名称：
+
+```text
+8BitDo Ultimate Wireless / Pro 2 Wired Controller
+  USB ID: 2dc8:3106
+  型号: 8BitDo Ultimate 2.4G Controller
+
+Generic X-Box pad
+  USB ID: 2dc8:200f
+  型号: 8BitDo Ultimate 3-mode Controller for Xbox
+```
+
+两者现已加入自动检测白名单。默认运行：
+
+```bash
+ros2 run my_joystick_driver joystick_node
+```
+
+会自动连接当前插入的任一手柄。原有 `device_name_filter` 继续有效，可用于临时匹配其他 evdev 手柄名称。ABXY、摇杆和方向键映射本次不变。
+
+新 3-mode Xbox 手柄的 L2/R2 原始范围为 `0..1023`，旧 2.4G 手柄为 `0..255`。本次按要求只修正自动检测；如果使用新手柄扳机控制机构，仍需后续将轴范围改为从 evdev `AbsInfo` 动态读取。

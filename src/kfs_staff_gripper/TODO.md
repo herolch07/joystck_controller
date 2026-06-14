@@ -91,3 +91,17 @@
 - [x] README 追加 v0.3.7 当前行为
 - [ ] 实机确认 Y 每按一次只切换一次，松开后保持当前状态
 - [ ] 实机确认 joystick timeout 后 KFS 自动 CLOSE
+
+
+## v0.4.0 六路双 arm relay panel
+
+- [x] relay panel 从三路扩展为六路严格串口协议
+- [x] 固定 relay 1-6 与 Pin 22-27 的实机功能顺序
+- [x] 默认安全状态改为 `[0,0,1,0,1,1]`
+- [x] `/pneumatic_gripper_cmd` 映射 relay 2-6
+- [x] `/kfs_staff_gripper_cmd` 映射 relay 1
+- [x] 无效长度 command 不再刷新 watchdog
+- [x] 新增六路格式、安全状态和旧协议拒绝测试
+- [ ] 实机确认 Arduino 回报 `Command OK`
+- [ ] 实机逐路确认 Relay 1-6，不连接危险负载时先测试
+- [ ] Arduino sketch 增加本地 `millis()` 通信 watchdog

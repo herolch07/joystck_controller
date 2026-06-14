@@ -217,3 +217,20 @@ ros2 topic echo /motor_position_selector_status
 1 = +35 rad
 2 = -35 rad
 ```
+
+
+## 2026-06-13 双 arm 气动按钮
+
+启动默认选择 Motor7。Motor7/8 的电机位置与气动功能共用同一个选择状态：
+
+```text
+START/+ : Motor7 / Motor8 切换
+X       : 所选电机循环 0 / +35 / -35 rad
+L2/R2   : 所选电机负向/正向微调
+A       : 所选 arm height 高低切换
+B       : 所选 arm gripper 开关切换
+SELECT/-: 只在选中 Motor8 时切换 inclination 高低
+Y       : KFS gripper 开关切换，与 Motor7/8 选择无关
+```
+
+按 START 只切换控制对象，不改变任何已锁定气动状态。不要同时按 START 和其他机构按钮。

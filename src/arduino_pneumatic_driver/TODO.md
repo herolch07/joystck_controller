@@ -72,3 +72,17 @@
 - [x] README 追加 v12 当前行为和释放夹持物风险
 - [ ] 实机确认启动默认 OPEN、B 每按一次只切换一次
 - [ ] 实机确认 joystick timeout 后 arm gripper OPEN 符合机构安全要求
+
+
+## v13 Motor7/8 双 arm 气动选择控制
+
+- [x] bridge 订阅 `/motor_position_selector_status`
+- [x] A/B 根据当前 Motor7/8 选择路由
+- [x] SELECT 仅控制 Motor8 inclination
+- [x] Motor7 与 Motor8 分别保存锁定状态
+- [x] 五位 arm command 默认安全值改为 `[0,1,0,1,1]`
+- [x] 保留 `input_timeout_sec=0.3 s` watchdog
+- [x] 新增 selector 索引、安全状态和上升沿测试
+- [ ] 实机确认 START 切换后 A/B 只改变所选 arm
+- [ ] 实机确认 SELECT 只改变 Motor8 inclination
+- [ ] 实机确认 joystick 断开后所有 arm 回到安全状态

@@ -378,3 +378,49 @@ Y 只在按钮从松开变为按下的上升沿切换一次，长按不会反复
 ```
 
 Arduino serial node、串口格式、relay 3 映射和 `command_timeout_sec = 0.5 s` watchdog 均未改变。
+
+
+## 2026-06-13 v0.4.0 六路 Arduino relay panel
+
+本节取代旧三路 relay 作为当前实现说明；旧章节保留用于设计回溯。正式串口节点仍为
+`kfs_staff_gripper_arduino_node`，同一时间不得启动其他节点打开同一个 Arduino 串口。
+
+Arduino 输出顺序固定为：
+
+```text
+[relay1, relay2, relay3, relay4, relay5, relay6]
+[KFS, M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper]
+```
+
+确认的值语义：
+
+| Relay | Pin | 机构 | `0` | `1` |
+|---|---:|---|---|---|
+| 1 | 22 | KFS gripper | CLOSE | OPEN |
+| 2 | 23 | Motor7 arm height | LOW | HIGH |
+| 3 | 24 | Motor7 arm gripper | CLOSE | OPEN |
+| 4 | 25 | Motor8 inclination | LOW | HIGH |
+| 5 | 26 | Motor8 arm height | HIGH | LOW |
+| 6 | 27 | Motor8 arm gripper | CLOSE | OPEN |
+
+完整启动、串口重连、节点关闭安全状态为：
+
+```text
+safe_state = [0,0,1,0,1,1]
+含义 = KFS CLOSE + M7 LOW/OPEN + M8 inclination LOW/height LOW/gripper OPEN
+```
+
+订阅接口：
+
+```text
+/pneumatic_gripper_cmd std_msgs/msg/Int32MultiArray
+  [M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper]
+/kfs_staff_gripper_cmd std_msgs/msg/Int32MultiArray
+  [KFS gripper]
+```
+
+默认映射参数为 `arm_relay_indices=[1,2,3,4,5]`、
+`staff_relay_indices=[0]`。节点只接受与映射长度完全相等的 command，旧两位或三位 command
+会被拒绝，且不会刷新该来源的 watchdog。两个来源分别超过
+`command_timeout_sec=0.5 s` 后，只恢复自己负责的 relay；串口重连和节点关闭恢复完整
+`safe_state`。Arduino 严格收到 `[x,x,x,x,x,x]\n`。

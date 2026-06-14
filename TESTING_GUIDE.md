@@ -287,3 +287,28 @@ ros2 topic echo /damiao_motor_status
 
 切换到另一台电机后重复测试，确认两台电机的索引互不影响。测试多圈目标时保持急停可用，
 并继续观察超过 `+-12.5 rad` 后的反馈是否真实可靠。
+
+
+## 2026-06-13 六路 relay 与双 arm 无动力测试
+
+先断开气源或移除危险负载，再启动系统：
+
+```bash
+ros2 topic echo /motor_position_selector_status
+ros2 topic echo /pneumatic_gripper_cmd
+ros2 topic echo /kfs_staff_gripper_cmd
+ros2 topic echo /kfs_staff_gripper_status
+```
+
+预期启动 command：
+
+```text
+/pneumatic_gripper_cmd = [0,1,0,1,1]
+/kfs_staff_gripper_cmd = [0]
+Arduino SENT = [0,0,1,0,1,1]
+```
+
+测试顺序：先确认默认 Motor7，按 A/B 只改变 command 第 1/2 项；松开全部按钮后按 START，
+确认 selected ID=8，再按 A/B/SELECT，只应改变第 4/5/3 项。Y 始终只改变 KFS command。
+停止 joystick 数据超过 0.3 s 后，arm command 应恢复 `[0,1,0,1,1]`；任一串口 command
+来源停止超过 0.5 s 后，Arduino 聚合状态中该来源负责的 relay 应恢复安全值。

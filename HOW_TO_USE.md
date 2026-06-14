@@ -1,23 +1,23 @@
-# R1 使用说明
+# R1 使用說明
 
-本说明面向日常操作。当前完整系统以 `r1_start_base_1_0.sh` 为入口；`start.sh`、`start_background.sh` 只保留为旧底盘 4 节点流程，不建议作为 R1 完整系统首选。
+本說明面向日常操作。當前完整系統以 `r1_start_base_1_0.sh` 為入口；`start.sh`、`start_background.sh` 只保留為舊底盤 4 節點流程，不建議作為 R1 完整系統首選。
 
-## 日常启动
+## 日常啓動
 
 ```bash
-ssh robotics@你的机器人IP
+ssh robotics@你的機器人IP
 cd /home/robotics/robocon2026_r1/r1_control_ws
 source install/setup.bash
 ./r1_start_base_1_0.sh
 ```
 
-脚本会进入 tmux。离开但保持运行：
+腳本會進入 tmux。離開但保持運行：
 
 ```text
-Ctrl+b，然后按 d
+Ctrl+b，然後按 d
 ```
 
-重新进入：
+重新進入：
 
 ```bash
 tmux attach -t r1_control
@@ -32,11 +32,11 @@ tmux kill-session -t r1_control
 ## 手柄要求
 
 - 8BitDo 手柄使用 X 模式。
-- 当前 `Joystick.msg` 数值范围为 `-512 .. 512`。
-- L2/R2 trigger 范围为 `0 .. 512`。
-- 当前死区为 `15`（约满量程 2.93%）。
+- 當前 `Joystick.msg` 數值範圍為 `-512 .. 512`。
+- L2/R2 trigger 範圍為 `0 .. 512`。
+- 當前死區為 `15`（約滿量程 2.93%）。
 
-检查手柄：
+檢查手柄：
 
 ```bash
 python3 - <<'PY'
@@ -50,26 +50,26 @@ PY
 ## 控制方式
 
 ```text
-左摇杆上/下: 底盘前进/后退
-左摇杆左/右: 底盘左/右横移
-右摇杆左/右: 底盘原地旋转
+左搖桿上/下: 底盤前進/後退
+左搖桿左/右: 底盤左/右橫移
+右搖桿左/右: 底盤原地旋轉
 R1: Motor 5 elevator 正向，固定速度
 L1: Motor 5 elevator 反向，固定速度
-D-pad 左/右: Motor 6 horizontal 左/右移动
-D-pad 上/下: Motor 6 horizontal power level 增加/减少
-START/SELECT: 当前不用于底盘调速
-R2: Motor 7 arm gripper 正向，按压深度调速
-L2: Motor 7 arm gripper 反向，按压深度调速
-B: arm pneumatic gripper OPEN while held，松开 CLOSE
+D-pad 左/右: Motor 6 horizontal 左/右移動
+D-pad 上/下: Motor 6 horizontal power level 增加/減少
+START/SELECT: 當前不用於底盤調速
+R2: Motor 7 arm gripper 正向，按壓深度調速
+L2: Motor 7 arm gripper 反向，按壓深度調速
+B: arm pneumatic gripper OPEN while held，松開 CLOSE
 A: arm pneumatic height LOW latch
 X: arm pneumatic height HIGH latch
-Y: KFS staff gripper OPEN，松开 CLOSE
-R3: 当前不使用
+Y: KFS staff gripper OPEN，松開 CLOSE
+R3: 當前不使用
 ```
 
-## 底盘速度曲线
+## 底盤速度曲線
 
-当前默认配置：
+當前默認配置：
 
 ```text
 max_speed_cm = 150.0
@@ -90,35 +90,35 @@ ros2 param get /joystick_bridge rotation_linear_weight
 ros2 param get /arm_gripper_joystick_bridge_node gripper_linear_weight
 ```
 
-START/SELECT 当前不用于底盘调速。左摇杆平移与右摇杆旋转都使用 `0.1x + 0.9x³`；满杆分别达到 `150 cm/s` 和 `1.2 rad/s`。Motor 7 的 R2/L2 也使用同一曲线，满按达到 `1.3 rad/s`。
+START/SELECT 當前不用於底盤調速。左搖桿平移與右搖桿旋轉都使用 `0.1x + 0.9x³`；滿桿分別達到 `150 cm/s` 和 `1.2 rad/s`。Motor 7 的 R2/L2 也使用同一曲線，滿按達到 `1.3 rad/s`。
 
-## 安全保护
+## 安全保護
 
-当前链路有多层 timeout：
+當前鏈路有多層 timeout：
 
 ```text
 joystick_bridge:
-  /joystick_data 超过 0.3s 未更新
+  /joystick_data 超過 0.3s 未更新
   -> /local_driving = [0,0,0]
 
 local_navigation_node:
-  /local_driving 超过 0.3s 未更新
-  -> Motor 1-4 发送 0 rad/s
+  /local_driving 超過 0.3s 未更新
+  -> Motor 1-4 發送 0 rad/s
 
 damiao_node:
-  连续 VEL 命令超过 0.5s 未刷新
-  -> 对应 motor_id 发送 0 rad/s
+  連續 VEL 命令超過 0.5s 未刷新
+  -> 對應 motor_id 發送 0 rad/s
 
 r1_arm_control:
-  执行机构 speed_cmd 超过 0.3s 未刷新
-  -> 对应 Motor 5/6/7 发送 0 rad/s
+  執行機構 speed_cmd 超過 0.3s 未刷新
+  -> 對應 Motor 5/6/7 發送 0 rad/s
 
 arduino_pneumatic_driver:
-  /pneumatic_gripper_cmd 超过 0.5s 未刷新
+  /pneumatic_gripper_cmd 超過 0.5s 未刷新
   -> safe_state = [0,1] = LOW + CLOSE
 ```
 
-## 常用检查
+## 常用檢查
 
 ```bash
 ros2 node list
@@ -132,16 +132,16 @@ ros2 topic echo /arm_gripper_status
 ros2 topic echo /pneumatic_gripper_status
 ```
 
-## 如果没有反应
+## 如果沒有反應
 
-按顺序检查：
+按順序檢查：
 
-1. `tmux attach -t r1_control` 查看对应窗口是否退出。
-2. `ros2 node list` 确认节点存在。
-3. `ros2 topic echo /joystick_data` 确认手柄数据变化。
-4. `ros2 topic echo /local_driving` 确认底盘指令变化。
-5. 查看 `motors` 窗口确认达妙驱动已连接。
-6. 确认 `/dev/ttyACM0` 是达妙 USB-CAN，Arduino relay 在 `/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0`。
+1. `tmux attach -t r1_control` 查看對應窗口是否退出。
+2. `ros2 node list` 確認節點存在。
+3. `ros2 topic echo /joystick_data` 確認手柄數據變化。
+4. `ros2 topic echo /local_driving` 確認底盤指令變化。
+5. 查看 `motors` 窗口確認達妙驅動已連接。
+6. 確認 `/dev/ttyACM0` 是達妙 USB-CAN，Arduino relay 在 `/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0`。
 
 ## ROS2 domain isolation
 
@@ -154,55 +154,55 @@ ROS_LOCALHOST_ONLY=1
 
 Use SSH into R1 to run `ros2 node list` / `ros2 topic echo`. Do not remove this isolation unless remote ROS2 debugging from another computer is required.
 
-## 2026-06-07 急停后自动恢复
+## 2026-06-07 急停後自動恢復
 
-`damiao_node` 现在会在反馈超时或电机反馈失能后自动执行 `VEL mode + enable + 0 rad/s`。恢复时不需要重启 bash，但必须先把摇杆和控制按钮全部松开回中，等 `/damiao_motor_status` 的 `state_code` 从 `0` 经过 `1` 变为 `2`，才允许再次运动。
+`damiao_node` 現在會在反饋超時或電機反饋失能後自動執行 `VEL mode + enable + 0 rad/s`。恢復時不需要重啓 bash，但必須先把搖桿和控制按鈕全部松開回中，等 `/damiao_motor_status` 的 `state_code` 從 `0` 經過 `1` 變為 `2`，才允許再次運動。
 
 ```bash
 ros2 topic echo /damiao_motor_status
 ```
 
 
-## 2026-06-12 Motor 8 位置实验操作
+## 2026-06-12 Motor 8 位置實驗操作
 
 ```text
-X: Motor 8 在位置 A/B 间切换
-L3: Motor 8 负向微调
-R3: Motor 8 正向微调
+X: Motor 8 在位置 A/B 間切換
+L3: Motor 8 負向微調
+R3: Motor 8 正向微調
 ```
 
-默认试验值为 A=`0.0 rad`、B=`0.3 rad`、软限位=`-0.5..0.5 rad`。第一次测试必须
-离地或解除机构负载。启动后先确认：
+默認試驗值為 A=`0.0 rad`、B=`0.3 rad`、軟限位=`-0.5..0.5 rad`。第一次測試必須
+離地或解除機構負載。啓動後先確認：
 
 ```bash
 ros2 topic echo /damiao_motor_status
 ros2 topic echo /motor8_position_status
 ```
 
-Motor 8 的 `/damiao_motor_status` 应显示 `motor_id=8`、`feedback_fresh=1`、
-`enabled=1`、`active_control_mode=2`。没有看到这些状态时不要按 X。
+Motor 8 的 `/damiao_motor_status` 應顯示 `motor_id=8`、`feedback_fresh=1`、
+`enabled=1`、`active_control_mode=2`。沒有看到這些狀態時不要按 X。
 
-## 2026-06-13 Motor 7/8 位置控制按键
+## 2026-06-13 Motor 7/8 位置控制按鍵
 
 ```text
-启动默认：Motor 7
-START (+)：Motor 7 / Motor 8 切换
-X：当前电机 A/B 切换
-L2：当前电机负向微调
-R2：当前电机正向微调
+啓動默認：Motor 7
+START (+)：Motor 7 / Motor 8 切換
+X：當前電機 A/B 切換
+L2：當前電機負向微調
+R2：當前電機正向微調
 ```
 
-切换时必须先松开 X、L2、R2。查看当前选择：
+切換時必須先松開 X、L2、R2。查看當前選擇：
 
 ```bash
 ros2 topic echo /motor_position_selector_status
 ```
 
-其中 `data[0]` 为当前电机 ID，正常启动应为 `7.0`。
+其中 `data[0]` 為當前電機 ID，正常啓動應為 `7.0`。
 
 ## 2026-06-13 Motor 7/8 三位置操作
 
-当前所选电机每短按一次 X：
+當前所選電機每短按一次 X：
 
 ```text
 第一次：0 -> +35 rad
@@ -210,7 +210,7 @@ ros2 topic echo /motor_position_selector_status
 第三次：-35 -> 0 rad
 ```
 
-`/motor7_position_status` 或 `/motor8_position_status` 的 `data[3]` 表示当前预设：
+`/motor7_position_status` 或 `/motor8_position_status` 的 `data[3]` 表示當前預設：
 
 ```text
 0 = 0 rad
@@ -219,18 +219,129 @@ ros2 topic echo /motor_position_selector_status
 ```
 
 
-## 2026-06-13 双 arm 气动按钮
+## 2026-06-13 雙 arm 氣動按鈕
 
-启动默认选择 Motor7。Motor7/8 的电机位置与气动功能共用同一个选择状态：
+啓動默認選擇 Motor7。Motor7/8 的電機位置與氣動功能共用同一個選擇狀態：
 
 ```text
-START/+ : Motor7 / Motor8 切换
-X       : 所选电机循环 0 / +35 / -35 rad
-L2/R2   : 所选电机负向/正向微调
-A       : 所选 arm height 高低切换
-B       : 所选 arm gripper 开关切换
-SELECT/-: 只在选中 Motor8 时切换 inclination 高低
-Y       : KFS gripper 开关切换，与 Motor7/8 选择无关
+START/+ : Motor7 / Motor8 切換
+X       : 所選電機循環 0 / +35 / -35 rad
+L2/R2   : 所選電機負向/正向微調
+A       : 所選 arm height 高低切換
+B       : 所選 arm gripper 開關切換
+SELECT/-: 只在選中 Motor8 時切換 inclination 高低
+Y       : KFS gripper 開關切換，與 Motor7/8 選擇無關
 ```
 
-按 START 只切换控制对象，不改变任何已锁定气动状态。不要同时按 START 和其他机构按钮。
+按 START 只切換控制對象，不改變任何已鎖定氣動狀態。不要同時按 START 和其他機構按鈕。
+
+
+## 2026-06-14 目前完整手柄按鍵配置（現行唯一操作依據）
+
+本節取代前面歷史章節中的舊按鍵說明。前面的 Motor7 速度模式、Motor8 `L3/R3` 微調、
+氣動夾爪按住控制等內容只保留作版本回溯，不再代表目前正式啟動配置。
+
+### 全部按鍵
+
+| 手柄輸入 | 目前功能 | 操作方式 |
+|---|---|---|
+| 左搖桿上／下 | 底盤前進／後退 | 持續推動 |
+| 左搖桿左／右 | 底盤左／右橫移 | 持續推動 |
+| 左搖桿斜向 | 底盤斜向平移 | 持續推動 |
+| 右搖桿左／右 | 底盤原地旋轉 | 持續推動 |
+| 右搖桿上／下 | 未使用 | - |
+| 十字鍵左 | Motor6 horizontal 負方向 | 按住移動，放開停止 |
+| 十字鍵右 | Motor6 horizontal 正方向 | 按住移動，放開停止 |
+| 十字鍵上 | 提高 Motor6 horizontal 速度檔 | 每按一次提高一檔 |
+| 十字鍵下 | 降低 Motor6 horizontal 速度檔 | 每按一次降低一檔 |
+| `L1` | Motor5 elevator 負方向 | 按住移動，放開停止 |
+| `R1` | Motor5 elevator 正方向 | 按住移動，放開停止 |
+| `L2` | 目前所選 Motor7/8 負方向微調 | 按壓深度控制微調量 |
+| `R2` | 目前所選 Motor7/8 正方向微調 | 按壓深度控制微調量 |
+| `A` | 目前所選 arm height 高／低切換 | 每按一次切換並保持 |
+| `B` | 目前所選 arm gripper 開／關切換 | 每按一次切換並保持 |
+| `X` | 目前所選 Motor7/8 三個預設位置循環 | 每按一次切換位置 |
+| `Y` | KFS gripper 開／關切換 | 每按一次切換並保持 |
+| `START/+` | 選擇 Motor7 或 Motor8 | 每按一次切換控制對象 |
+| `SELECT/-` | Motor8 inclination 高／低切換 | 只有選中 Motor8 時有效 |
+| `L3` | 未使用 | - |
+| `R3` | 未使用 | - |
+
+### Motor7／Motor8 選擇邏輯
+
+系統啟動時預設選中 `Motor7`：
+
+```text
+按一次 START/+：Motor7 -> Motor8
+再按一次 START/+：Motor8 -> Motor7
+```
+
+`START/+` 只改變目前控制對象，不會立即改變任何電機位置或氣動鎖定狀態。切換前必須先
+放開 `X`、`L2`、`R2`；其中任何一個仍在操作時，本次切換會被阻止。
+
+選中 Motor7 時：
+
+```text
+X       : Motor7 三位置循環
+L2/R2   : Motor7 位置微調
+A       : Motor7 arm height
+B       : Motor7 arm gripper
+SELECT/-: 無動作
+```
+
+選中 Motor8 時：
+
+```text
+X       : Motor8 三位置循環
+L2/R2   : Motor8 位置微調
+A       : Motor8 arm height
+B       : Motor8 arm gripper
+SELECT/-: Motor8 inclination
+```
+
+Motor7 與 Motor8 分別保存自己的位置目標和氣動狀態。`Y` 控制 KFS，完全不受 Motor7／8
+選擇影響。
+
+### Motor7／Motor8 三個預設位置
+
+每次短按 `X` 的循環順序：
+
+```text
+第一次：目前位置 -> +35 rad
+第二次：+35 rad -> -35 rad
+第三次：-35 rad -> 0 rad
+之後重複循環
+```
+
+`L2/R2` 用於在軟限位 `-35..+35 rad` 內微調目標位置，預設最大微調速度為 `2 rad/s`。
+
+### Motor6 horizontal 速度檔
+
+Motor6 啟動預設為 20% 檔。十字鍵上／下只切換速度檔，不會直接令 Motor6 移動：
+
+```text
+20% = 4 rad/s
+50% = 10 rad/s
+100% = 20 rad/s
+```
+
+切換速度檔後，使用十字鍵左／右控制實際移動方向。
+
+### 同時按鍵行為
+
+```text
+L1 + R1                : Motor5 停止
+深度相同的 L2 + R2     : Motor7/8 微調互相抵消
+X、L2 或 R2 操作期間按 +: 不切換 Motor7/8
+Motor7 模式按 SELECT/- : 無動作
+```
+
+### 目前底盤上限
+
+```text
+最大平移速度：150 cm/s
+最大旋轉速度：1.2 rad/s
+```
+
+目前左搖桿使用底盤自身座標：底盤旋轉後，搖桿向前仍代表「底盤目前正前方」，不是固定的
+場地方向。現階段尚未加入 IMU 或手動 90 度方向偏移功能。

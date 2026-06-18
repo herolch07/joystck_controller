@@ -167,8 +167,8 @@ ROS_LOCALHOST_ONLY=1
 Motor6 horizontal 已搬到：
 
 ```text
-L3：-10 rad/s
-R3：+10 rad/s
+L3：+10 rad/s
+R3：-10 rad/s
 L3 + R3 或全部鬆開：0 rad/s
 ```
 
@@ -193,11 +193,38 @@ P2 = L3
 實際效果：
 
 ```text
-P1 -> R3 -> Motor6 +10 rad/s
-P2 -> L3 -> Motor6 -10 rad/s
+P1 -> R3 -> Motor6 -10 rad/s
+P2 -> L3 -> Motor6 +10 rad/s
 P1 + P2 或全部鬆開 -> Motor6 0 rad/s
 ```
 
 這只改變手柄物理操作位置，不改變 ROS topic、message、timeout 或控制計算。
 
 本功能已於 2026-06-15 完成實機測試並確認繼續採用。
+
+## 2026-06-18 目前正式操作更新
+
+本節為目前最新操作摘要，取代前文所有舊版按鍵方向、relay7 reserved、以及手動啟動優先的說明；舊段落保留作版本回溯。
+
+```text
+P1 = R3 -> Motor6 horizontal -10 rad/s
+P2 = L3 -> Motor6 horizontal +10 rad/s
+P1 + P2 或全部鬆開 -> Motor6 0 rad/s
+```
+
+七路 Arduino relay 目前順序：
+
+```text
+[relay1, relay2, relay3, relay4, relay5, relay6, relay7]
+[KFS, M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper, M7 inclination]
+```
+
+`/pneumatic_gripper_cmd` 目前為 6 個值：
+
+```text
+[M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper, M7 inclination]
+```
+
+`SELECT/-` 會控制目前由 `START/+` 選中的 arm inclination：選中 Motor7 時控制 relay7 / Motor7 inclination；選中 Motor8 時控制 relay4 / Motor8 inclination。
+
+新增 controller-gated autostart：Pi 開機後可由 `systemd/r1-control-autostart.service` 啟動 `scripts/wait_and_start_robot.sh`，等 8BitDo / Xbox controller active 後才自動執行 `r1_start_base_1_0.sh`。預設 `STOP_ON_CONTROLLER_LOST=0`，手柄中途關掉不自動 kill 整套 ROS，仍依靠各 node watchdog 進安全輸出。

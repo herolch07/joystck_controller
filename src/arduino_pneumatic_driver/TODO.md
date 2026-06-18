@@ -86,3 +86,20 @@
 - [ ] 实机确认 START 切换后 A/B 只改变所选 arm
 - [ ] 实机确认 SELECT 只改变 Motor8 inclination
 - [ ] 实机确认 joystick 断开后所有 arm 回到安全状态
+
+## v14 七路 Arduino panel 相容性
+
+- [x] 確認本 bridge 仍發布五路 `/pneumatic_gripper_cmd`
+- [x] 確認七路 serial output 由 `kfs_staff_gripper_arduino_node` 合併處理
+- [x] 保持 A/B/SELECT 與 Motor7/8 selector 邏輯不變
+- [x] 記錄 Relay 7 / Pin 28 暫時不由本 package 控制
+- [ ] Relay 7 用途確認後，再評估是否需要本 package 新增一個控制欄位
+
+## v15 Motor7 inclination
+
+- [x] 將 Relay 7 / Pin 28 記錄為 Motor7 inclination
+- [x] `/pneumatic_gripper_cmd` 從五路擴為六路
+- [x] `DEFAULT_ARM_SAFE_STATE` 改為 `[0,1,0,1,1,0]`
+- [x] SELECT 改為控制目前選中 arm 的 inclination
+- [x] 新增 selected inclination index 測試
+- [ ] 實機確認 Motor7/Motor8 切換後 SELECT 只作用於選中 arm

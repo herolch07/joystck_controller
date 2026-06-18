@@ -10,7 +10,7 @@ from std_msgs.msg import Float32MultiArray
 class HorizontalJoystickBridgeNode(Node):
     """Convert L3/R3 buttons to a fixed signed Motor 6 speed command.
 
-    R3 commands positive motion, L3 commands negative motion, and pressing both
+    L3 commands positive motion, R3 commands negative motion, and pressing both
     or neither publishes zero. The downstream controller provides the 0.3 s
     command watchdog and motor speed clamp.
     """
@@ -31,15 +31,15 @@ class HorizontalJoystickBridgeNode(Node):
         )
 
         self.get_logger().info("Horizontal joystick bridge initialized")
-        self.get_logger().info("Mapping: R3 positive, L3 negative, both stop")
+        self.get_logger().info("Mapping: L3 positive, R3 negative, both stop")
 
     @staticmethod
     def speed_from_buttons(l3_pressed, r3_pressed, command_speed):
         """Return fixed signed speed; conflicting or released buttons stop."""
         speed = abs(float(command_speed))
-        if r3_pressed and not l3_pressed:
-            return speed
         if l3_pressed and not r3_pressed:
+            return speed
+        if r3_pressed and not l3_pressed:
             return -speed
         return 0.0
 

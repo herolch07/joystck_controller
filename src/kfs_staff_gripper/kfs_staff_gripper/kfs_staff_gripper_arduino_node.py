@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-ROS2 six-relay Arduino Mega driver for two arm mechanisms and KFS gripper.
+ROS2 seven-relay Arduino Mega driver for two arm mechanisms and KFS gripper.
 
 This node targets the Arduino sketch that accepts serial commands in the exact
-format "[1,0,1,0,1,0]". Because the staff gripper shares the same Arduino Mega
+format "[1,0,1,0,1,0,1]". Because the staff gripper shares the same Arduino Mega
 panel as the existing pneumatic arm system, this node aggregates both command
 sources and opens the serial port only once.
 """
@@ -22,12 +22,12 @@ except ImportError:  # pragma: no cover - reported clearly at runtime on robot
     serial = None
 
 
-RELAY_COUNT = 6
-DEFAULT_SAFE_STATE = [0, 0, 1, 0, 1, 1]
+RELAY_COUNT = 7
+DEFAULT_SAFE_STATE = [0, 0, 1, 0, 1, 1, 0]
 
 
 def normalize_relay_state(state):
-    """Return exactly six relay values or raise ValueError."""
+    """Return exactly seven relay values or raise ValueError."""
     values = [1 if int(value) else 0 for value in state]
     if len(values) != RELAY_COUNT:
         raise ValueError(f"expected {RELAY_COUNT} relay values, got {len(values)}")
@@ -35,7 +35,7 @@ def normalize_relay_state(state):
 
 
 def format_relay_command(state):
-    """Format a validated six-relay state for the Arduino line protocol."""
+    """Format a validated seven-relay state for the Arduino line protocol."""
     values = normalize_relay_state(state)
     return "[" + ",".join(str(value) for value in values) + "]\n"
 
@@ -45,14 +45,14 @@ class KfsStaffGripperArduinoNode(Node):
     Aggregate two arm pneumatic mechanisms and the KFS gripper.
 
     Subscribes:
-      /pneumatic_gripper_cmd: Int32MultiArray, default mapped to relay 2-6
+      /pneumatic_gripper_cmd: Int32MultiArray, default mapped to relay 2-7
       /kfs_staff_gripper_cmd: Int32MultiArray, default mapped to relay 1
 
     Publishes:
       /kfs_staff_gripper_status: String status and Arduino serial feedback
 
     Output to Arduino:
-      [relay1,relay2,relay3,relay4,relay5,relay6]\n.
+      [relay1,relay2,relay3,relay4,relay5,relay6,relay7]\n.
     """
 
     def __init__(self):
@@ -68,7 +68,7 @@ class KfsStaffGripperArduinoNode(Node):
         self.declare_parameter("watchdog_hz", 20.0)
         self.declare_parameter("reconnect_sec", 1.0)
         self.declare_parameter("safe_state", DEFAULT_SAFE_STATE)
-        self.declare_parameter("arm_relay_indices", [1, 2, 3, 4, 5])
+        self.declare_parameter("arm_relay_indices", [1, 2, 3, 4, 5, 6])
         self.declare_parameter("staff_relay_indices", [0])
         self.declare_parameter("arm_cmd_topic", "/pneumatic_gripper_cmd")
         self.declare_parameter("staff_cmd_topic", "/kfs_staff_gripper_cmd")
@@ -105,7 +105,7 @@ class KfsStaffGripperArduinoNode(Node):
         self.get_logger().info(f"KFS staff topic: {staff_topic}")
 
     def get_safe_state(self):
-        """Return the six-relay safe state, clamped to 0/1 values."""
+        """Return the seven-relay safe state, clamped to 0/1 values."""
         raw = list(self.get_parameter("safe_state").value)
         safe = list(DEFAULT_SAFE_STATE)
         for index, value in enumerate(raw[:RELAY_COUNT]):
@@ -177,7 +177,7 @@ class KfsStaffGripperArduinoNode(Node):
         return None
 
     def arm_command_callback(self, msg):
-        """Update relay 2-6 from the selected-arm pneumatic command topic."""
+        """Update relay 2-7 from the selected-arm pneumatic command topic."""
         if self.apply_partial_command(
             msg.data,
             self.get_indices("arm_relay_indices"),
@@ -211,7 +211,7 @@ class KfsStaffGripperArduinoNode(Node):
         return True
 
     def send_state(self, state, reason, force=False):
-        """Send the six-relay state using the Arduino sketch list protocol."""
+        """Send the seven-relay state using the Arduino sketch list protocol."""
         try:
             self.current_state = normalize_relay_state(state)
         except ValueError as exc:

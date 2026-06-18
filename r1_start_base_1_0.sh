@@ -103,4 +103,9 @@ echo ""
 echo "Stop all:"
 echo "tmux kill-session -t $SESSION"
 
-tmux attach -t "$SESSION"
+if [ "${R1_NO_TMUX_ATTACH:-0}" = "1" ]; then
+    echo ""
+    echo "R1_NO_TMUX_ATTACH=1, leaving tmux session detached."
+else
+    tmux attach -t "$SESSION"
+fi

@@ -1,5 +1,16 @@
 # arduino_pneumatic_driver
 
+
+## 2026-06-18 v15 目前正式狀態摘要
+
+目前正式 `/pneumatic_gripper_cmd` 為 6 路：
+
+```text
+[M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper, M7 inclination]
+```
+
+`SELECT/-` 控制目前由 `START/+` 選中的 arm inclination。Motor7 inclination 對應 Arduino relay7 / pin28；Motor8 inclination 對應 relay4 / pin25。舊 v14「relay7 reserved」段落只保留作歷史過渡記錄。
+
 Arduino Mega pneumatic relay gripper driver。此 package 通过 USB Serial 连接 Arduino Mega，并复用已测试的 Arduino 协议：
 
 ```text
@@ -332,3 +343,54 @@ Motor8 height 的电磁阀逻辑与 Motor7 相反，因此 Motor8 LOW=`1`。Moto
 | `publish_hz` | `20.0` | command 刷新频率，单位 Hz |
 
 超时后全部 arm relay 回到 `safe_state`，并要求 A/B/SELECT 先松开再接受下一次上升沿。
+
+## 2026-06-18 v14 七路 Arduino panel 相容性說明（歷史過渡記錄，已由 v15 取代）
+
+`pneumatic_gripper_joystick_bridge_node` 目前仍只負責兩個 arm 的 5 路氣動狀態，輸出 topic
+不變：
+
+```text
+/pneumatic_gripper_cmd = [M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper]
+```
+
+新 Arduino sketch 已升級為 7 路 relay，但 7 路 serial 格式由
+`kfs_staff_gripper_arduino_node` 負責合併與輸出。本 package 不直接打開 Arduino serial，也不需要
+把 `/pneumatic_gripper_cmd` 改成 7 路。
+
+目前合併後的完整 relay 順序在 `kfs_staff_gripper` package 中維護：
+
+```text
+[KFS, M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper, reserved]
+```
+
+因此本 bridge 的按鍵、timeout、selector 行為均保持不變。Relay 7 / Pin 28 暫時 reserved，
+不由 A/B/SELECT/START 或任何現有手柄按鍵控制。
+
+## 2026-06-18 v15 Motor7 inclination 加入 arm command
+
+本節取代 v14 中「Relay 7 reserved」的目前行為說明。Relay 7 / Pin 28 現在用作 Motor7
+inclination，因此本 bridge 的 `/pneumatic_gripper_cmd` 從 5 路擴為 6 路：
+
+```text
+[M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper, M7 inclination]
+```
+
+默認和 `/joystick_data` 超時安全值為：
+
+```text
+[0,1,0,1,1,0]
+M7 height LOW + gripper OPEN + inclination LOW
+M8 inclination LOW + height LOW + gripper OPEN
+```
+
+目前按鍵：
+
+```text
+START/+ : 切換 Motor7 / Motor8（由 motor selector node 處理）
+A       : 切換目前選中 arm height
+B       : 切換目前選中 arm gripper
+SELECT/-: 切換目前選中 arm inclination
+```
+
+注意：M7 inclination 位於 command 最後一位，但在 Arduino 實體 relay 上是 relay7 / pin28。
+M8 inclination 仍是 command 第三位，對應 relay4 / pin25。

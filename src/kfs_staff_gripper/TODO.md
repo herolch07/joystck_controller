@@ -105,3 +105,26 @@
 - [ ] 实机确认 Arduino 回报 `Command OK`
 - [ ] 实机逐路确认 Relay 1-6，不连接危险负载时先测试
 - [ ] Arduino sketch 增加本地 `millis()` 通信 watchdog
+
+## v0.4.1 七路 relay panel
+
+- [x] Arduino serial protocol 從六路 `[r1,r2,r3,r4,r5,r6]` 更新為七路 `[r1,r2,r3,r4,r5,r6,r7]`
+- [x] `RELAY_COUNT` 改為 `7`
+- [x] 預設完整安全狀態改為 `[0,0,1,0,1,1,0]`
+- [x] 保持 `/pneumatic_gripper_cmd` 為五路，不改現有手柄按鍵
+- [x] 保持 `/kfs_staff_gripper_cmd` 為一路
+- [x] Relay 7 / Pin 28 暫時標記為 reserved，安全值 `0`
+- [x] 更新七路格式與安全狀態測試
+- [ ] 確認 Relay 7 / Pin 28 實際接線用途與 `0/1` 安全語義
+- [ ] Relay 7 用途確認後，再決定是否新增 topic 或手柄按鍵
+- [ ] 實機確認 Arduino 回報七路 `Command OK`
+
+## v0.4.2 Relay 7 = Motor7 inclination
+
+- [x] 確認 Relay 7 / Pin 28 用作 Motor7 inclination
+- [x] `/pneumatic_gripper_cmd` 從五路擴為六路
+- [x] `arm_relay_indices` 從 `[1,2,3,4,5]` 更新為 `[1,2,3,4,5,6]`
+- [x] SELECT 改為控制目前選中 arm 的 inclination
+- [x] 保持完整 safe_state `[0,0,1,0,1,1,0]`
+- [ ] 實機確認 START 選中 Motor7 時 SELECT 只切換 Motor7 inclination
+- [ ] 實機確認 START 選中 Motor8 時 SELECT 只切換 Motor8 inclination

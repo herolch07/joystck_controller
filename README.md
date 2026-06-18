@@ -168,8 +168,8 @@ acceleration limits are unchanged.
 Motor 6 horizontal control is now:
 
 ```text
-L3: -10 rad/s
-R3: +10 rad/s
+L3: +10 rad/s
+R3: -10 rad/s
 L3 + R3 or neither: 0 rad/s
 ```
 
@@ -190,9 +190,36 @@ P2 = L3
 This means P1/P2 are alternate physical inputs for Motor 6 horizontal control:
 
 ```text
-P1 -> R3 -> +10 rad/s
-P2 -> L3 -> -10 rad/s
+P1 -> R3 -> -10 rad/s
+P2 -> L3 -> +10 rad/s
 P1 + P2 or released -> 0 rad/s
 ```
 
 No ROS message, topic, node, timeout, or controller logic changed for this mapping.
+
+## 2026-06-18 Current Operation Update
+
+This section is the latest operation summary. It supersedes older sections that describe the previous P1/P2 direction, relay7 as reserved, or manual startup as the only startup flow. Older sections remain for traceability.
+
+```text
+P1 = R3 -> Motor6 horizontal -10 rad/s
+P2 = L3 -> Motor6 horizontal +10 rad/s
+P1 + P2 or released -> Motor6 0 rad/s
+```
+
+Current seven-relay Arduino order:
+
+```text
+[relay1, relay2, relay3, relay4, relay5, relay6, relay7]
+[KFS, M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper, M7 inclination]
+```
+
+`/pneumatic_gripper_cmd` now has six values:
+
+```text
+[M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper, M7 inclination]
+```
+
+`SELECT/-` controls the inclination of the arm currently selected by `START/+`: Motor7 uses relay7 / Motor7 inclination, and Motor8 uses relay4 / Motor8 inclination.
+
+Controller-gated autostart is available: `systemd/r1-control-autostart.service` starts `scripts/wait_and_start_robot.sh` at boot, and the watcher starts `r1_start_base_1_0.sh` only after an 8BitDo / Xbox controller is active. Default `STOP_ON_CONTROLLER_LOST=0` means a controller dropout does not kill the ROS tmux session; node watchdogs remain responsible for safe output.

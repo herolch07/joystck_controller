@@ -730,3 +730,43 @@ L3/R3 -> horizontal_joystick_bridge_node
 
 底層運動學、CAN driver、Motor6 controller、topic 類型與 watchdog 均未改變。本功能已於
 2026-06-15 完成實機驗證。
+
+## 2026-06-18 Current Runtime Architecture Override
+
+This section records the current runtime architecture and supersedes older node graphs that still mention legacy arm gripper or two-channel pneumatic nodes.
+
+Startup path:
+
+```text
+scripts/wait_and_start_robot.sh                  # optional boot watcher
+  -> r1_start_base_1_0.sh                         # tmux runtime launcher
+```
+
+Current tmux runtime nodes:
+
+```text
+my_joystick_driver/joystick_node
+joystick_bridge/joystick_bridge
+base_omniwheel_r2_700/damiao_node
+base_omniwheel_r2_700/local_navigation_node
+r1_arm_control/elevator_controller_node
+r1_arm_control/elevator_joystick_bridge_node
+r1_arm_control/horizontal_controller_node
+r1_arm_control/horizontal_joystick_bridge_node
+r1_arm_control/motor7_position_controller_node
+r1_arm_control/motor8_position_controller_node
+r1_arm_control/motor_position_selector_joystick_bridge_node
+kfs_staff_gripper/kfs_staff_gripper_arduino_node
+arduino_pneumatic_driver/pneumatic_gripper_joystick_bridge_node
+kfs_staff_gripper/kfs_staff_gripper_joystick_bridge_node
+```
+
+Current pneumatic aggregation:
+
+```text
+pneumatic_gripper_joystick_bridge_node -> /pneumatic_gripper_cmd
+kfs_staff_gripper_joystick_bridge_node -> /kfs_staff_gripper_cmd
+kfs_staff_gripper_arduino_node -> Arduino [KFS, M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper, M7 inclination]
+```
+
+Do not launch the legacy `pneumatic_relay_driver_node` together with `kfs_staff_gripper_arduino_node`, because both would try to own the Arduino serial path.

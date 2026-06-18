@@ -203,3 +203,48 @@ ros2 topic echo /view_orientation
 ```
 
 本功能已於 2026-06-15 完成實機測試並確認繼續採用。
+
+## 2026-06-18 Current Quick Start Override
+
+This section is the current startup path. Older commands in this file remain as historical notes.
+
+Manual startup:
+
+```bash
+cd /home/robotics/robocon2026_r1/r1_control_ws
+./r1_start_base_1_0.sh
+```
+
+Controller-gated autostart manual test:
+
+```bash
+cd /home/robotics/robocon2026_r1/r1_control_ws
+./scripts/wait_and_start_robot.sh
+```
+
+Install boot autostart after manual test succeeds:
+
+```bash
+sudo cp systemd/r1-control-autostart.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable r1-control-autostart.service
+sudo systemctl start r1-control-autostart.service
+```
+
+Current important controls:
+
+```text
+D-pad: operator-frame view selection
+P1 = R3 -> Motor6 horizontal -10 rad/s
+P2 = L3 -> Motor6 horizontal +10 rad/s
+START: select Motor7 / Motor8
+X: selected Motor7/8 three-position cycle
+SELECT: selected arm inclination
+Y: KFS gripper toggle
+```
+
+Current relay order:
+
+```text
+[KFS, M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper, M7 inclination]
+```

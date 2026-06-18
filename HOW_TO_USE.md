@@ -374,8 +374,8 @@ Motor7 模式按 SELECT/- : 無動作
 Motor6 新按鍵：
 
 ```text
-L3：Motor6 負方向
-R3：Motor6 正方向
+L3：Motor6 正方向
+R3：Motor6 負方向
 L3 + R3：停止
 固定命令速度：10 rad/s
 ```
@@ -413,10 +413,148 @@ P2 = L3
 所以實際操作為：
 
 ```text
-按住 P1：等同 R3，Motor6 horizontal 正方向，/horizontal_speed_cmd = [10.0]
-按住 P2：等同 L3，Motor6 horizontal 負方向，/horizontal_speed_cmd = [-10.0]
+按住 P1：等同 R3，Motor6 horizontal 負方向，/horizontal_speed_cmd = [-10.0]
+按住 P2：等同 L3，Motor6 horizontal 正方向，/horizontal_speed_cmd = [10.0]
 P1 + P2 或全部鬆開：等同 L3 + R3 或鬆開，/horizontal_speed_cmd = [0.0]
 ```
 
 這只是手柄硬體層的按鍵替代，不新增 ROS topic、message 欄位或 node。原本 L3／R3
 仍保留同樣功能。
+
+## 2026-06-18 七路 Arduino 氣動 panel（歷史過渡記錄，已由下一節取代）
+
+目前新 Arduino sketch 使用 7 路 relay，pin 為 `22..28`。ROS 操作按鍵不變，只有底層
+Arduino serial command 從 6 路變為 7 路。
+
+目前完整 relay 順序：
+
+```text
+[relay1, relay2, relay3, relay4, relay5, relay6, relay7]
+[KFS, M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper, reserved]
+```
+
+完整 safe state：
+
+```text
+[0,0,1,0,1,1,0]
+```
+
+Relay 7 / Pin 28 暫時 reserved，保持 `0/OFF`，不由任何手柄按鍵控制。A/B/SELECT/Y/START 的
+現有操作不變。
+
+## 2026-06-18 Relay 7 = Motor7 inclination
+
+Relay 7 / Pin 28 現在不是 reserved，而是 Motor7 inclination。完整 relay 順序：
+
+```text
+[KFS, M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper, M7 inclination]
+```
+
+目前 SELECT/- 行為：
+
+```text
+START 選中 Motor7：SELECT 切換 Motor7 inclination
+START 選中 Motor8：SELECT 切換 Motor8 inclination
+```
+
+A/B 仍控制目前選中 arm 的 height/gripper；Y 仍控制 KFS；Arduino 完整 safe state 仍為：
+
+```text
+[0,0,1,0,1,1,0]
+```
+
+
+## 2026-06-18 Controller-gated autostart
+
+本版本新增開機自動啟動 watcher，但不是開機立即啟動整套 ROS。流程是：
+
+```text
+Raspberry Pi 開機
+-> systemd 啟動 scripts/wait_and_start_robot.sh
+-> watcher 每 1 秒掃描 active controller input device
+-> 偵測到 8BitDo / Xbox controller active
+-> 自動執行 r1_start_base_1_0.sh
+-> 建立 tmux session r1_control
+```
+
+預設安全策略：
+
+```text
+STOP_ON_CONTROLLER_LOST=0
+```
+
+也就是手柄中途關掉或短暫斷線時，不會自動 kill 整套 ROS。底盤、氣動、Motor7/8 等控制鏈路仍依靠各自 node 的 timeout / watchdog 進入安全輸出。這樣比賽現場不會因短暫手柄斷線而把整個 tmux session 關掉。
+
+如果之後確定要「手柄關掉就停止整套系統」，可以在 service 中改：
+
+```text
+Environment=STOP_ON_CONTROLLER_LOST=1
+```
+
+但正式比賽建議先保持 `0`。
+
+### 手動測試 watcher 語法
+
+先不要安裝 systemd service，可以手動跑：
+
+```bash
+cd /home/robotics/robocon2026_r1/r1_control_ws
+./scripts/wait_and_start_robot.sh
+```
+
+預期：
+
+```text
+手柄未開：反覆顯示 waiting for controller...
+手柄打開：顯示 controller active; starting robot system
+之後建立 tmux session r1_control
+```
+
+查看 tmux：
+
+```bash
+tmux attach -t r1_control
+```
+
+停止整套 ROS：
+
+```bash
+tmux kill-session -t r1_control
+```
+
+停止 watcher：在 watcher terminal 按 `Ctrl-C`。
+
+### 安裝 systemd autostart
+
+確認手動測試成功後再安裝：
+
+```bash
+cd /home/robotics/robocon2026_r1/r1_control_ws
+sudo cp systemd/r1-control-autostart.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable r1-control-autostart.service
+sudo systemctl start r1-control-autostart.service
+```
+
+查看狀態與 log：
+
+```bash
+systemctl status r1-control-autostart.service
+journalctl -u r1-control-autostart.service -f
+```
+
+停用 autostart：
+
+```bash
+sudo systemctl disable --now r1-control-autostart.service
+```
+
+### 相關文件
+
+```text
+scripts/wait_and_start_robot.sh
+systemd/r1-control-autostart.service
+r1_start_base_1_0.sh
+```
+
+`r1_start_base_1_0.sh` 新增 `R1_NO_TMUX_ATTACH=1` 支援。systemd watcher 使用這個環境變數建立 tmux session，但不嘗試 attach，避免 background service 卡住或因沒有 terminal 而失敗。

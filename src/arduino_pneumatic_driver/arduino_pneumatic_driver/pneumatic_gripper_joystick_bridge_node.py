@@ -9,15 +9,14 @@ from std_msgs.msg import Float32MultiArray, Int32MultiArray
 from my_joystick_msgs.msg import Joystick
 
 
-DEFAULT_ARM_SAFE_STATE = [0, 1, 0, 1, 1]
+DEFAULT_ARM_SAFE_STATE = [0, 1, 0, 1, 1, 0]
 
 
 class PneumaticGripperJoystickBridgeNode(Node):
     """Control Motor 7/8 arm pneumatics using the shared motor selector.
 
-    The command order is Motor7 height/gripper followed by Motor8
-    inclination/height/gripper. A and B act on the selected arm. SELECT acts
-    only on Motor8 inclination while Motor8 is selected.
+    The command order is Motor7 height/gripper, Motor8 inclination/height/gripper,
+    then Motor7 inclination. A, B, and SELECT act on the selected arm.
     """
 
     def __init__(self):
@@ -60,14 +59,14 @@ class PneumaticGripperJoystickBridgeNode(Node):
         self.get_logger().info(
             "Pneumatic bridge initialized: START selects Motor 7/8; "
             "A=selected height, B=selected gripper, "
-            "SELECT=Motor 8 inclination"
+            "SELECT=selected inclination"
         )
 
     def get_safe_state(self):
-        """Return five arm relay values in the confirmed wiring order."""
+        """Return six arm relay values in the confirmed wiring order."""
         raw = list(self.get_parameter("safe_state").value)
         safe = list(DEFAULT_ARM_SAFE_STATE)
-        for index, value in enumerate(raw[:5]):
+        for index, value in enumerate(raw[:6]):
             safe[index] = self.normalize_state(value)
         return safe
 
@@ -99,18 +98,15 @@ class PneumaticGripperJoystickBridgeNode(Node):
             self.states[gripper_index], gripper_pressed, self.gripper_toggle_pressed
         )
 
-        if self.selected_motor_id == 8:
-            (
-                self.states[2],
-                self.inclination_toggle_pressed,
-            ) = self.apply_toggle(
-                self.states[2],
-                inclination_pressed,
-                self.inclination_toggle_pressed,
-            )
-        else:
-            # Holding SELECT while switching to Motor 8 must not cause a toggle.
-            self.inclination_toggle_pressed = inclination_pressed
+        inclination_index = self.selected_inclination_index(self.selected_motor_id)
+        (
+            self.states[inclination_index],
+            self.inclination_toggle_pressed,
+        ) = self.apply_toggle(
+            self.states[inclination_index],
+            inclination_pressed,
+            self.inclination_toggle_pressed,
+        )
 
     @staticmethod
     def normalize_state(value):
@@ -121,6 +117,11 @@ class PneumaticGripperJoystickBridgeNode(Node):
     def selected_arm_indices(motor_id):
         """Return height and gripper command indices for Motor 7 or 8."""
         return (0, 1) if int(motor_id) == 7 else (3, 4)
+
+    @staticmethod
+    def selected_inclination_index(motor_id):
+        """Return inclination command index for the selected arm."""
+        return 5 if int(motor_id) == 7 else 2
 
     @staticmethod
     def apply_toggle(state, pressed, was_pressed):

@@ -1,5 +1,16 @@
 # kfs_staff_gripper
 
+
+## 2026-06-18 v0.4.2 目前正式狀態摘要
+
+目前正式七路 Arduino relay 順序：
+
+```text
+[KFS, M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper, M7 inclination]
+```
+
+`/pneumatic_gripper_cmd` 為 6 路並映射到 relay2-7；`/kfs_staff_gripper_cmd` 為 1 路並映射到 relay1。完整 safe state 保持 `[0,0,1,0,1,1,0]`。舊 v0.4.1「relay7 reserved」段落只保留作歷史過渡記錄。
+
 KFS staff gripper 的 Arduino Mega 三路 relay 控制 package。
 
 此 package 用于你提供的 Arduino sketch：
@@ -424,3 +435,77 @@ safe_state = [0,0,1,0,1,1]
 会被拒绝，且不会刷新该来源的 watchdog。两个来源分别超过
 `command_timeout_sec=0.5 s` 后，只恢复自己负责的 relay；串口重连和节点关闭恢复完整
 `safe_state`。Arduino 严格收到 `[x,x,x,x,x,x]\n`。
+
+## 2026-06-18 v0.4.1 七路 Arduino relay panel（歷史過渡記錄，已由 v0.4.2 取代）
+
+本節取代 v0.4.0 六路 serial 輸出的目前行為說明；舊章節保留作版本回溯。你提供的新
+Arduino sketch 使用 7 路 relay，pin 順序為 `22..28`，並且只接受 7 個值的嚴格格式：
+
+```text
+[relay1, relay2, relay3, relay4, relay5, relay6, relay7]
+example: [0,0,1,0,1,1,0]
+```
+
+目前 ROS 上層接口保持不變：
+
+```text
+/pneumatic_gripper_cmd = [M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper]
+/kfs_staff_gripper_cmd = [KFS gripper]
+```
+
+Arduino aggregator 內部合併後輸出 7 路：
+
+| Relay | Pin | 目前用途 | 來源 | Safe |
+|---|---:|---|---|---:|
+| 1 | 22 | KFS gripper | `/kfs_staff_gripper_cmd[0]` | 0 |
+| 2 | 23 | Motor7 arm height | `/pneumatic_gripper_cmd[0]` | 0 |
+| 3 | 24 | Motor7 arm gripper | `/pneumatic_gripper_cmd[1]` | 1 |
+| 4 | 25 | Motor8 inclination | `/pneumatic_gripper_cmd[2]` | 0 |
+| 5 | 26 | Motor8 arm height | `/pneumatic_gripper_cmd[3]` | 1 |
+| 6 | 27 | Motor8 arm gripper | `/pneumatic_gripper_cmd[4]` | 1 |
+| 7 | 28 | reserved / 未分配 | 無 topic | 0 |
+
+完整啟動、serial 重連、node 關閉安全狀態為：
+
+```text
+safe_state = [0,0,1,0,1,1,0]
+含義 = KFS CLOSE + M7 LOW/OPEN + M8 inclination LOW/height LOW/gripper OPEN + relay7 OFF
+```
+
+`arm_relay_indices` 仍為 `[1,2,3,4,5]`，`staff_relay_indices` 仍為 `[0]`。Relay 7
+目前不由任何手柄按鍵控制，也不接受 `/pneumatic_gripper_cmd` 更新。等 pin 28 的實際機構與
+安全語義確認後，再新增獨立 topic、映射參數或按鍵邏輯。
+
+超時策略不變：arm topic 超時只恢復 relay 2-6；KFS topic 超時只恢復 relay 1；完整 safe
+state 只在啟動、serial 重連與 node 關閉時發送。
+
+## 2026-06-18 v0.4.2 Relay 7 改為 Motor7 inclination
+
+本節取代 v0.4.1 中「relay7 reserved」的目前行為說明；v0.4.1 保留作當時安全過渡記錄。
+Relay 7 / Pin 28 現在確認為 Motor7 inclination。
+
+完整 Arduino serial relay 順序為：
+
+```text
+[relay1, relay2, relay3, relay4, relay5, relay6, relay7]
+[KFS, M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper, M7 inclination]
+```
+
+上層 topic 更新為：
+
+```text
+/pneumatic_gripper_cmd = [M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper, M7 inclination]
+/kfs_staff_gripper_cmd = [KFS gripper]
+```
+
+`arm_relay_indices` 更新為 `[1,2,3,4,5,6]`，所以 6 路 arm command 會映射到 relay 2-7。
+完整 safe state 保持：
+
+```text
+safe_state = [0,0,1,0,1,1,0]
+含義 = KFS CLOSE + M7 height LOW + M7 gripper OPEN + M8 inclination LOW + M8 height LOW + M8 gripper OPEN + M7 inclination LOW
+```
+
+手柄行為同步更新：`SELECT` 不再只控制 Motor8 inclination，而是控制「目前選中的 arm」的
+inclination。也就是 START 選中 Motor7 時，SELECT 切換 Motor7 inclination；START 選中 Motor8
+時，SELECT 切換 Motor8 inclination。A/B 仍控制目前選中 arm 的 height/gripper。

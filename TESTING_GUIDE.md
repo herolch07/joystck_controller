@@ -331,8 +331,8 @@ ros2 topic echo /horizontal_speed_cmd
 3. 左搖桿回中，十字鍵右，狀態變為 `1`；左搖桿向前，方向約為 `-1.57 rad`。
 4. 左搖桿回中，十字鍵下，狀態變為 `2`；左搖桿向前，方向約為 `+/-3.14 rad`。
 5. 左搖桿未回中時按十字鍵，`/view_orientation` 不應改變；鬆開十字鍵及左搖桿後重按。
-6. `L3` 預期 `/horizontal_speed_cmd=[-10.0]`。
-7. `R3` 預期 `/horizontal_speed_cmd=[10.0]`。
+6. `L3` 預期 `/horizontal_speed_cmd=[10.0]`。
+7. `R3` 預期 `/horizontal_speed_cmd=[-10.0]`。
 8. 同時按 `L3+R3` 或全部鬆開，預期 `[0.0]`。
 
 四方向確認完成後，再落地低速確認左搖桿方向與人的視角一致。沒有 IMU，車身旋轉或操作人
@@ -358,9 +358,95 @@ ros2 topic echo /horizontal_speed_cmd
 
 預期結果：
 
-1. 按住 `P1`，`/joystick_data` 應顯示 `r3: true`，`/horizontal_speed_cmd` 應為 `[10.0]`。
-2. 按住 `P2`，`/joystick_data` 應顯示 `l3: true`，`/horizontal_speed_cmd` 應為 `[-10.0]`。
+1. 按住 `P1`，`/joystick_data` 應顯示 `r3: true`，`/horizontal_speed_cmd` 應為 `[-10.0]`。
+2. 按住 `P2`，`/joystick_data` 應顯示 `l3: true`，`/horizontal_speed_cmd` 應為 `[10.0]`。
 3. 同時按 `P1+P2` 或全部鬆開，`/horizontal_speed_cmd` 應為 `[0.0]`。
 
 注意：P1／P2 目前沒有獨立 evdev event，不應期待 `/joystick_data` 出現 `p1` 或 `p2`
 欄位。這次測試確認的是背鍵作為 L3／R3 替代鍵可用。
+
+## 2026-06-18 七路 Arduino relay 測試
+
+只接 Arduino 和 relay board、不要先接危險負載。啟動：
+
+```bash
+ros2 run kfs_staff_gripper kfs_staff_gripper_arduino_node
+ros2 topic echo /kfs_staff_gripper_status
+```
+
+啟動後預期 status 看到七路格式：
+
+```text
+SENT startup_safe_state [0,0,1,0,1,1,0]
+```
+
+再分別測 topic：
+
+```bash
+ros2 topic pub --once /kfs_staff_gripper_cmd std_msgs/msg/Int32MultiArray "{data: [1]}"
+ros2 topic pub --once /kfs_staff_gripper_cmd std_msgs/msg/Int32MultiArray "{data: [0]}"
+ros2 topic pub --once /pneumatic_gripper_cmd std_msgs/msg/Int32MultiArray "{data: [0,1,0,1,1,0]}"
+```
+
+預期 Arduino Serial 回報 `Command OK`，且 `/kfs_staff_gripper_status` 中所有 `SENT` 都是
+`[x,x,x,x,x,x,x]` 七個值。此測試命令最後一位為 Motor7 inclination / relay7，使用 `0` 保持低位安全狀態。
+
+## 2026-06-18 Motor7 inclination / Relay 7 測試
+
+在不接危險負載或先拔掉氣管的情況下測試。啟動後監控：
+
+```bash
+ros2 topic echo /pneumatic_gripper_cmd
+ros2 topic echo /kfs_staff_gripper_status
+```
+
+預期 `/pneumatic_gripper_cmd` 現在是 6 個值：
+
+```text
+[M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper, M7 inclination]
+```
+
+測試流程：
+
+1. START 選中 Motor7。
+2. 按 SELECT，預期 `/pneumatic_gripper_cmd` 最後一位 M7 inclination 在 `0/1` 間切換。
+3. START 選中 Motor8。
+4. 按 SELECT，預期 `/pneumatic_gripper_cmd` 第三位 M8 inclination 在 `0/1` 間切換。
+5. 觀察 `/kfs_staff_gripper_status`，預期 Arduino `SENT` 仍為七路 `[x,x,x,x,x,x,x]`。
+
+完整安全狀態仍為：
+
+```text
+[0,0,1,0,1,1,0]
+```
+
+## 2026-06-18 Controller-gated autostart 測試
+
+手動測試 watcher，不先安裝 systemd：
+
+```bash
+cd /home/robotics/robocon2026_r1/r1_control_ws
+./scripts/wait_and_start_robot.sh
+```
+
+預期：
+
+```text
+手柄未開：waiting for controller...
+手柄打開：controller active; starting robot system
+```
+
+成功後確認 tmux：
+
+```bash
+tmux attach -t r1_control
+```
+
+systemd 安裝後用以下指令看狀態與 log：
+
+```bash
+systemctl status r1-control-autostart.service
+journalctl -u r1-control-autostart.service -f
+```
+
+預設 `STOP_ON_CONTROLLER_LOST=0`，所以手柄中途關掉不會自動 kill `r1_control`。這是目前建議比賽配置。

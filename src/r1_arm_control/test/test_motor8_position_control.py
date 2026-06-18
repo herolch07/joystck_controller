@@ -52,11 +52,11 @@ def test_x_cycles_three_positions():
 
 def test_trim_integration_obeys_soft_limits():
     assert Motor8PositionControllerNode.integrate_trim(
-        34.0, 1.0, 2.0, 1.0, -35.0, 35.0
-    ) == pytest.approx(35.0)
+        31.0, 1.0, 2.0, 1.0, -32.0, 32.0
+    ) == pytest.approx(32.0)
     assert Motor8PositionControllerNode.integrate_trim(
-        -34.0, -1.0, 2.0, 1.0, -35.0, 35.0
-    ) == pytest.approx(-35.0)
+        -31.0, -1.0, 2.0, 1.0, -32.0, 32.0
+    ) == pytest.approx(-32.0)
 
 
 def test_motor7_reuses_motor8_controller_implementation():

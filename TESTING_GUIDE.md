@@ -241,7 +241,7 @@ ros2 param set /motor8_position_controller_node preset_speed_rad_s 0.2
 ```text
 A = 0.0 rad
 B = 33.0 rad
-soft limit = -35.0..35.0 rad
+soft limit = -32.0..32.0 rad
 preset speed = 3.0 rad/s
 trim speed = 2.0 rad/s
 ```
@@ -280,8 +280,8 @@ ros2 topic echo /damiao_motor_status
 对当前所选电机连续短按 X 三次，预期：
 
 ```text
-按第1次：target_q = +35，selected_position = 1
-按第2次：target_q = -35，selected_position = 2
+按第1次：target_q = +32，selected_position = 1
+按第2次：target_q = -32，selected_position = 2
 按第3次：target_q = 0，selected_position = 0
 ```
 
@@ -450,3 +450,21 @@ journalctl -u r1-control-autostart.service -f
 ```
 
 預設 `STOP_ON_CONTROLLER_LOST=0`，所以手柄中途關掉不會自動 kill `r1_control`。這是目前建議比賽配置。
+
+## 2026-06-18 四鍵長按關機 dry-run 測試
+
+啟動完整系統後監控：
+
+```bash
+ros2 topic echo /robot_power_status
+```
+
+測試流程：
+
+1. 確認 `power_shutdown` tmux window 正在跑 `joystick_shutdown_node`。
+2. 同時長按 `X + Y + B + A` 5 秒。
+3. 預期 `/robot_power_status` 顯示 `DRY_RUN shutdown_combo_held`。
+4. dry-run 模式下 Pi 不應關機，tmux session 不應被 kill。
+5. 正式模式 `dry_run=false` 下，預期 `/robot_power_status` 先顯示 `SHUTDOWN combo_held`，再顯示 `SHUTDOWN_COMMAND_STARTED sudo -n /usr/bin/systemctl poweroff`，然後 Pi 關機。
+
+目前 sudoers 已要求允許 `robotics` 免密執行 `/usr/bin/systemctl poweroff`。node 不應先 kill 自己所在的 tmux session；poweroff 命令啟動後讓 systemd 完成關機。

@@ -57,7 +57,7 @@ class MotorPositionSelectorJoystickBridgeNode(Node):
         self.timer = self.create_timer(1.0 / publish_hz, self.timer_callback)
         self.get_logger().info(
             f"Position selector initialized; default Motor {self.selected_motor_id}. "
-            "START selects 7/8, X cycles 0/+35/-35, L2/R2 trim"
+            "START selects 7/8, X cycles 0/+32/-32, L2/R2 trim"
         )
 
     @staticmethod

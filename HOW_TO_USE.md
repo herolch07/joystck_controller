@@ -205,17 +205,17 @@ ros2 topic echo /motor_position_selector_status
 當前所選電機每短按一次 X：
 
 ```text
-第一次：0 -> +35 rad
-第二次：+35 -> -35 rad
-第三次：-35 -> 0 rad
+第一次：0 -> +32 rad
+第二次：+32 -> -32 rad
+第三次：-32 -> 0 rad
 ```
 
 `/motor7_position_status` 或 `/motor8_position_status` 的 `data[3]` 表示當前預設：
 
 ```text
 0 = 0 rad
-1 = +35 rad
-2 = -35 rad
+1 = +32 rad
+2 = -32 rad
 ```
 
 
@@ -225,7 +225,7 @@ ros2 topic echo /motor_position_selector_status
 
 ```text
 START/+ : Motor7 / Motor8 切換
-X       : 所選電機循環 0 / +35 / -35 rad
+X       : 所選電機循環 0 / +32 / -32 rad
 L2/R2   : 所選電機負向/正向微調
 A       : 所選 arm height 高低切換
 B       : 所選 arm gripper 開關切換
@@ -307,13 +307,13 @@ Motor7 與 Motor8 分別保存自己的位置目標和氣動狀態。`Y` 控制 
 每次短按 `X` 的循環順序：
 
 ```text
-第一次：目前位置 -> +35 rad
-第二次：+35 rad -> -35 rad
-第三次：-35 rad -> 0 rad
+第一次：目前位置 -> +32 rad
+第二次：+32 rad -> -32 rad
+第三次：-32 rad -> 0 rad
 之後重複循環
 ```
 
-`L2/R2` 用於在軟限位 `-35..+35 rad` 內微調目標位置，預設最大微調速度為 `2 rad/s`。
+`L2/R2` 用於在軟限位 `-32..+32 rad` 內微調目標位置，預設最大微調速度為 `2 rad/s`。
 
 ### Motor6 horizontal 速度檔
 
@@ -558,3 +558,43 @@ r1_start_base_1_0.sh
 ```
 
 `r1_start_base_1_0.sh` 新增 `R1_NO_TMUX_ATTACH=1` 支援。systemd watcher 使用這個環境變數建立 tmux session，但不嘗試 attach，避免 background service 卡住或因沒有 terminal 而失敗。
+
+## 2026-06-18 手柄四鍵長按關機 dry-run
+
+新增 `robot_power_control` package 與 `joystick_shutdown_node`。目前 `r1_start_base_1_0.sh` 會啟動一個 `power_shutdown` tmux window，但預設使用安全測試模式：
+
+```text
+dry_run = true
+```
+
+目前按鍵組合：
+
+```text
+X + Y + B + A 同時長按 5 秒
+```
+
+dry-run 模式下不會真的關機，只會發布：
+
+```text
+/robot_power_status = DRY_RUN shutdown_combo_held
+```
+
+監控：
+
+```bash
+ros2 topic echo /robot_power_status
+```
+
+真正啟用關機前，必須先設定 sudoers 精確授權：
+
+```text
+robotics ALL=NOPASSWD: /usr/bin/systemctl poweroff
+```
+
+然後才可以把啟動參數改為：
+
+```text
+dry_run:=false
+```
+
+目前已完成 dry-run 實機確認並已把啟動腳本切到 `dry_run:=false`。四鍵長按會直接呼叫 `sudo -n /usr/bin/systemctl poweroff`。不要再讓 node 先 kill tmux，否則會把自己殺掉而無法執行 poweroff。

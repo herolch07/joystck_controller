@@ -91,6 +91,13 @@
 - [x] 新增 `position_c_rad = -35.0 rad`
 - [x] `position_b_rad` 由 `33.0 rad` 调整为 `35.0 rad`
 - [x] X 改为 `0 -> +35 -> -35 -> 0` 三位置循环
+
+## v12 Motor7/8 POS_VEL 目标收窄到 32 rad
+
+- [x] `position_b_rad` 由 `35.0 rad` 调整为 `32.0 rad`
+- [x] `position_c_rad` 由 `-35.0 rad` 调整为 `-32.0 rad`
+- [x] 软限位由 `-35.0..35.0 rad` 调整为 `-32.0..32.0 rad`
+- [ ] 实机确认 Motor7/8 在 `0/+32/-32 rad` 三点循环下不会撞限位
 - [x] Motor 7/8 分别保存自己的三位置索引
 - [x] 新增三位置循环无硬件测试
 - [ ] 实机确认 Motor 7 三个位置顺序和方向

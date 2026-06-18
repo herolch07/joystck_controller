@@ -359,8 +359,8 @@ Motor 8 在无危险机械负载的初步测试中，以下运行参数能够完
 ```text
 position_a_rad = 0.0 rad
 position_b_rad = 33.0 rad
-min_position_rad = -35.0 rad
-max_position_rad = 35.0 rad
+min_position_rad = -32.0 rad
+max_position_rad = 32.0 rad
 preset_speed_rad_s = 3.0 rad/s
 trim_speed_rad_s = 2.0 rad/s
 ```
@@ -429,20 +429,20 @@ Motor 7 和 Motor 8 的 X 预设由两点改为三点，两个 controller 使用
 
 ```text
 position_a_rad = 0.0 rad       # selected_position = 0
-position_b_rad = 35.0 rad      # selected_position = 1
-position_c_rad = -35.0 rad     # selected_position = 2
-min_position_rad = -35.0 rad
-max_position_rad = 35.0 rad
+position_b_rad = 32.0 rad      # selected_position = 1
+position_c_rad = -32.0 rad     # selected_position = 2
+min_position_rad = -32.0 rad
+max_position_rad = 32.0 rad
 ```
 
 每次短按 X 的循环顺序：
 
 ```text
-0 rad -> +35 rad -> -35 rad -> 0 rad
+0 rad -> +32 rad -> -32 rad -> 0 rad
 ```
 
 Motor 7 和 Motor 8 分别保存自己的 `selected_position`。START 切换当前控制电机时，
-不会改变未选中电机的预设索引或目标位置。L2/R2 仍可在 `-35..35 rad` 范围内微调。
+不会改变未选中电机的预设索引或目标位置。L2/R2 仍可在 `-32..32 rad` 范围内微调。
 
 
 ## 2026-06-14 v9 Motor6 改用 L3／R3

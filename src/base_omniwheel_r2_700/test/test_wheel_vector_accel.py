@@ -45,3 +45,27 @@ def test_target_passes_through_when_inside_acceleration_step():
 
     assert alpha == 1.0
     assert limited == target
+
+
+def test_independent_limit_keeps_ramp_without_shared_alpha():
+    """Per-wheel mode keeps a ramp but does not preserve target ratios."""
+    current = {1: 0.0, 2: 0.0, 3: 0.0, 4: 0.0}
+    target = {1: -30.75, 2: 13.05, 3: 30.75, 4: -13.05}
+
+    limited = LocalNavigationNode.limit_wheel_independent_delta(
+        current, target, max_delta=2.5
+    )
+
+    assert limited == pytest.approx({1: -2.5, 2: 2.5, 3: 2.5, 4: -2.5})
+
+
+def test_independent_limit_passes_small_targets_through():
+    """Small wheel deltas still reach the target in one cycle."""
+    current = {1: 1.0, 2: -2.0, 3: 2.0, 4: -1.0}
+    target = {1: 1.5, 2: -2.5, 3: 2.5, 4: -1.5}
+
+    limited = LocalNavigationNode.limit_wheel_independent_delta(
+        current, target, max_delta=1.0
+    )
+
+    assert limited == target

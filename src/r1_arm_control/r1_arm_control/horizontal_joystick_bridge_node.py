@@ -21,7 +21,7 @@ class HorizontalJoystickBridgeNode(Node):
     def __init__(self):
         super().__init__("horizontal_joystick_bridge_node")
 
-        self.declare_parameter("command_speed_rad_s", 10.0)
+        self.declare_parameter("command_speed_rad_s", 30.0)
         self.declare_parameter("trigger_deadzone", 24)
         self.declare_parameter("mode_timeout_sec", 0.5)
 

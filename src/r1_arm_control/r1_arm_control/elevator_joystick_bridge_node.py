@@ -20,7 +20,7 @@ class ElevatorJoystickBridgeNode(Node):
     def __init__(self):
         super().__init__("elevator_joystick_bridge_node")
 
-        self.declare_parameter("command_speed_rad_s", 3.0)
+        self.declare_parameter("command_speed_rad_s", 28.0)
         self.declare_parameter("mode_timeout_sec", 0.5)
 
         self.operation_mode = 0

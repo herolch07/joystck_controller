@@ -959,3 +959,39 @@ STAFF mode：`A=Motor7 左右 90°/preset`，`X=Motor8 左右 90°/preset`，`B=
 KFS mode：`Y=KFS gripper`，`L2/R2=Motor6 horizontal positive/negative`，`L1/R1=Motor5 elevator negative/positive`。
 
 最新 Arduino 五路 relay 順序為 `[KFS gripper, M7 gripper, M8 inclination, M8 gripper, M7 inclination]`，安全狀態為 `[0,1,0,1,0]`。
+
+## 2026-06-19 - v16 加速度斜坡模式可切換
+
+本節取代 v15 中「舊逐輪獨立限幅已刪除、沒有保留模式開關」的目前行為說明。現在 `local_navigation_node` 保留速度斜坡，但新增參數：
+
+```text
+accel_limit_mode = per_wheel | vector
+```
+
+目前預設為：
+
+```text
+max_wheel_accel_rad_s2 = 25.0 rad/s^2
+accel_limit_mode = per_wheel
+```
+
+`per_wheel`：每個輪子各自最多變化 `max_wheel_accel_rad_s2 * dt`。這會保留加速/減速斜坡，但不使用四輪共同 `alpha`，適合用來測試 vector limit 是否影響實機手感。
+
+`vector`：使用 v15 的四輪統一 alpha：
+
+```text
+delta_i = target_i - current_i
+peak_delta = max(abs(delta_i))
+alpha = min(1, max_wheel_accel_rad_s2 * dt / peak_delta)
+new_i = current_i + alpha * delta_i
+```
+
+Runtime 切換：
+
+```bash
+ros2 param set /local_navigation_node accel_limit_mode per_wheel
+ros2 param set /local_navigation_node accel_limit_mode vector
+ros2 param get /local_navigation_node accel_limit_mode
+```
+
+注意：`per_wheel` 不是取消加速度限制；如果要完全取消速度斜坡才把 `max_wheel_accel_rad_s2` 設為 `0.0`。目前仍保留 `max_wheel_speed_rad_s = 40.0 rad/s` 的四輪同比速度限幅和 `/local_driving` 超時停止。

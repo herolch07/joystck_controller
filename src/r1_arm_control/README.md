@@ -73,7 +73,7 @@ data = [target_speed, commanded_speed, timeout_active, motor_id]
 
 ```text
 motor_id = 5
-max_speed_rad_s = 3.0
+max_speed_rad_s = 9.0
 timeout_sec = 0.3
 publish_hz = 20.0
 max_accel_rad_s2 = 0.0
@@ -145,7 +145,7 @@ R1 + L1: 停止
 参数：
 
 ```text
-command_speed_rad_s = 3.0
+command_speed_rad_s = 9.0
 ```
 
 ### horizontal_joystick_bridge_node
@@ -632,3 +632,16 @@ KFS mode：`Y=KFS gripper`，`L2/R2=Motor6 horizontal positive/negative`，`L1/R
 - `horizontal_joystick_bridge_node` 只在 `/operation_mode=2` 且 mode 未超時時工作：`L2 -> positive/out`，`R2 -> negative/in`。
 - `elevator_joystick_bridge_node` 只在 `/operation_mode=2` 且 mode 未超時時工作：`L1 -> negative/down`，`R1 -> positive/up`。
 - `/operation_mode` 超過 `mode_timeout_sec=0.5 s` 或 `/joystick_data` 超過 `input_timeout_sec=0.3 s` 後，各 bridge 發布停止/invalid 輸出，避免舊按鍵狀態繼續控制機構。
+
+## 2026-06-19 Motor5 elevator 3x speed update
+
+Motor5 elevator current default speed has been increased by 3x:
+
+```text
+elevator_joystick_bridge_node.command_speed_rad_s = 9.0 rad/s
+elevator_controller_node.max_speed_rad_s = 9.0 rad/s
+```
+
+Both values must match the intended maximum. The joystick bridge publishes `/elevator_speed_cmd=[+/-9.0]` in KFS mode, and the controller clamps any incoming command to `max_speed_rad_s`. If only the bridge is changed but the controller remains at `3.0`, the real command sent to `/damiao_control` will still be limited to `3.0 rad/s`.
+
+Safety behavior is unchanged: `/operation_mode` must be KFS (`2`), mode timeout still disables L1/R1 input, and `elevator_controller_node.timeout_sec=0.3 s` still sends `0 rad/s` when `/elevator_speed_cmd` stops refreshing. `max_accel_rad_s2` remains `0.0`, so there is no extra elevator ramp unless that parameter is set later.

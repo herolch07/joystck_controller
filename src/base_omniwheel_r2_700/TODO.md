@@ -171,3 +171,11 @@
 - [x] Motor 7/8 共用位置模式恢复与安全保持逻辑
 - [x] 保持 Motor 1-6 的 VEL 控制不变
 - [ ] 实机确认 Motor 7 的 POS_VEL 反馈与急停恢复
+
+## 2026-06-19 加速度斜坡模式切換
+
+- [x] 新增 `accel_limit_mode` 參數
+- [x] 預設改為 `per_wheel`，保留速度斜坡但暫停四輪 vector alpha
+- [x] 保留 `vector` 模式，方便 runtime 對比測試
+- [x] 新增 per-wheel acceleration limiter 單元測試
+- [ ] 實機比較 `per_wheel` 與 `vector` 在 22°、45°、高速起步時的偏航差異

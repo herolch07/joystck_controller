@@ -131,6 +131,7 @@ class LocalNavigationNode(Node):
         # Keep the software hard limit slightly below that rated point.
         self.declare_parameter("max_wheel_speed_rad_s", 40.0)
         self.declare_parameter("max_wheel_accel_rad_s2", 25.0)
+        self.declare_parameter("accel_limit_mode", "per_wheel")
         self.declare_parameter("motor_direction_1", float(MOTOR_DIRECTION[1]))
         self.declare_parameter("motor_direction_2", float(MOTOR_DIRECTION[2]))
         self.declare_parameter("motor_direction_3", float(MOTOR_DIRECTION[3]))
@@ -179,6 +180,9 @@ class LocalNavigationNode(Node):
         )
         self.get_logger().info(
             f"Max wheel accel: {self.get_parameter('max_wheel_accel_rad_s2').value} rad/s^2"
+        )
+        self.get_logger().info(
+            f"Accel limit mode: {self.get_parameter('accel_limit_mode').value}"
         )
         self.get_logger().info(f"Motor control mode: {DEFAULT_MOTOR_MODE} (VEL)")
         self.get_logger().info(f"Command timeout: {self.get_parameter('command_timeout_sec').value}s")
@@ -326,11 +330,10 @@ class LocalNavigationNode(Node):
         Apply wheel-speed and acceleration limits before publishing motor commands.
 
         Diagonal and combined translate+rotate commands can produce a larger wheel
-        command than pure forward/sideways motion. Scaling all wheels together
-        preserves the requested direction while keeping the motor driver inside a
-        safer test range. The acceleration limiter moves the complete four-wheel
-        command with one shared scale, preserving the chassis motion relationship
-        while reducing current spikes during sudden joystick movement.
+        command than pure forward/sideways motion. Speed limiting still scales all
+        wheels together. Acceleration limiting is selectable: ``per_wheel`` keeps a
+        speed ramp without the shared vector alpha, while ``vector`` preserves the
+        complete four-wheel command ratio during the ramp.
         """
         max_speed = abs(float(self.get_parameter("max_wheel_speed_rad_s").value))
         if max_speed > 0.0:
@@ -353,15 +356,33 @@ class LocalNavigationNode(Node):
         now = time.monotonic()
         dt = max(now - self.last_speed_time, 1e-3)
         max_delta = max_accel * dt
-        limited, alpha = self.limit_wheel_vector_delta(
-            self.last_wheel_speeds,
-            wheel_speeds,
-            max_delta,
-        )
-        if alpha < 1.0:
-            self.get_logger().debug(
-                f"Wheel vector acceleration scaled by {alpha:.3f}; "
-                f"max delta {max_delta:.3f} rad/s"
+        accel_mode = str(self.get_parameter("accel_limit_mode").value).strip().lower()
+        if accel_mode == "vector":
+            limited, alpha = self.limit_wheel_vector_delta(
+                self.last_wheel_speeds,
+                wheel_speeds,
+                max_delta,
+            )
+            if alpha < 1.0:
+                self.get_logger().debug(
+                    f"Wheel vector acceleration scaled by {alpha:.3f}; "
+                    f"max delta {max_delta:.3f} rad/s"
+                )
+        elif accel_mode == "per_wheel":
+            limited = self.limit_wheel_independent_delta(
+                self.last_wheel_speeds,
+                wheel_speeds,
+                max_delta,
+            )
+        else:
+            self.get_logger().warn(
+                f"Unknown accel_limit_mode '{accel_mode}', using per_wheel",
+                throttle_duration_sec=2.0,
+            )
+            limited = self.limit_wheel_independent_delta(
+                self.last_wheel_speeds,
+                wheel_speeds,
+                max_delta,
             )
 
         self.last_wheel_speeds = dict(limited)
@@ -391,6 +412,31 @@ class LocalNavigationNode(Node):
             for motor_id, delta in deltas.items()
         }
         return limited, alpha
+
+    @staticmethod
+    def limit_wheel_independent_delta(current_speeds, target_speeds, max_delta):
+        """Clamp each wheel speed change independently by max_delta.
+
+        This keeps the speed ramp active while disabling the shared vector alpha.
+        It is useful for comparing real chassis behavior against the vector limiter
+        without removing acceleration limiting entirely.
+        """
+        if max_delta <= 0.0:
+            return {
+                motor_id: current_speeds.get(motor_id, 0.0)
+                for motor_id in target_speeds
+            }
+
+        limited = {}
+        for motor_id, target in target_speeds.items():
+            current = current_speeds.get(motor_id, 0.0)
+            delta = target - current
+            if delta > max_delta:
+                delta = max_delta
+            elif delta < -max_delta:
+                delta = -max_delta
+            limited[motor_id] = current + delta
+        return limited
 
     def motor_direction(self, motor_id):
         """

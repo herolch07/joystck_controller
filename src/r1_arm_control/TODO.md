@@ -219,3 +219,10 @@ KFS mode 不變：`Y=KFS gripper`，`L2/R2=horizontal positive/negative`，`L1/R
 - [x] KFS mode `L2/R2` 控制 Motor6 horizontal positive/negative
 - [x] KFS mode `L1/R1` 控制 Motor5 elevator negative/positive
 - [ ] 實機再次確認 Motor7/Motor8 90° preset 的機械角度是否需要由 32 rad 改為更精準值
+
+## 2026-06-19 Motor5 elevator speed increase
+
+- [x] Increase `elevator_joystick_bridge_node.command_speed_rad_s` from `3.0` to `9.0`
+- [x] Increase `elevator_controller_node.max_speed_rad_s` from `3.0` to `9.0`
+- [x] Keep KFS-only mode gate and `timeout_sec=0.3 s` unchanged
+- [ ] Test Motor5 elevator at 9.0 rad/s with mechanism clear of hard stops

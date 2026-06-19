@@ -1,3 +1,5 @@
+> 2026-06-19 現行操作入口：目前手柄鍵位、STAFF/KFS mode、D-pad 視角、五路 relay 順序請先看 `/home/robotics/robocon2026_r1/r1_control_ws/CONTROLLER_USAGE.md`。本文若是舊測試/排查紀錄，內容保留作歷史，不代表目前實機鍵位。
+
 # arduino_pneumatic_driver TODO
 
 ## 已完成
@@ -103,3 +105,102 @@
 - [x] SELECT 改為控制目前選中 arm 的 inclination
 - [x] 新增 selected inclination index 測試
 - [ ] 實機確認 Motor7/Motor8 切換後 SELECT 只作用於選中 arm
+
+
+## 2026-06-19 STAFF/KFS operation mode pneumatic 鍵位
+
+- [x] `pneumatic_gripper_joystick_bridge_node` 訂閱 `/operation_mode`
+- [x] 只有 STAFF mode 接受 pneumatic 按鍵
+- [x] `A` 改為 Motor7 height toggle
+- [x] `Y` 改為 Motor8 height toggle
+- [x] `R1` 改為 Motor7 inclination/head toggle
+- [x] `L1` 改為 Motor8 inclination/head toggle
+- [x] `SELECT/START` 不再控制 pneumatic，避免與 mode 切換衝突
+- [x] 保持 joystick timeout 後回 safe state
+- [ ] 實機確認四個 pneumatic 鍵位與 relay 方向
+
+
+## 2026-06-19 五路 relay staff pneumatic 鍵位
+
+- [x] `/pneumatic_gripper_cmd` 從六路改為四路
+- [x] 移除 Motor7/Motor8 height relay 相關 A/Y 控制
+- [x] STAFF mode 下 `B` 控 Motor7 staff gripper relay
+- [x] STAFF mode 下 `X` 控 Motor8 staff gripper relay
+- [x] STAFF mode 下 `R1` 控 Motor7 inclination/head relay
+- [x] STAFF mode 下 `L1` 控 Motor8 inclination/head relay
+- [x] `DEFAULT_ARM_SAFE_STATE` 更新為 `[1,0,1,0]`
+- [x] 更新五路 pneumatic command 測試
+- [ ] 實機確認 X/B 同時驅動 position preset 與 gripper relay 的效果符合機構需求
+
+
+## 2026-06-19 STAFF gripper relay 改為 A/Y
+
+- [x] STAFF mode 下 `Y` 改為 Motor7 gripper relay toggle
+- [x] STAFF mode 下 `A` 改為 Motor8 gripper relay toggle
+- [x] 移除 `B/X` 作為 gripper relay 鍵位
+- [x] 移除 `L1/R1` 作為 inclination relay 鍵位，避免和 trim 衝突
+- [ ] 實機確認 A/Y 同時觸發 position preset 與 gripper relay 的時序可接受
+
+
+## 2026-06-19 STAFF head relay moved to L3/R3
+
+- [x] STAFF mode 下 `R3` 控 Motor7 inclination/head relay
+- [x] STAFF mode 下 `L3` 控 Motor8 inclination/head relay
+- [x] 保持 `L1/R1/L2/R2` 作 Motor7/8 manual trim
+- [x] 更新 inclination index 測試
+- [ ] 實機確認 L3/R3 抬頭方向與 relay 狀態
+
+
+## 2026-06-19 Final STAFF Gripper / 90-Degree Split
+
+This section supersedes any same-day text that says Y/A also toggle gripper relays.
+
+Current STAFF mode split:
+
+```text
+Y  -> Motor7 left-right 90-degree / preset cycle only
+A  -> Motor8 left-right 90-degree / preset cycle only
+B  -> Motor7 staff gripper relay toggle only
+X  -> Motor8 staff gripper relay toggle only
+R1 -> Motor7 manual trim negative
+R2 -> Motor7 manual trim positive
+L1 -> Motor8 manual trim negative
+L2 -> Motor8 manual trim positive
+R3 -> Motor7 head / inclination relay toggle
+L3 -> Motor8 head / inclination relay toggle
+```
+
+Current KFS mode remains:
+
+```text
+Y  -> KFS gripper toggle
+L2 -> Motor6 horizontal positive / out
+R2 -> Motor6 horizontal negative / in
+L1 -> Motor5 elevator negative / down
+R1 -> Motor5 elevator positive / up
+```
+
+
+## 2026-06-19 Final STAFF ABXY Layout
+
+最新 STAFF mode ABXY：
+
+```text
+A -> Motor7 左右 90° / preset cycle only
+X -> Motor8 左右 90° / preset cycle only
+B -> Motor7 staff gripper relay toggle only
+Y -> Motor8 staff gripper relay toggle only
+```
+
+其他 STAFF 鍵位不變：`R1/R2=Motor7 微調`，`L1/L2=Motor8 微調`，`R3=Motor7 抬頭`，`L3=Motor8 抬頭`。
+
+KFS mode 不變：`Y=KFS gripper`，`L2/R2=horizontal positive/negative`，`L1/R1=elevator negative/positive`。
+
+
+## 2026-06-19 現行五路 STAFF relay 確認
+
+- [x] `/pneumatic_gripper_cmd` 固定為 `[M7 gripper, M8 inclination, M8 gripper, M7 inclination]`
+- [x] STAFF mode `B=Motor7 gripper`、`Y=Motor8 gripper`
+- [x] STAFF mode `R3/P1=Motor7 inclination`、`L3/P2=Motor8 inclination`
+- [x] `A/X` 不再同時切 gripper relay，只交給 position bridge 控制 preset
+- [ ] 實機確認 Arduino 五路 relay 實際線序與文件一致：`[KFS, M7 gripper, M8 inclination, M8 gripper, M7 inclination]`

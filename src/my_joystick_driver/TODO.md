@@ -1,3 +1,5 @@
+> 2026-06-19 現行操作入口：目前手柄鍵位、STAFF/KFS mode、D-pad 視角、五路 relay 順序請先看 `/home/robotics/robocon2026_r1/r1_control_ws/CONTROLLER_USAGE.md`。本文若是舊測試/排查紀錄，內容保留作歷史，不代表目前實機鍵位。
+
 # Joystick Driver 开发任务清单
 
 ## v1.0 基础功能（初始版本）
@@ -70,3 +72,11 @@
 - [x] 決定不修改 `Joystick.msg` 或 `joystick_node.py`
 - [x] 記錄目前手柄 remap：`P1 = R3`、`P2 = L3`
 - [ ] 若未來切換模式後 P1／P2 有獨立 `EV_KEY` code，再新增 `p1/p2` 欄位
+
+
+## 2026-06-19 P1/P2 現行用途
+
+- [x] 保持 P1/P2 不新增獨立 ROS 欄位
+- [x] 記錄目前 remap：`P1=R3`、`P2=L3`
+- [x] 記錄現行用途：STAFF mode `P1/R3=Motor7 inclination`、`P2/L3=Motor8 inclination`
+- [ ] 若未來手柄模式能提供獨立 P1/P2 evdev code，再評估擴充 message

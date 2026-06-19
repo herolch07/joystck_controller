@@ -1,3 +1,5 @@
+> 2026-06-19 現行操作入口：目前手柄鍵位、STAFF/KFS mode、D-pad 視角、五路 relay 順序請先看 `/home/robotics/robocon2026_r1/r1_control_ws/CONTROLLER_USAGE.md`。本文若是舊測試/排查紀錄，內容保留作歷史，不代表目前實機鍵位。
+
 # kfs_staff_gripper TODO
 
 ## v0.1.0 初始版本
@@ -128,3 +130,32 @@
 - [x] 保持完整 safe_state `[0,0,1,0,1,1,0]`
 - [ ] 實機確認 START 選中 Motor7 時 SELECT 只切換 Motor7 inclination
 - [ ] 實機確認 START 選中 Motor8 時 SELECT 只切換 Motor8 inclination
+
+
+## 2026-06-19 KFS mode gating
+
+- [x] `kfs_staff_gripper_joystick_bridge_node` 訂閱 `/operation_mode`
+- [x] 只有 KFS mode 接受 Y 鍵切換 KFS gripper
+- [x] STAFF mode 下忽略 Y，避免和 Motor8 height 鍵位衝突
+- [x] 保持 joystick timeout 後回 safe state
+- [ ] 實機確認 START 切 KFS mode 後 Y 才控制 KFS gripper
+- [ ] 實機確認 SELECT 切 STAFF mode 後 Y 不再控制 KFS gripper
+
+
+## 2026-06-19 五路 Arduino relay 協議
+
+- [x] Arduino serial protocol 改為五路 `[r1,r2,r3,r4,r5]`
+- [x] relay pins 更新為 `{22,24,25,27,28}` 對應 ROS 順序 `[KFS, M7 gripper, M8 inclination, M8 gripper, M7 inclination]`
+- [x] `DEFAULT_SAFE_STATE` 更新為 `[0,1,0,1,0]`
+- [x] `/pneumatic_gripper_cmd` 改為四路，映射 relay 2-5
+- [x] `/kfs_staff_gripper_cmd` 保持一路，映射 relay 1
+- [x] 更新五路 protocol 單元測試
+- [ ] 實機確認 Arduino 收到 `[0,1,0,1,0]` 時所有 relay 安全狀態正確
+
+
+## 2026-06-19 五路 Arduino 聚合確認
+
+- [x] Arduino serial 聚合順序更新為 `[KFS, M7 gripper, M8 inclination, M8 gripper, M7 inclination]`
+- [x] KFS gripper `Y` 只在 `/operation_mode=2` 時生效
+- [x] 全系統 relay safe state 記錄為 `[0,1,0,1,0]`
+- [ ] 實機長時間測試 KFS/STAF mode 來回切換時 relay 不誤動作

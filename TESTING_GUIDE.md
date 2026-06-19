@@ -1,3 +1,7 @@
+> 2026-06-19 現行操作入口：目前手柄鍵位、STAFF/KFS mode、D-pad 視角、五路 relay 順序請先看 [`CONTROLLER_USAGE.md`](CONTROLLER_USAGE.md)。本文若是舊測試/排查紀錄，內容保留作歷史，不代表目前實機鍵位。
+
+> 2026-06-19 現行操作準則：手柄鍵位、STAFF/KFS mode、D-pad 視角與五路 relay 順序以 [`CONTROLLER_USAGE.md`](CONTROLLER_USAGE.md) 為唯一準則。本文件較早日期的鍵位段落保留為歷史紀錄，不作為目前實機操作依據。
+
 # R1 测试指南
 
 本文件记录当前工作区内的测试方式。旧路径 `Robocon2026_r2/2026R2_ws` 和旧脚本 `start_full_control_chain.sh` 已不再作为当前 R1 流程使用。
@@ -527,3 +531,236 @@ KFS gripper 在最前方時測試：
 3. 左搖桿回中，按十字鍵下，狀態變為 `2`；左搖桿向前，方向約為 `-1.57 rad`。
 4. 左搖桿回中，按十字鍵左，狀態變為 `3`；左搖桿向前，方向約為 `+/-3.14 rad`。
 5. 左搖桿未回中時按十字鍵，`/view_orientation` 不應改變。
+
+
+## 2026-06-19 STAFF/KFS mode 鍵位測試
+
+先確認 mode topic：
+
+```bash
+ros2 topic echo /operation_mode
+```
+
+預期：按 `SELECT / 中左` 後變 `1`；按 `START / 中右` 後變 `2`。
+
+STAFF mode 測試：
+
+```bash
+ros2 topic echo /motor7_position_input
+ros2 topic echo /motor8_position_input
+ros2 topic echo /pneumatic_gripper_cmd
+```
+
+```text
+X  -> /motor8_position_input data[0] 短暫為 1
+B  -> /motor7_position_input data[0] 短暫為 1
+L2 -> /motor8_position_input data[1] 為負值
+R2 -> /motor7_position_input data[1] 為正值
+A  -> /pneumatic_gripper_cmd 第 1 項 Motor7 height toggle
+Y  -> /pneumatic_gripper_cmd 第 4 項 Motor8 height toggle
+R1 -> /pneumatic_gripper_cmd 第 6 項 Motor7 inclination toggle
+L1 -> /pneumatic_gripper_cmd 第 3 項 Motor8 inclination toggle
+```
+
+KFS mode 測試：
+
+```bash
+ros2 topic echo /kfs_staff_gripper_cmd
+```
+
+```text
+START 切到 KFS mode 後，Y 才會切換 /kfs_staff_gripper_cmd
+SELECT 切回 STAFF mode 後，Y 不應再改 /kfs_staff_gripper_cmd，而是改 Motor8 height
+```
+
+安全檢查：切 mode 時不要按其他機構鍵，確認 mode 切換本身不會讓 `/pneumatic_gripper_cmd`、`/motor7_position_input`、`/motor8_position_input` 產生動作事件。
+
+
+## 2026-06-19 KFS mode Zone2 擴展測試
+
+先切 KFS mode：
+
+```text
+按 START / 中右
+/operation_mode 應為 2
+```
+
+監控：
+
+```bash
+ros2 topic echo /kfs_staff_gripper_cmd
+ros2 topic echo /horizontal_speed_cmd
+ros2 topic echo /elevator_speed_cmd
+```
+
+預期：
+
+```text
+Y  -> /kfs_staff_gripper_cmd toggle
+L2 -> /horizontal_speed_cmd 負值
+R2 -> /horizontal_speed_cmd 正值
+L1 -> /elevator_speed_cmd 負值
+R1 -> /elevator_speed_cmd 正值
+```
+
+再切回 STAFF mode：
+
+```text
+按 SELECT / 中左
+/operation_mode 應為 1
+```
+
+STAFF mode 下，L2/R2 應只影響 `/motor8_position_input`、`/motor7_position_input`；L1/R1 應只影響 `/pneumatic_gripper_cmd` 的 Motor8/Motor7 inclination；`/horizontal_speed_cmd` 與 `/elevator_speed_cmd` 應保持 `0.0`。
+
+
+## 2026-06-19 五路 relay 測試
+
+監控 Arduino 聚合輸出：
+
+```bash
+ros2 topic echo /pneumatic_gripper_cmd
+ros2 topic echo /kfs_staff_gripper_cmd
+ros2 topic echo /kfs_staff_gripper_status
+```
+
+預期 command 長度：
+
+```text
+/kfs_staff_gripper_cmd = [KFS]
+/pneumatic_gripper_cmd = [M7 gripper, M8 inclination, M8 gripper, M7 inclination]
+Arduino serial = [KFS, M7 gripper, M8 inclination, M8 gripper, M7 inclination]
+```
+
+STAFF mode 測試：
+
+```text
+B  -> /pneumatic_gripper_cmd 第 1 項 toggle，並觸發 /motor7_position_input toggle
+X  -> /pneumatic_gripper_cmd 第 3 項 toggle，並觸發 /motor8_position_input toggle
+R1 -> /pneumatic_gripper_cmd 第 4 項 toggle
+L1 -> /pneumatic_gripper_cmd 第 2 項 toggle
+A  -> 不應改 /pneumatic_gripper_cmd
+Y  -> STAFF mode 不應改 /pneumatic_gripper_cmd，也不應改 /kfs_staff_gripper_cmd
+```
+
+KFS mode 測試：
+
+```text
+Y -> /kfs_staff_gripper_cmd toggle
+```
+
+
+## 2026-06-19 STAFF/KFS 最新鍵位測試
+
+STAFF mode (`SELECT / 中左`)：
+
+```bash
+ros2 topic echo /motor7_position_input
+ros2 topic echo /motor8_position_input
+ros2 topic echo /pneumatic_gripper_cmd
+```
+
+預期：
+
+```text
+Y  -> /motor7_position_input data[0] 短暫為 1；/pneumatic_gripper_cmd 第 1 項 toggle
+A  -> /motor8_position_input data[0] 短暫為 1；/pneumatic_gripper_cmd 第 3 項 toggle
+R1 -> /motor7_position_input data[1] 負值
+R2 -> /motor7_position_input data[1] 正值
+L1 -> /motor8_position_input data[1] 負值
+L2 -> /motor8_position_input data[1] 正值
+B/X -> 不應改 /motor7_position_input、/motor8_position_input 或 /pneumatic_gripper_cmd
+```
+
+KFS mode (`START / 中右`)：
+
+```bash
+ros2 topic echo /horizontal_speed_cmd
+```
+
+```text
+L2 -> /horizontal_speed_cmd 正值
+R2 -> /horizontal_speed_cmd 負值
+```
+
+
+## 2026-06-19 STAFF mode L3/R3 抬頭測試
+
+STAFF mode (`SELECT / 中左`) 下監控：
+
+```bash
+ros2 topic echo /pneumatic_gripper_cmd
+```
+
+五路 pneumatic command 的四路 arm 部分為：
+
+```text
+[M7 gripper, M8 inclination, M8 gripper, M7 inclination]
+```
+
+預期：
+
+```text
+L3 -> 第 2 項 Motor8 inclination toggle
+R3 -> 第 4 項 Motor7 inclination toggle
+```
+
+
+## 2026-06-19 Final STAFF Gripper / 90-Degree Split
+
+This section supersedes any same-day text that says Y/A also toggle gripper relays.
+
+Current STAFF mode split:
+
+```text
+Y  -> Motor7 left-right 90-degree / preset cycle only
+A  -> Motor8 left-right 90-degree / preset cycle only
+B  -> Motor7 staff gripper relay toggle only
+X  -> Motor8 staff gripper relay toggle only
+R1 -> Motor7 manual trim negative
+R2 -> Motor7 manual trim positive
+L1 -> Motor8 manual trim negative
+L2 -> Motor8 manual trim positive
+R3 -> Motor7 head / inclination relay toggle
+L3 -> Motor8 head / inclination relay toggle
+```
+
+Current KFS mode remains:
+
+```text
+Y  -> KFS gripper toggle
+L2 -> Motor6 horizontal positive / out
+R2 -> Motor6 horizontal negative / in
+L1 -> Motor5 elevator negative / down
+R1 -> Motor5 elevator positive / up
+```
+
+
+## 2026-06-19 Final STAFF ABXY Layout
+
+最新 STAFF mode ABXY：
+
+```text
+A -> Motor7 左右 90° / preset cycle only
+X -> Motor8 左右 90° / preset cycle only
+B -> Motor7 staff gripper relay toggle only
+Y -> Motor8 staff gripper relay toggle only
+```
+
+其他 STAFF 鍵位不變：`R1/R2=Motor7 微調`，`L1/L2=Motor8 微調`，`R3=Motor7 抬頭`，`L3=Motor8 抬頭`。
+
+KFS mode 不變：`Y=KFS gripper`，`L2/R2=horizontal positive/negative`，`L1/R1=elevator negative/positive`。
+
+
+## 2026-06-19 現行手柄鍵位總表（以 CONTROLLER_USAGE.md 為準）
+
+目前手柄操作的唯一準則已整理到 [`CONTROLLER_USAGE.md`](CONTROLLER_USAGE.md)。若本文件前面存在舊版鍵位描述，保留為歷史紀錄；實機操作以本節和 `CONTROLLER_USAGE.md` 為準。
+
+固定不變：左搖桿控制底盤平移，右搖桿控制底盤旋轉，D-pad 設定 KFS visual front 的人視角方向，`X+Y+B+A` 長按 5 秒觸發 Raspberry Pi shutdown command。
+
+模式切換：`SELECT/中左 = STAFF mode (/operation_mode=1)`，`START/中右 = KFS mode (/operation_mode=2)`。
+
+STAFF mode：`A=Motor7 左右 90°/preset`，`X=Motor8 左右 90°/preset`，`B=Motor7 staff gripper relay`，`Y=Motor8 staff gripper relay`，`R1/R2=Motor7 微調 -/+`，`L1/L2=Motor8 微調 -/+`，`R3/P1=Motor7 抬頭/inclination relay`，`L3/P2=Motor8 抬頭/inclination relay`。
+
+KFS mode：`Y=KFS gripper`，`L2/R2=Motor6 horizontal positive/negative`，`L1/R1=Motor5 elevator negative/positive`。
+
+最新 Arduino 五路 relay 順序為 `[KFS gripper, M7 gripper, M8 inclination, M8 gripper, M7 inclination]`，安全狀態為 `[0,1,0,1,0]`。

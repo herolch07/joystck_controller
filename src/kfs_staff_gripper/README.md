@@ -1,3 +1,7 @@
+> 2026-06-19 現行操作入口：目前手柄鍵位、STAFF/KFS mode、D-pad 視角、五路 relay 順序請先看 `/home/robotics/robocon2026_r1/r1_control_ws/CONTROLLER_USAGE.md`。本文若是舊測試/排查紀錄，內容保留作歷史，不代表目前實機鍵位。
+
+> 2026-06-19 現行操作準則：手柄鍵位、STAFF/KFS mode、D-pad 視角與五路 relay 順序以 `/home/robotics/robocon2026_r1/r1_control_ws/CONTROLLER_USAGE.md` 為唯一準則。本文件較早日期的鍵位段落保留為歷史紀錄，不作為目前實機操作依據。
+
 # kfs_staff_gripper
 
 
@@ -509,3 +513,82 @@ safe_state = [0,0,1,0,1,1,0]
 手柄行為同步更新：`SELECT` 不再只控制 Motor8 inclination，而是控制「目前選中的 arm」的
 inclination。也就是 START 選中 Motor7 時，SELECT 切換 Motor7 inclination；START 選中 Motor8
 時，SELECT 切換 Motor8 inclination。A/B 仍控制目前選中 arm 的 height/gripper。
+
+
+## 2026-06-19 KFS mode gating
+
+`kfs_staff_gripper_joystick_bridge_node` 現在訂閱 `/operation_mode`。只有 `/operation_mode=2` (KFS) 且 mode topic 未超過 `mode_timeout_sec=0.5 s` 時，`Y` 才會切換 KFS gripper。
+
+```text
+SELECT / 中左 = STAFF mode，此時 Y 交給 Motor8 staff height
+START  / 中右 = KFS mode，此時 Y 控制 KFS gripper toggle
+```
+
+Timeout 行為不變：`/joystick_data` 超過 `input_timeout_sec=0.3 s` 未更新時，KFS gripper 回到 `safe_state=[0]`。mode 切換本身不自動開關 KFS gripper。
+
+
+## 2026-06-19 五路 Arduino relay 協議
+
+本節取代前文六路／七路 Arduino relay 說明；舊內容保留作硬件演進記錄。
+
+最新 Arduino sketch：
+
+```text
+NUM_RELAYS = 5
+relayPins = {22, 24, 25, 27, 28}
+serial format = [r1,r2,r3,r4,r5]
+HIGH = ON, LOW = OFF
+```
+
+ROS 端完整 relay 順序：
+
+```text
+[ KFS gripper,
+  Motor7 staff gripper,
+  Motor8 inclination/head,
+  Motor8 staff gripper,
+  Motor7 inclination/head ]
+```
+
+`kfs_staff_gripper_arduino_node` 仍聚合兩個 topic：
+
+```text
+/kfs_staff_gripper_cmd -> relay 1，長度 1
+/pneumatic_gripper_cmd -> relay 2-5，長度 4
+```
+
+預設 safe state：
+
+```text
+[0,1,0,1,0]
+```
+
+含義：KFS gripper CLOSE；Motor7/Motor8 staff gripper relay 保持 OPEN；兩個 inclination/head relay OFF。
+
+Timeout 行為不變：任一 command topic 超過 `command_timeout_sec=0.5 s` 未更新時，只把該 topic 對應 relay group 恢復到 safe state。
+
+
+## 2026-06-19 現行手柄鍵位總表（以 CONTROLLER_USAGE.md 為準）
+
+目前手柄操作的唯一準則已整理到 `/home/robotics/robocon2026_r1/r1_control_ws/CONTROLLER_USAGE.md`。若本文件前面存在舊版鍵位描述，保留為歷史紀錄；實機操作以本節和 `CONTROLLER_USAGE.md` 為準。
+
+固定不變：左搖桿控制底盤平移，右搖桿控制底盤旋轉，D-pad 設定 KFS visual front 的人視角方向，`X+Y+B+A` 長按 5 秒觸發 Raspberry Pi shutdown command。
+
+模式切換：`SELECT/中左 = STAFF mode (/operation_mode=1)`，`START/中右 = KFS mode (/operation_mode=2)`。
+
+STAFF mode：`A=Motor7 左右 90°/preset`，`X=Motor8 左右 90°/preset`，`B=Motor7 staff gripper relay`，`Y=Motor8 staff gripper relay`，`R1/R2=Motor7 微調 -/+`，`L1/L2=Motor8 微調 -/+`，`R3/P1=Motor7 抬頭/inclination relay`，`L3/P2=Motor8 抬頭/inclination relay`。
+
+KFS mode：`Y=KFS gripper`，`L2/R2=Motor6 horizontal positive/negative`，`L1/R1=Motor5 elevator negative/positive`。
+
+最新 Arduino 五路 relay 順序為 `[KFS gripper, M7 gripper, M8 inclination, M8 gripper, M7 inclination]`，安全狀態為 `[0,1,0,1,0]`。
+
+
+## 2026-06-19 kfs_staff_gripper 現行五路 Arduino 聚合
+
+`kfs_staff_gripper_arduino_node` 現在是 Arduino 五路 relay 的 serial 聚合器。它把 `/kfs_staff_gripper_cmd` 與 `/pneumatic_gripper_cmd` 合成 Arduino 需要的 5 位格式：
+
+```text
+[KFS gripper, M7 gripper, M8 inclination, M8 gripper, M7 inclination]
+```
+
+安全狀態為 `[0,1,0,1,0]`。KFS gripper 只在 `/operation_mode=2` 時由 `Y` 切換；STAFF mode 的 `Y` 由 `arduino_pneumatic_driver` 用作 Motor8 staff gripper relay，不會同時控制 KFS gripper。

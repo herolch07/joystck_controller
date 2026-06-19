@@ -1,3 +1,7 @@
+> 2026-06-19 現行操作入口：目前手柄鍵位、STAFF/KFS mode、D-pad 視角、五路 relay 順序請先看 `/home/robotics/robocon2026_r1/r1_control_ws/CONTROLLER_USAGE.md`。本文若是舊測試/排查紀錄，內容保留作歷史，不代表目前實機鍵位。
+
+> 2026-06-19 現行操作準則：手柄鍵位、STAFF/KFS mode、D-pad 視角與五路 relay 順序以 `/home/robotics/robocon2026_r1/r1_control_ws/CONTROLLER_USAGE.md` 為唯一準則。本文件較早日期的鍵位段落保留為歷史紀錄，不作為目前實機操作依據。
+
 # Joystick Bridge Node
 
 ## 📅 Changelog
@@ -521,3 +525,31 @@ body_front_view = (KFS view - 1) % 4
 The D-pad semantic remains unchanged: D-pad up still means KFS gripper is visually in front of the operator. Startup default remains `default_view_orientation=0`, equivalent to D-pad up. With this calibration, startup view `0` should make left-stick-forward move forward in the operator view when the KFS gripper is visually at the front.
 
 Timeout behavior is unchanged: if `/joystick_data` is stale for `input_timeout_sec=0.3 s`, the node publishes `/local_driving=[0,0,0]`.
+
+
+## 2026-06-19 現行手柄鍵位總表（以 CONTROLLER_USAGE.md 為準）
+
+目前手柄操作的唯一準則已整理到 `/home/robotics/robocon2026_r1/r1_control_ws/CONTROLLER_USAGE.md`。若本文件前面存在舊版鍵位描述，保留為歷史紀錄；實機操作以本節和 `CONTROLLER_USAGE.md` 為準。
+
+固定不變：左搖桿控制底盤平移，右搖桿控制底盤旋轉，D-pad 設定 KFS visual front 的人視角方向，`X+Y+B+A` 長按 5 秒觸發 Raspberry Pi shutdown command。
+
+模式切換：`SELECT/中左 = STAFF mode (/operation_mode=1)`，`START/中右 = KFS mode (/operation_mode=2)`。
+
+STAFF mode：`A=Motor7 左右 90°/preset`，`X=Motor8 左右 90°/preset`，`B=Motor7 staff gripper relay`，`Y=Motor8 staff gripper relay`，`R1/R2=Motor7 微調 -/+`，`L1/L2=Motor8 微調 -/+`，`R3/P1=Motor7 抬頭/inclination relay`，`L3/P2=Motor8 抬頭/inclination relay`。
+
+KFS mode：`Y=KFS gripper`，`L2/R2=Motor6 horizontal positive/negative`，`L1/R1=Motor5 elevator negative/positive`。
+
+最新 Arduino 五路 relay 順序為 `[KFS gripper, M7 gripper, M8 inclination, M8 gripper, M7 inclination]`，安全狀態為 `[0,1,0,1,0]`。
+
+
+## 2026-06-19 KFS visual front D-pad 底盤視角
+
+`joystick_bridge` 的 D-pad 現在不控制機構，也不直接令底盤旋轉。D-pad 只更新 KFS visual front 在機手視角中的方向，左搖桿再根據該方向轉換為底盤 body frame 速度。
+
+目前實機校正公式：
+
+```text
+body_front_view = (KFS view - 1) % 4
+```
+
+開機預設 `view=0`，等同 D-pad Up。更新 D-pad 前左搖桿需要回中，避免高速移動中突然切換人視角造成方向突變。

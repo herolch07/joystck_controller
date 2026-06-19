@@ -1,3 +1,7 @@
+> 2026-06-19 現行操作入口：目前手柄鍵位、STAFF/KFS mode、D-pad 視角、五路 relay 順序請先看 `/home/robotics/robocon2026_r1/r1_control_ws/CONTROLLER_USAGE.md`。本文若是舊測試/排查紀錄，內容保留作歷史，不代表目前實機鍵位。
+
+> 2026-06-19 現行操作準則：手柄鍵位、STAFF/KFS mode、D-pad 視角與五路 relay 順序以 `/home/robotics/robocon2026_r1/r1_control_ws/CONTROLLER_USAGE.md` 為唯一準則。本文件較早日期的鍵位段落保留為歷史紀錄，不作為目前實機操作依據。
+
 # r1_arm_control
 
 R1 机械臂控制 package。当前用于控制速度型达妙电机执行机构：升降、水平移动、夹爪。
@@ -488,3 +492,143 @@ P1 + P2 或全部鬆開 -> /horizontal_speed_cmd [0.0]
 此配置只影響操作者手感，不改變 topic、message、timeout、Motor6 controller 或 Damiao
 控制鏈路。若未來某個手柄模式能讓 P1／P2 產生獨立 evdev code，才需要擴充
 `my_joystick_msgs/msg/Joystick.msg` 與 `my_joystick_driver/joystick_node.py`。
+
+
+## 2026-06-19 STAFF/KFS operation mode 鍵位更新
+
+本節取代前文「START 在 Motor7/Motor8 之間切換」的現行行為；舊內容保留作歷史回溯。
+
+`motor_position_selector_joystick_bridge_node` 現在訂閱 `/operation_mode` (`std_msgs/msg/Int32`)：
+
+```text
+0 = INVALID，禁用 staff position 按鍵
+1 = STAFF，啟用 Motor7/8 staff position 按鍵
+2 = KFS，禁用 staff position 按鍵
+```
+
+STAFF mode 下位置速度模式鍵位：
+
+```text
+X  -> Motor8 staff gripper preset/open-close cycle
+B  -> Motor7 staff gripper preset/open-close cycle
+L2 -> Motor8 manual trim，負方向，按壓深度 0..1
+R2 -> Motor7 manual trim，正方向，按壓深度 0..1
+```
+
+`/motor7_position_input` 與 `/motor8_position_input` 格式仍為 `[toggle_event, trim_input, input_valid]`。mode 不是 STAFF、`/operation_mode` 超過 `mode_timeout_sec=0.5 s` 未更新、或 `/joystick_data` 超過 `input_timeout_sec=0.3 s` 未更新時，bridge 發布 `[0,0,0]`，position controller 停止接收 toggle/trim 並以自身安全邏輯保持/回到當前位置。
+
+`elevator_joystick_bridge_node` 的 legacy L1/R1 elevator mapping 目前預設 `enabled=false`，避免和 STAFF pneumatic 的 L1/R1 抬頭鍵位衝突。如要恢復舊 Motor5 elevator 手動控制，可用參數顯式啟用。
+
+
+## 2026-06-19 KFS mode elevator/horizontal 鍵位
+
+本節補充 STAFF/KFS operation mode：`elevator_joystick_bridge_node` 與 `horizontal_joystick_bridge_node` 現在也訂閱 `/operation_mode`，只有 KFS mode (`2`) 且 mode topic 未超過 `mode_timeout_sec=0.5 s` 時才接受按鍵。
+
+KFS mode 鍵位：
+
+```text
+L1 -> Motor5 elevator negative/down
+R1 -> Motor5 elevator positive/up
+L2 -> Motor6 horizontal negative/in
+R2 -> Motor6 horizontal positive/out
+```
+
+若實機方向與「出/入、升/降」相反，只需要交換符號或按鍵映射，不影響 topic 介面。
+
+STAFF mode 下 L1/R1 仍交給 pneumatic head toggle，L2/R2 仍交給 Motor8/Motor7 position trim；因此 elevator/horizontal bridge 在 STAFF mode 會發布 `0.0`。
+
+
+## 2026-06-19 STAFF mode A/Y 90-degree 與 L/R 微調更新
+
+本節取代前文 `X/B` 控 Motor8/Motor7 preset、`L2/R2` 控微調的現行鍵位說明。
+
+STAFF mode 最新位置速度模式鍵位：
+
+```text
+Y  -> Motor7 preset / left-right 90-degree cycle
+A  -> Motor8 preset / left-right 90-degree cycle
+R1 -> Motor7 trim negative
+R2 -> Motor7 trim positive
+L1 -> Motor8 trim negative
+L2 -> Motor8 trim positive
+```
+
+`B` 不再由 staff position bridge 使用，避免和現有 90-degree turn 行為衝突。`X` 目前也不再由 staff position bridge 使用。
+
+KFS mode horizontal 方向已對調：
+
+```text
+L2 -> Motor6 horizontal positive/out
+R2 -> Motor6 horizontal negative/in
+```
+
+
+## 2026-06-19 Final STAFF Gripper / 90-Degree Split
+
+This section supersedes any same-day text that says Y/A also toggle gripper relays.
+
+Current STAFF mode split:
+
+```text
+Y  -> Motor7 left-right 90-degree / preset cycle only
+A  -> Motor8 left-right 90-degree / preset cycle only
+B  -> Motor7 staff gripper relay toggle only
+X  -> Motor8 staff gripper relay toggle only
+R1 -> Motor7 manual trim negative
+R2 -> Motor7 manual trim positive
+L1 -> Motor8 manual trim negative
+L2 -> Motor8 manual trim positive
+R3 -> Motor7 head / inclination relay toggle
+L3 -> Motor8 head / inclination relay toggle
+```
+
+Current KFS mode remains:
+
+```text
+Y  -> KFS gripper toggle
+L2 -> Motor6 horizontal positive / out
+R2 -> Motor6 horizontal negative / in
+L1 -> Motor5 elevator negative / down
+R1 -> Motor5 elevator positive / up
+```
+
+
+## 2026-06-19 Final STAFF ABXY Layout
+
+最新 STAFF mode ABXY：
+
+```text
+A -> Motor7 左右 90° / preset cycle only
+X -> Motor8 左右 90° / preset cycle only
+B -> Motor7 staff gripper relay toggle only
+Y -> Motor8 staff gripper relay toggle only
+```
+
+其他 STAFF 鍵位不變：`R1/R2=Motor7 微調`，`L1/L2=Motor8 微調`，`R3=Motor7 抬頭`，`L3=Motor8 抬頭`。
+
+KFS mode 不變：`Y=KFS gripper`，`L2/R2=horizontal positive/negative`，`L1/R1=elevator negative/positive`。
+
+
+## 2026-06-19 現行手柄鍵位總表（以 CONTROLLER_USAGE.md 為準）
+
+目前手柄操作的唯一準則已整理到 `/home/robotics/robocon2026_r1/r1_control_ws/CONTROLLER_USAGE.md`。若本文件前面存在舊版鍵位描述，保留為歷史紀錄；實機操作以本節和 `CONTROLLER_USAGE.md` 為準。
+
+固定不變：左搖桿控制底盤平移，右搖桿控制底盤旋轉，D-pad 設定 KFS visual front 的人視角方向，`X+Y+B+A` 長按 5 秒觸發 Raspberry Pi shutdown command。
+
+模式切換：`SELECT/中左 = STAFF mode (/operation_mode=1)`，`START/中右 = KFS mode (/operation_mode=2)`。
+
+STAFF mode：`A=Motor7 左右 90°/preset`，`X=Motor8 左右 90°/preset`，`B=Motor7 staff gripper relay`，`Y=Motor8 staff gripper relay`，`R1/R2=Motor7 微調 -/+`，`L1/L2=Motor8 微調 -/+`，`R3/P1=Motor7 抬頭/inclination relay`，`L3/P2=Motor8 抬頭/inclination relay`。
+
+KFS mode：`Y=KFS gripper`，`L2/R2=Motor6 horizontal positive/negative`，`L1/R1=Motor5 elevator negative/positive`。
+
+最新 Arduino 五路 relay 順序為 `[KFS gripper, M7 gripper, M8 inclination, M8 gripper, M7 inclination]`，安全狀態為 `[0,1,0,1,0]`。
+
+
+## 2026-06-19 r1_arm_control 現行 mode gate 與按鍵
+
+`r1_arm_control` 目前只負責 Motor5/Motor6/Motor7/Motor8 的 ROS 控制與手柄 bridge，不直接處理 Arduino relay。
+
+- `motor_position_selector_joystick_bridge_node` 只在 `/operation_mode=1` 且 mode 未超時時工作：`A -> /motor7_position_input toggle`，`X -> /motor8_position_input toggle`，`R1/R2 -> Motor7 trim -/+`，`L1/L2 -> Motor8 trim -/+`。
+- `horizontal_joystick_bridge_node` 只在 `/operation_mode=2` 且 mode 未超時時工作：`L2 -> positive/out`，`R2 -> negative/in`。
+- `elevator_joystick_bridge_node` 只在 `/operation_mode=2` 且 mode 未超時時工作：`L1 -> negative/down`，`R1 -> positive/up`。
+- `/operation_mode` 超過 `mode_timeout_sec=0.5 s` 或 `/joystick_data` 超過 `input_timeout_sec=0.3 s` 後，各 bridge 發布停止/invalid 輸出，避免舊按鍵狀態繼續控制機構。

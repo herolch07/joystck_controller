@@ -21,3 +21,11 @@ def test_both_or_neither_button_stops():
 
 def test_negative_parameter_is_normalized_to_positive_magnitude():
     assert HorizontalJoystickBridgeNode.speed_from_buttons(False, True, -10.0) == -10.0
+
+
+def test_l2_r2_trigger_speed_for_kfs_horizontal():
+    speed = HorizontalJoystickBridgeNode.speed_from_triggers
+    assert speed(512, 0, 10.0, 24) == 10.0
+    assert speed(0, 512, 10.0, 24) == -10.0
+    assert speed(512, 512, 10.0, 24) == 0.0
+    assert speed(10, 10, 10.0, 24) == 0.0

@@ -1,3 +1,5 @@
+> 2026-06-19 現行操作入口：目前手柄鍵位、STAFF/KFS mode、D-pad 視角、五路 relay 順序請先看 [`CONTROLLER_USAGE.md`](CONTROLLER_USAGE.md)。本文若是舊測試/排查紀錄，內容保留作歷史，不代表目前實機鍵位。
+
 # ROS2 Domain Isolation for R1 / R2
 
 本文档说明为什么 R1 会看到 R2 的 node / topic，为什么这会影响底盘调试，以及以后如何固定避免。

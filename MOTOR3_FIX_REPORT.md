@@ -1,3 +1,5 @@
+> 2026-06-19 現行操作入口：目前手柄鍵位、STAFF/KFS mode、D-pad 視角、五路 relay 順序請先看 [`CONTROLLER_USAGE.md`](CONTROLLER_USAGE.md)。本文若是舊測試/排查紀錄，內容保留作歷史，不代表目前實機鍵位。
+
 # Motor 3 无限重启问题修复报告
 
 > 当前状态说明：本报告记录早期 Motor 3 `isEnable`/CAN feedback 解析问题。当前最终实机记录还确认过另一个 Motor 3 反向响应慢问题，最终原因是 ESC 损坏；这不是本报告中的软件解析问题。当前完整操作请以 `README.md` 和 `r1 final operation guide 1.0.md` 为准。

@@ -61,3 +61,27 @@ def test_trim_integration_obeys_soft_limits():
 
 def test_motor7_reuses_motor8_controller_implementation():
     assert issubclass(Motor7PositionControllerNode, Motor8PositionControllerNode)
+
+
+def test_staff_mode_direct_trims_route_to_fixed_motors():
+    motor7_trim, motor8_trim = MotorPositionSelectorJoystickBridgeNode.direct_motor_trims(
+        False, 256, True, 512, 24
+    )
+    assert motor7_trim == pytest.approx(0.0)
+    assert motor8_trim == pytest.approx(0.5)
+
+
+def test_staff_mode_direct_trims_obey_deadzone():
+    motor7_trim, motor8_trim = MotorPositionSelectorJoystickBridgeNode.direct_motor_trims(
+        False, 10, False, 10, 24
+    )
+    assert motor7_trim == pytest.approx(0.0)
+    assert motor8_trim == pytest.approx(0.0)
+
+
+def test_staff_mode_button_trim_negative_direction():
+    motor7_trim, motor8_trim = MotorPositionSelectorJoystickBridgeNode.direct_motor_trims(
+        True, 0, True, 0, 24
+    )
+    assert motor7_trim == pytest.approx(-1.0)
+    assert motor8_trim == pytest.approx(-1.0)

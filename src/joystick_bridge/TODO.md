@@ -1,3 +1,5 @@
+> 2026-06-19 現行操作入口：目前手柄鍵位、STAFF/KFS mode、D-pad 視角、五路 relay 順序請先看 `/home/robotics/robocon2026_r1/r1_control_ws/CONTROLLER_USAGE.md`。本文若是舊測試/排查紀錄，內容保留作歷史，不代表目前實機鍵位。
+
 # Joystick Bridge 开发任务清单
 
 ## v1.0.0 基础功能（已完成）
@@ -151,3 +153,11 @@
 - [x] 更新方向轉換單元測試
 - [ ] 實機確認 KFS 在前時，不按 D-pad 或按 D-pad 上，左搖桿向前會向操作人前方移動
 - [ ] 實機確認四方向 D-pad 與左搖桿方向一致
+
+
+## 2026-06-19 KFS visual front 視角控制
+
+- [x] D-pad 改為 KFS visual front 人視角輸入
+- [x] 實機校正公式記錄為 `body_front_view = (KFS view - 1) % 4`
+- [x] 開機預設 D-pad Up / `view=0`
+- [ ] 實機在四個方向高速平移時再次確認人視角一致性

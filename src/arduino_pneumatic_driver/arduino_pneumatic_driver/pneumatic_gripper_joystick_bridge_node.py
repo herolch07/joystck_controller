@@ -1,51 +1,59 @@
 #!/usr/bin/env python3
-"""Route joystick buttons to two selectable arm pneumatic mechanisms."""
+"""Route STAFF-mode joystick buttons to the five-relay staff pneumatic panel."""
 
 import rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
-from std_msgs.msg import Float32MultiArray, Int32MultiArray
+from std_msgs.msg import Int32, Int32MultiArray
 
 from my_joystick_msgs.msg import Joystick
 
 
-DEFAULT_ARM_SAFE_STATE = [0, 1, 0, 1, 1, 0]
+# /pneumatic_gripper_cmd order for Arduino relays 2-5:
+# [M7 gripper, M8 inclination, M8 gripper, M7 inclination]
+DEFAULT_ARM_SAFE_STATE = [1, 0, 1, 0]
+MODE_STAFF = 1
 
 
 class PneumaticGripperJoystickBridgeNode(Node):
-    """Control Motor 7/8 arm pneumatics using the shared motor selector.
+    """Control staff gripper relays only while STAFF mode is active.
 
-    The command order is Motor7 height/gripper, Motor8 inclination/height/gripper,
-    then Motor7 inclination. A, B, and SELECT act on the selected arm.
+    Current STAFF mapping:
+      B  -> Motor 7 staff gripper relay toggle
+      Y  -> Motor 8 staff gripper relay toggle
+      R3 -> Motor 7 inclination/head relay toggle
+      L3 -> Motor 8 inclination/head relay toggle
+
+    The former Motor7/Motor8 height relays were removed from the Arduino panel.
+    L1/R1/L2/R2 are reserved for Motor7/8 manual trim.
     """
 
     def __init__(self):
         super().__init__("pneumatic_gripper_joystick_bridge_node")
 
-        self.declare_parameter("default_motor_id", 7)
-        self.declare_parameter("height_toggle_button", "a")
-        self.declare_parameter("gripper_toggle_button", "b")
-        self.declare_parameter("inclination_toggle_button", "select")
+        self.declare_parameter("motor7_gripper_button", "b")
+        self.declare_parameter("motor8_gripper_button", "y")
+        self.declare_parameter("motor7_inclination_button", "r3")
+        self.declare_parameter("motor8_inclination_button", "l3")
         self.declare_parameter("safe_state", DEFAULT_ARM_SAFE_STATE)
         self.declare_parameter("publish_hz", 20.0)
         self.declare_parameter("input_timeout_sec", 0.3)
+        self.declare_parameter("mode_timeout_sec", 0.5)
 
-        default_motor = int(self.get_parameter("default_motor_id").value)
-        self.selected_motor_id = default_motor if default_motor in (7, 8) else 7
         self.states = self.get_safe_state()
-        self.height_toggle_pressed = True
-        self.gripper_toggle_pressed = True
-        self.inclination_toggle_pressed = True
         self.last_joystick_time = None
+        self.last_mode_time = None
+        self.operation_mode = 0
+        self.motor7_gripper_pressed = True
+        self.motor8_gripper_pressed = True
+        self.motor7_inclination_pressed = True
+        self.motor8_inclination_pressed = True
 
         self.joy_sub = self.create_subscription(
             Joystick, "/joystick_data", self.joystick_callback, 10
         )
-        self.selector_sub = self.create_subscription(
-            Float32MultiArray,
-            "/motor_position_selector_status",
-            self.selector_status_callback,
-            10,
+        self.mode_sub = self.create_subscription(
+            Int32, "/operation_mode", self.operation_mode_callback, 10
         )
         self.cmd_pub = self.create_publisher(
             Int32MultiArray, "/pneumatic_gripper_cmd", 10
@@ -57,56 +65,68 @@ class PneumaticGripperJoystickBridgeNode(Node):
         )
 
         self.get_logger().info(
-            "Pneumatic bridge initialized: START selects Motor 7/8; "
-            "A=selected height, B=selected gripper, "
-            "SELECT=selected inclination"
+            "Pneumatic bridge initialized: STAFF mode B=M7 gripper, Y=M8 gripper, "
+            "R3=M7 head, L3=M8 head"
         )
 
     def get_safe_state(self):
-        """Return six arm relay values in the confirmed wiring order."""
+        """Return four staff relay values in the confirmed wiring order."""
         raw = list(self.get_parameter("safe_state").value)
         safe = list(DEFAULT_ARM_SAFE_STATE)
-        for index, value in enumerate(raw[:6]):
+        for index, value in enumerate(raw[:4]):
             safe[index] = self.normalize_state(value)
         return safe
 
-    def selector_status_callback(self, msg):
-        """Track the existing Motor 7/8 selector without handling START twice."""
-        if not msg.data:
-            return
-        selected = int(msg.data[0])
-        if selected in (7, 8):
-            self.selected_motor_id = selected
+    def operation_mode_callback(self, msg):
+        """Track `/operation_mode`; only STAFF mode enables button toggles."""
+        self.operation_mode = int(msg.data)
+        self.last_mode_time = self.get_clock().now()
+
+    def staff_mode_active(self):
+        """Return true only while a fresh STAFF mode message is present."""
+        if self.last_mode_time is None:
+            return False
+        elapsed = (self.get_clock().now() - self.last_mode_time).nanoseconds / 1e9
+        return (
+            self.operation_mode == MODE_STAFF
+            and elapsed <= float(self.get_parameter("mode_timeout_sec").value)
+        )
 
     def joystick_callback(self, msg):
-        """Apply rising-edge toggles to the currently selected arm."""
+        """Apply STAFF-mode rising-edge toggles to fixed staff relay channels."""
         self.last_joystick_time = self.get_clock().now()
 
-        height_pressed = self.get_configured_button(msg, "height_toggle_button")
-        gripper_pressed = self.get_configured_button(msg, "gripper_toggle_button")
-        inclination_pressed = self.get_configured_button(
-            msg, "inclination_toggle_button"
+        if not self.staff_mode_active():
+            self.reset_edge_memory()
+            return
+
+        self.states[0], self.motor7_gripper_pressed = self.apply_toggle(
+            self.states[0],
+            self.get_configured_button(msg, "motor7_gripper_button"),
+            self.motor7_gripper_pressed,
+        )
+        self.states[2], self.motor8_gripper_pressed = self.apply_toggle(
+            self.states[2],
+            self.get_configured_button(msg, "motor8_gripper_button"),
+            self.motor8_gripper_pressed,
+        )
+        self.states[3], self.motor7_inclination_pressed = self.apply_toggle(
+            self.states[3],
+            self.get_configured_button(msg, "motor7_inclination_button"),
+            self.motor7_inclination_pressed,
+        )
+        self.states[1], self.motor8_inclination_pressed = self.apply_toggle(
+            self.states[1],
+            self.get_configured_button(msg, "motor8_inclination_button"),
+            self.motor8_inclination_pressed,
         )
 
-        height_index, gripper_index = self.selected_arm_indices(
-            self.selected_motor_id
-        )
-        self.states[height_index], self.height_toggle_pressed = self.apply_toggle(
-            self.states[height_index], height_pressed, self.height_toggle_pressed
-        )
-        self.states[gripper_index], self.gripper_toggle_pressed = self.apply_toggle(
-            self.states[gripper_index], gripper_pressed, self.gripper_toggle_pressed
-        )
-
-        inclination_index = self.selected_inclination_index(self.selected_motor_id)
-        (
-            self.states[inclination_index],
-            self.inclination_toggle_pressed,
-        ) = self.apply_toggle(
-            self.states[inclination_index],
-            inclination_pressed,
-            self.inclination_toggle_pressed,
-        )
+    def reset_edge_memory(self):
+        """Require release before accepting a toggle after timeout or mode change."""
+        self.motor7_gripper_pressed = True
+        self.motor8_gripper_pressed = True
+        self.motor7_inclination_pressed = True
+        self.motor8_inclination_pressed = True
 
     @staticmethod
     def normalize_state(value):
@@ -115,13 +135,18 @@ class PneumaticGripperJoystickBridgeNode(Node):
 
     @staticmethod
     def selected_arm_indices(motor_id):
-        """Return height and gripper command indices for Motor 7 or 8."""
-        return (0, 1) if int(motor_id) == 7 else (3, 4)
+        """Return legacy gripper-only indices for Motor 7 or Motor 8."""
+        return (0, 0) if int(motor_id) == 7 else (2, 2)
 
     @staticmethod
     def selected_inclination_index(motor_id):
-        """Return inclination command index for the selected arm."""
-        return 5 if int(motor_id) == 7 else 2
+        """Return inclination command index for Motor 7 or Motor 8."""
+        return 3 if int(motor_id) == 7 else 1
+
+    @staticmethod
+    def selected_gripper_index(motor_id):
+        """Return gripper command index for Motor 7 or Motor 8."""
+        return 0 if int(motor_id) == 7 else 2
 
     @staticmethod
     def apply_toggle(state, pressed, was_pressed):
@@ -132,7 +157,7 @@ class PneumaticGripperJoystickBridgeNode(Node):
 
     @staticmethod
     def apply_height_toggle(height_state, pressed, was_pressed):
-        """Backward-compatible alias used by existing unit tests."""
+        """Backward-compatible alias for old tests; no height relay remains."""
         return PneumaticGripperJoystickBridgeNode.apply_toggle(
             height_state, pressed, was_pressed
         )
@@ -156,12 +181,10 @@ class PneumaticGripperJoystickBridgeNode(Node):
         return bool(getattr(msg, button_name))
 
     def publish_timer_callback(self):
-        """Publish continuously and restore all arm relays after input timeout."""
+        """Publish continuously and restore all staff relays after joystick timeout."""
         if self.is_joystick_timed_out():
             self.states = self.get_safe_state()
-            self.height_toggle_pressed = True
-            self.gripper_toggle_pressed = True
-            self.inclination_toggle_pressed = True
+            self.reset_edge_memory()
 
         msg = Int32MultiArray()
         msg.data = [int(value) for value in self.states]

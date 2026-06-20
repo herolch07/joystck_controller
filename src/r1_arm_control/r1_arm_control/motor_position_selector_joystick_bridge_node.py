@@ -23,6 +23,9 @@ class MotorPositionSelectorJoystickBridgeNode(Node):
       R1/R2 -> Motor 7 trim, negative/positive
       L1/L2 -> Motor 8 trim, negative/positive
 
+    If `/view_orientation` is D-pad down (`2`), Motor 7 and Motor 8 controls
+    are swapped so STAFF operation follows the operator-facing robot direction.
+
     SELECT/START are intentionally not used here; they are owned by
     operation_mode_selector_node. When operation mode is not STAFF, this bridge
     publishes invalid neutral input so the position controllers stop accepting
@@ -38,10 +41,12 @@ class MotorPositionSelectorJoystickBridgeNode(Node):
         self.declare_parameter("publish_hz", 20.0)
         self.declare_parameter("input_timeout_sec", 0.3)
         self.declare_parameter("mode_timeout_sec", 0.5)
+        self.declare_parameter("swap_staff_grippers_on_view_down", True)
 
         self.last_joystick_time = 0.0
         self.last_mode_time = 0.0
         self.operation_mode = 0
+        self.view_orientation = 0
         self.motor7_toggle_was_pressed = True
         self.motor8_toggle_was_pressed = True
         self.pending_motor7_toggle = False
@@ -54,6 +59,9 @@ class MotorPositionSelectorJoystickBridgeNode(Node):
         )
         self.mode_sub = self.create_subscription(
             Int32, "/operation_mode", self.operation_mode_callback, 10
+        )
+        self.view_sub = self.create_subscription(
+            Int32, "/view_orientation", self.view_orientation_callback, 10
         )
         self.motor7_pub = self.create_publisher(
             Float32MultiArray, "/motor7_position_input", 10
@@ -69,7 +77,7 @@ class MotorPositionSelectorJoystickBridgeNode(Node):
         self.timer = self.create_timer(1.0 / publish_hz, self.timer_callback)
         self.get_logger().info(
             "Position bridge initialized: STAFF mode A->M7 preset, X->M8 preset, "
-            "R1/R2->M7 trim, L1/L2->M8 trim"
+            "R1/R2->M7 trim, L1/L2->M8 trim; D-pad down swaps M7/M8"
         )
 
     @staticmethod
@@ -111,6 +119,25 @@ class MotorPositionSelectorJoystickBridgeNode(Node):
         )
 
     @staticmethod
+    def maybe_swap_motor_values(motor7_value, motor8_value, swap_enabled, view_orientation):
+        """Swap Motor7/Motor8 values only when D-pad down view is active."""
+        if bool(swap_enabled) and int(view_orientation) == 2:
+            return motor8_value, motor7_value
+        return motor7_value, motor8_value
+
+    @staticmethod
+    def maybe_swap_trim_values(motor7_trim, motor8_trim, swap_enabled, view_orientation):
+        """Swap Motor7/Motor8 trims and reverse each pair direction on D-pad down.
+
+        D-pad down means the operator is facing the STAFF side from the opposite
+        direction. Besides swapping Motor7 and Motor8, each local trim pair also
+        needs its positive/negative buttons reversed: R1<->R2 and L1<->L2.
+        """
+        if bool(swap_enabled) and int(view_orientation) == 2:
+            return -motor8_trim, -motor7_trim
+        return motor7_trim, motor8_trim
+
+    @staticmethod
     def controls_are_neutral(toggle_pressed, l2, r2, deadzone):
         """Legacy helper retained for tests and documentation history."""
         return (
@@ -128,6 +155,10 @@ class MotorPositionSelectorJoystickBridgeNode(Node):
         """Track `/operation_mode`; only STAFF mode enables this bridge."""
         self.operation_mode = int(msg.data)
         self.last_mode_time = time.monotonic()
+
+    def view_orientation_callback(self, msg):
+        """Track operator view; D-pad down optionally swaps Motor7/Motor8."""
+        self.view_orientation = int(msg.data)
 
     def staff_mode_active(self):
         """Return true only while a fresh STAFF mode message is present."""
@@ -164,6 +195,12 @@ class MotorPositionSelectorJoystickBridgeNode(Node):
 
         motor7_toggle_pressed = self.get_button(msg, "motor7_toggle_button")
         motor8_toggle_pressed = self.get_button(msg, "motor8_toggle_button")
+        motor7_toggle_pressed, motor8_toggle_pressed = self.maybe_swap_motor_values(
+            motor7_toggle_pressed,
+            motor8_toggle_pressed,
+            self.get_parameter("swap_staff_grippers_on_view_down").value,
+            self.view_orientation,
+        )
 
         motor7_edge, self.motor7_toggle_was_pressed = self.rising_edge(
             motor7_toggle_pressed, self.motor7_toggle_was_pressed
@@ -175,6 +212,12 @@ class MotorPositionSelectorJoystickBridgeNode(Node):
         self.pending_motor8_toggle = self.pending_motor8_toggle or motor8_edge
         self.motor7_trim_input, self.motor8_trim_input = self.direct_motor_trims(
             msg.l1, msg.l2, msg.r1, msg.r2, deadzone
+        )
+        self.motor7_trim_input, self.motor8_trim_input = self.maybe_swap_trim_values(
+            self.motor7_trim_input,
+            self.motor8_trim_input,
+            self.get_parameter("swap_staff_grippers_on_view_down").value,
+            self.view_orientation,
         )
 
     def timer_callback(self):

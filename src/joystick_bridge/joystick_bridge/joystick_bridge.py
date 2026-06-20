@@ -56,7 +56,7 @@ class JoystickBridge(Node):
         
         # 声明参数（符合 AGENTS.md 2.2.4 规范）
         self.declare_parameter('max_speed_cm', 150.0)
-        self.declare_parameter('max_rotation', 1.2)
+        self.declare_parameter('max_rotation', 3.0)
         self.declare_parameter('deadzone', 15)
         self.declare_parameter('input_timeout_sec', 0.3)
         self.declare_parameter('watchdog_hz', 20.0)

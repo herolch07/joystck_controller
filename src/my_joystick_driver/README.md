@@ -265,3 +265,19 @@ KFS mode：`Y=KFS gripper`，`L2/R2=Motor6 horizontal positive/negative`，`L1/R
 P1/P2 仍不作為獨立 ROS message 欄位。手柄內部 remap 維持：`P1=R3`，`P2=L3`。目前實際用途只在 STAFF mode 生效：`P1/R3 -> Motor7 inclination/head relay`，`P2/L3 -> Motor8 inclination/head relay`。
 
 若未來更換連線模式後 P1/P2 能輸出獨立 evdev key code，才需要擴充 `Joystick.msg` 與 `joystick_node.py`。
+
+## 2026-06-20 KFS mechanism speed parameters
+
+目前 source code 中 KFS mode 的機構速度如下：
+
+```text
+Motor5 elevator = 28.0 rad/s
+  L1: negative/down
+  R1: positive/up
+
+Motor6 horizontal = 30.0 rad/s
+  L2: positive/out at full trigger
+  R2: negative/in at full trigger
+```
+
+對應參數：`elevator_joystick_bridge_node.command_speed_rad_s=28.0`、`elevator_controller_node.max_speed_rad_s=28.0`、`horizontal_joystick_bridge_node.command_speed_rad_s=30.0`、`horizontal_controller_node.max_speed_rad_s=30.0`。只有 `/operation_mode=2` 時生效；超時保護仍為 `timeout_sec=0.3 s`。

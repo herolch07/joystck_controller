@@ -59,14 +59,14 @@ max_wheel_accel_rad_s2
 | 参数 | 默认值 | 单位 | 所属节点 | 作用 |
 |---|---:|---|---|---|
 | `max_speed_cm` | `150.0` | `cm/s` | `/joystick_bridge` | 左摇杆推到底时的目标最大平移速度 |
-| `max_rotation` | `1.2` | `rad/s` | `/joystick_bridge` | 右摇杆推到底时的目标最大旋转角速度 |
+| `max_rotation` | `3.0` | `rad/s` | `/joystick_bridge` | 右摇杆推到底时的目标最大旋转角速度 |
 | `translation_linear_weight` | `0.1` | ratio | `/joystick_bridge` | 平移混合曲线线性权重 |
 | `rotation_linear_weight` | `0.1` | ratio | `/joystick_bridge` | 旋转混合曲线线性权重 |
 | `gripper_linear_weight` | `0.1` | ratio | `/arm_gripper_joystick_bridge_node` | Motor 7 扳机混合曲线线性权重 |
 | `deadzone` | `15` | joystick units | `/joystick_bridge` | 摇杆小幅漂移过滤，当前摇杆范围是 `-512..512` |
 | `input_timeout_sec` | `0.3` | `s` | `/joystick_bridge` | `/joystick_data` 超时后发布底盘停止指令 |
-| `max_wheel_speed_rad_s` | `64.0` | `rad/s` | `/local_navigation_node` | 单个轮子的角速度上限 |
-| `max_wheel_accel_rad_s2` | `12.0` | `rad/s^2` | `/local_navigation_node` | 单个轮子的角加速度上限 |
+| `max_wheel_speed_rad_s` | `40.0` | `rad/s` | `/local_navigation_node` | 单个轮子的角速度上限 |
+| `max_wheel_accel_rad_s2` | `25.0` | `rad/s^2` | `/local_navigation_node` | 单个轮子的角加速度上限 |
 | `omniwheel_radius_m` | `0.0635` | `m` | `/local_navigation_node` | 全向轮半径，用于线速度/角速度换算 |
 | `command_timeout_sec` | `0.3` | `s` | `/local_navigation_node` | `/local_driving` 超时后 Motor 1-4 归零 |
 | `command_timeout_sec` | `0.5` | `s` | `/motor_controller_node` | 连续 VEL 命令超时后对应电机归零 |
@@ -76,14 +76,14 @@ max_wheel_accel_rad_s2
 ```text
 max_speed_cm = 150.0
 translation_linear_weight = 0.1
-max_rotation = 1.2
+max_rotation = 3.0
 rotation_linear_weight = 0.1
 gripper max_speed_rad_s = 1.3
 gripper_linear_weight = 0.1
 deadzone = 15
 input_timeout_sec = 0.3
-max_wheel_speed_rad_s = 64.0
-max_wheel_accel_rad_s2 = 12.0
+max_wheel_speed_rad_s = 40.0
+max_wheel_accel_rad_s2 = 25.0
 omniwheel_radius_m = 0.0635
 local_navigation_node command_timeout_sec = 0.3
 damiao_node command_timeout_sec = 0.5
@@ -160,7 +160,7 @@ wheel_radius_m = 0.0635
 如果设置：
 
 ```text
-max_wheel_speed_rad_s = 64.0
+max_wheel_speed_rad_s = 40.0
 ```
 
 理论轮子线速度：
@@ -205,7 +205,7 @@ chassis_accel_m_s2 = wheel_accel_rad_s2 * wheel_radius_m
 默认：
 
 ```text
-max_wheel_accel_rad_s2 = 12.0
+max_wheel_accel_rad_s2 = 25.0
 ```
 
 线加速度约为：
@@ -397,7 +397,7 @@ R1 speed tests must not be run while `/base/dummy_control` or `/damiao_motor_con
 
 ## 2026-06-06 当前平移控制策略
 
-当前默认平移上限为 `150 cm/s`、旋转上限为 `1.2 rad/s`、Motor 7 上限为 `1.3 rad/s`；三者均采用 `y = 0.1x + 0.9x³`。START/SELECT 底盘速度档已取消。本文较早章节中的调速命令属于历史调试记录。
+当前默认平移上限为 `150 cm/s`、旋转上限为 `3.0 rad/s`、Motor 7/8 STAFF 位置模式按各自 controller 参数运行；三者均采用 `y = 0.1x + 0.9x³`。START/SELECT 底盘速度档已取消。本文较早章节中的调速命令属于历史调试记录。
 
 ## 2026-06-10 当前有效速度边界（取代旧 64 rad/s / 400 cm/s 方案）
 
@@ -407,9 +407,9 @@ R1 speed tests must not be run while `/base/dummy_control` or `/damiao_motor_con
 
 ```text
 joystick_bridge.max_speed_cm = 150.0 cm/s
-joystick_bridge.max_rotation = 1.2 rad/s
+joystick_bridge.max_rotation = 3.0 rad/s
 local_navigation_node.max_wheel_speed_rad_s = 40.0 rad/s
-local_navigation_node.max_wheel_accel_rad_s2 = 12.0 rad/s^2
+local_navigation_node.max_wheel_accel_rad_s2 = 25.0 rad/s^2
 omniwheel_radius_m = 0.0635 m
 wheel_base_radius_m = 0.327038 m
 ```
@@ -431,10 +431,10 @@ wheel_base_radius_m = 0.327038 m
 旋转叠加轮速 = rotation_rad_s × wheel_base_radius_m / wheel_radius_m
 ```
 
-满旋转 `1.2 rad/s` 对单轮增加约：
+满旋转 `3.0 rad/s` 对单轮增加约：
 
 ```text
-1.2 × 0.327038 / 0.0635 = 6.18 rad/s
+3.0 × 0.327038 / 0.0635 = 15.45 rad/s
 ```
 
 ### 当前软件和电机理论上限
@@ -453,10 +453,10 @@ wheel_base_radius_m = 0.327038 m
 ```text
 纯前后/左右：1.50 / 0.0635 = 23.62 rad/s
 斜向最坏方向：23.62 × sqrt(2) = 33.41 rad/s
-斜向 + 1.2 rad/s 满旋转：33.41 + 6.18 = 39.59 rad/s
+斜向 + 3.0 rad/s 满旋转：33.41 + 15.45 = 48.86 rad/s
 ```
 
-因此当前 `150 cm/s` 即使叠加最大旋转，也刚好低于 `40 rad/s` 软件上限，但余量只有约 `0.41 rad/s`。
+因此当前 `150 cm/s` 纯平移不会被 `40 rad/s` 截断；但斜向同时叠加满旋转会触发四轮同比缩放。纯前后/左右 + 满旋转约为 `23.62 + 15.45 = 39.07 rad/s`，仍低于 `40 rad/s`。
 
 ### 如何提高到 170 cm/s
 
@@ -522,3 +522,31 @@ new_wheel_i = current_wheel_i + alpha * (target_wheel_i - current_wheel_i)
 ```
 
 这项修改主要改善加速和方向切换阶段，不是 IMU 航向闭环。如果底盘达到稳定速度后仍持续转向，应检查轮子接地、滚子阻力、载重分布和四轮实际输出差异。
+
+
+## 2026-06-20 当前旋转速度更新
+
+当前右摇杆满杆旋转速度为：
+
+```text
+joystick_bridge.max_rotation = 3.0 rad/s
+```
+
+这不会改变 `max_speed_cm = 150 cm/s` 和 `local_navigation_node.max_wheel_speed_rad_s = 40.0 rad/s`。但它会改变组合动作边界：
+
+```text
+纯前后/左右 150 cm/s + 满旋转 3.0 rad/s: 23.62 + 15.45 = 39.07 rad/s
+斜向最坏 150 cm/s + 满旋转 3.0 rad/s: 33.41 + 15.45 = 48.86 rad/s
+```
+
+所以纯平移不会触发 `40 rad/s` 轮速限制；纯前后/左右加满旋转已经非常接近上限；斜向加满旋转会被 `local_navigation_node` 四轮同比速度限幅缩放。
+
+## 2026-06-20 Current Rotation Default
+
+Current source default:
+
+```text
+joystick_bridge.max_rotation = 3.0 rad/s
+```
+
+Older sections mentioning `1.2 rad/s` or `2.4 rad/s` are historical and are not the current runtime default.

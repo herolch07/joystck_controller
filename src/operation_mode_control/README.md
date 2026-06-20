@@ -109,3 +109,19 @@ KFS mode：`Y=KFS gripper`，`L2/R2=Motor6 horizontal positive/negative`，`L1/R
 目前不新增 Zone3 自動策略 node。`operation_mode_selector_node` 只提供兩個可組合模式：`SELECT=STAFF`、`START=KFS`。Zone1 使用 STAFF mode，Zone2 使用 KFS mode，Zone3 由機手按 SELECT/START 手動切換需要的機構組。
 
 這個 package 不包含比賽流程或戰術 FSM，因此仍符合「模式選擇可復用、上層策略外置」的 package 邊界。
+
+## 2026-06-20 KFS mechanism speed parameters
+
+目前 source code 中 KFS mode 的機構速度如下：
+
+```text
+Motor5 elevator = 28.0 rad/s
+  L1: negative/down
+  R1: positive/up
+
+Motor6 horizontal = 30.0 rad/s
+  L2: positive/out at full trigger
+  R2: negative/in at full trigger
+```
+
+對應參數：`elevator_joystick_bridge_node.command_speed_rad_s=28.0`、`elevator_controller_node.max_speed_rad_s=28.0`、`horizontal_joystick_bridge_node.command_speed_rad_s=30.0`、`horizontal_controller_node.max_speed_rad_s=30.0`。只有 `/operation_mode=2` 時生效；超時保護仍為 `timeout_sec=0.3 s`。

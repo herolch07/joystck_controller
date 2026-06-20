@@ -90,7 +90,7 @@
 
 ## 2026-06-07 右摇杆旋转混合曲线
 
-- [x] `max_rotation` 当前默认改为 `1.2 rad/s`
+- [x] `max_rotation` 在 2026-06-07 當時改為 `1.2 rad/s`，目前預設已更新為 `3.0 rad/s`
 - [x] 新增 `rotation_linear_weight = 0.1`
 - [x] 旋转曲线实现 `y = 0.1x + 0.9x³`
 - [x] 保持 `deadzone = 15` 和 `input_timeout_sec = 0.3 s` watchdog 不变
@@ -161,3 +161,8 @@
 - [x] 實機校正公式記錄為 `body_front_view = (KFS view - 1) % 4`
 - [x] 開機預設 D-pad Up / `view=0`
 - [ ] 實機在四個方向高速平移時再次確認人視角一致性
+
+## 2026-06-20 Rotation Speed
+
+- [x] Update current documented `max_rotation` to `3.0 rad/s`
+- [ ] Real robot test combined translation + full rotation to check wheel speed scaling

@@ -79,7 +79,7 @@ R3: 當前不使用
 max_speed_cm = 150.0
 translation_linear_weight = 0.1
 translation curve = 0.1x + 0.9x^3
-max_rotation = 1.2
+max_rotation = 3.0
 rotation_linear_weight = 0.1
 rotation curve = 0.1x + 0.9x^3
 ```
@@ -94,7 +94,7 @@ ros2 param get /joystick_bridge rotation_linear_weight
 ros2 param get /arm_gripper_joystick_bridge_node gripper_linear_weight
 ```
 
-START/SELECT 當前不用於底盤調速。左搖桿平移與右搖桿旋轉都使用 `0.1x + 0.9x³`；滿桿分別達到 `150 cm/s` 和 `1.2 rad/s`。Motor 7 的 R2/L2 也使用同一曲線，滿按達到 `1.3 rad/s`。
+START/SELECT 當前不用於底盤調速。左搖桿平移與右搖桿旋轉都使用 `0.1x + 0.9x³`；滿桿分別達到 `150 cm/s` 和 `3.0 rad/s`。Motor 7 的 R2/L2 也使用同一曲線，滿按達到 `1.3 rad/s`。
 
 ## 安全保護
 
@@ -344,7 +344,7 @@ Motor7 模式按 SELECT/- : 無動作
 
 ```text
 最大平移速度：150 cm/s
-最大旋轉速度：1.2 rad/s
+最大旋轉速度：3.0 rad/s
 ```
 
 目前左搖桿使用底盤自身座標：底盤旋轉後，搖桿向前仍代表「底盤目前正前方」，不是固定的
@@ -417,9 +417,9 @@ P2 = L3
 所以實際操作為：
 
 ```text
-按住 P1：等同 R3，Motor6 horizontal 負方向，/horizontal_speed_cmd = [-10.0]
-按住 P2：等同 L3，Motor6 horizontal 正方向，/horizontal_speed_cmd = [10.0]
-P1 + P2 或全部鬆開：等同 L3 + R3 或鬆開，/horizontal_speed_cmd = [0.0]
+按下 P1：等同 R3，只在 STAFF mode 切換 Motor7 inclination/head relay
+按下 P2：等同 L3，只在 STAFF mode 切換 Motor8 inclination/head relay
+KFS mode 不使用 P1/P2；Motor6 horizontal 目前由 L2/R2 控制
 ```
 
 這只是手柄硬體層的按鍵替代，不新增 ROS topic、message 欄位或 node。原本 L3／R3
@@ -906,3 +906,95 @@ STAFF mode：`A=Motor7 左右 90°/preset`，`X=Motor8 左右 90°/preset`，`B=
 KFS mode：`Y=KFS gripper`，`L2/R2=Motor6 horizontal positive/negative`，`L1/R1=Motor5 elevator negative/positive`。
 
 最新 Arduino 五路 relay 順序為 `[KFS gripper, M7 gripper, M8 inclination, M8 gripper, M7 inclination]`，安全狀態為 `[0,1,0,1,0]`。
+
+## 2026-06-20 KFS mechanism speed parameters
+
+目前 source code 中 KFS mode 的機構速度如下：
+
+```text
+Motor5 elevator = 28.0 rad/s
+  L1: negative/down
+  R1: positive/up
+
+Motor6 horizontal = 30.0 rad/s
+  L2: positive/out at full trigger
+  R2: negative/in at full trigger
+```
+
+對應參數：`elevator_joystick_bridge_node.command_speed_rad_s=28.0`、`elevator_controller_node.max_speed_rad_s=28.0`、`horizontal_joystick_bridge_node.command_speed_rad_s=30.0`、`horizontal_controller_node.max_speed_rad_s=30.0`。只有 `/operation_mode=2` 時生效；超時保護仍為 `timeout_sec=0.3 s`。
+
+## 2026-06-20 STAFF D-pad Down Motor7/Motor8 Swap
+
+目前 STAFF mode 會讀取 `/view_orientation`。規則：
+
+```text
+/view_orientation = 0  # D-pad 上，KFS visual front 在機手前方
+  STAFF mapping 保持正常：Motor7 按鍵仍控制 Motor7，Motor8 按鍵仍控制 Motor8
+
+/view_orientation = 2  # D-pad 下，KFS visual front 在機手後方
+  STAFF mapping 對調：所有 Motor7 staff gripper 控制改送 Motor8，所有 Motor8 staff gripper 控制改送 Motor7
+```
+
+D-pad 左/右 (`1/3`) 目前不觸發對調，保持正常 mapping。對調只在 STAFF mode (`/operation_mode=1`) 影響 staff gripper 相關控制；KFS mode、底盤左/右搖桿、Motor5 elevator、Motor6 horizontal 不受影響。
+
+正常 mapping：
+
+```text
+A -> Motor7 90° / preset
+X -> Motor8 90° / preset
+B -> Motor7 staff gripper relay
+Y -> Motor8 staff gripper relay
+R1/R2 -> Motor7 trim -/+
+L1/L2 -> Motor8 trim -/+
+R3/P1 -> Motor7 inclination/head relay
+L3/P2 -> Motor8 inclination/head relay
+```
+
+D-pad 下 swap mapping：
+
+```text
+A -> Motor8 90° / preset
+X -> Motor7 90° / preset
+B -> Motor8 staff gripper relay
+Y -> Motor7 staff gripper relay
+R1/R2 -> Motor8 trim +/-   # R1/R2 also swapped, so R1 positive and R2 negative
+L1/L2 -> Motor7 trim +/-   # L1/L2 also swapped, so L1 positive and L2 negative
+R3/P1 -> Motor8 inclination/head relay
+L3/P2 -> Motor7 inclination/head relay
+```
+
+相關參數：
+
+```text
+motor_position_selector_joystick_bridge_node.swap_staff_grippers_on_view_down = true
+pneumatic_gripper_joystick_bridge_node.swap_staff_grippers_on_view_down = true
+```
+
+## 2026-06-20 Chassis Rotation Speed
+
+Right stick rotation speed default is now:
+
+```text
+joystick_bridge.max_rotation = 3.0 rad/s
+```
+
+The rotation curve remains:
+
+```text
+rotation = (0.1x + 0.9x^3) * max_rotation
+```
+
+So small right-stick input still gives fine control, while full right-stick input can request up to `3.0 rad/s`. Actual chassis motion may still be scaled by `local_navigation_node.max_wheel_speed_rad_s = 40.0 rad/s` when translation and rotation are combined.
+
+### 2026-06-20 STAFF D-pad Down Trim Direction Update
+
+D-pad 下的 STAFF swap 現在也會把微調方向一起對調：`R1/R2` 互換、`L1/L2` 互換。因此 D-pad 下時：
+
+```text
+R1 -> Motor8 trim positive
+R2 -> Motor8 trim negative
+L1 -> Motor7 trim positive
+L2 -> Motor7 trim negative
+```
+
+D-pad 上仍保持原本：`R1/R2=Motor7 -/+`，`L1/L2=Motor8 -/+`。

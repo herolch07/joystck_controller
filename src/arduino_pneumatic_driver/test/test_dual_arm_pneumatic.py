@@ -34,3 +34,39 @@ def test_toggle_changes_once_per_press():
 def test_l3_r3_inclination_indices_remain_available():
     assert PneumaticGripperJoystickBridgeNode.selected_inclination_index(7) == 3
     assert PneumaticGripperJoystickBridgeNode.selected_inclination_index(8) == 1
+
+
+def test_view_down_swaps_staff_pneumatic_buttons():
+    buttons = PneumaticGripperJoystickBridgeNode.maybe_swap_button_pairs(
+        motor7_gripper=True,
+        motor8_gripper=False,
+        motor7_inclination=True,
+        motor8_inclination=False,
+        swap_enabled=True,
+        view_orientation=2,
+    )
+
+    assert buttons == {
+        "motor7_gripper": False,
+        "motor8_gripper": True,
+        "motor7_inclination": False,
+        "motor8_inclination": True,
+    }
+
+
+def test_view_up_keeps_staff_pneumatic_buttons_normal():
+    buttons = PneumaticGripperJoystickBridgeNode.maybe_swap_button_pairs(
+        motor7_gripper=True,
+        motor8_gripper=False,
+        motor7_inclination=True,
+        motor8_inclination=False,
+        swap_enabled=True,
+        view_orientation=0,
+    )
+
+    assert buttons == {
+        "motor7_gripper": True,
+        "motor8_gripper": False,
+        "motor7_inclination": True,
+        "motor8_inclination": False,
+    }

@@ -24,6 +24,9 @@ class PneumaticGripperJoystickBridgeNode(Node):
       R3 -> Motor 7 inclination/head relay toggle
       L3 -> Motor 8 inclination/head relay toggle
 
+    If `/view_orientation` is D-pad down (`2`), Motor 7 and Motor 8 relay
+    controls are swapped to match operator-facing STAFF gripper control.
+
     The former Motor7/Motor8 height relays were removed from the Arduino panel.
     L1/R1/L2/R2 are reserved for Motor7/8 manual trim.
     """
@@ -39,11 +42,13 @@ class PneumaticGripperJoystickBridgeNode(Node):
         self.declare_parameter("publish_hz", 20.0)
         self.declare_parameter("input_timeout_sec", 0.3)
         self.declare_parameter("mode_timeout_sec", 0.5)
+        self.declare_parameter("swap_staff_grippers_on_view_down", True)
 
         self.states = self.get_safe_state()
         self.last_joystick_time = None
         self.last_mode_time = None
         self.operation_mode = 0
+        self.view_orientation = 0
         self.motor7_gripper_pressed = True
         self.motor8_gripper_pressed = True
         self.motor7_inclination_pressed = True
@@ -54,6 +59,9 @@ class PneumaticGripperJoystickBridgeNode(Node):
         )
         self.mode_sub = self.create_subscription(
             Int32, "/operation_mode", self.operation_mode_callback, 10
+        )
+        self.view_sub = self.create_subscription(
+            Int32, "/view_orientation", self.view_orientation_callback, 10
         )
         self.cmd_pub = self.create_publisher(
             Int32MultiArray, "/pneumatic_gripper_cmd", 10
@@ -66,7 +74,7 @@ class PneumaticGripperJoystickBridgeNode(Node):
 
         self.get_logger().info(
             "Pneumatic bridge initialized: STAFF mode B=M7 gripper, Y=M8 gripper, "
-            "R3=M7 head, L3=M8 head"
+            "R3=M7 head, L3=M8 head; D-pad down swaps M7/M8"
         )
 
     def get_safe_state(self):
@@ -81,6 +89,10 @@ class PneumaticGripperJoystickBridgeNode(Node):
         """Track `/operation_mode`; only STAFF mode enables button toggles."""
         self.operation_mode = int(msg.data)
         self.last_mode_time = self.get_clock().now()
+
+    def view_orientation_callback(self, msg):
+        """Track operator view; D-pad down optionally swaps Motor7/Motor8."""
+        self.view_orientation = int(msg.data)
 
     def staff_mode_active(self):
         """Return true only while a fresh STAFF mode message is present."""
@@ -100,25 +112,26 @@ class PneumaticGripperJoystickBridgeNode(Node):
             self.reset_edge_memory()
             return
 
-        self.states[0], self.motor7_gripper_pressed = self.apply_toggle(
-            self.states[0],
+        buttons = self.maybe_swap_button_pairs(
             self.get_configured_button(msg, "motor7_gripper_button"),
-            self.motor7_gripper_pressed,
+            self.get_configured_button(msg, "motor8_gripper_button"),
+            self.get_configured_button(msg, "motor7_inclination_button"),
+            self.get_configured_button(msg, "motor8_inclination_button"),
+            self.get_parameter("swap_staff_grippers_on_view_down").value,
+            self.view_orientation,
+        )
+
+        self.states[0], self.motor7_gripper_pressed = self.apply_toggle(
+            self.states[0], buttons["motor7_gripper"], self.motor7_gripper_pressed
         )
         self.states[2], self.motor8_gripper_pressed = self.apply_toggle(
-            self.states[2],
-            self.get_configured_button(msg, "motor8_gripper_button"),
-            self.motor8_gripper_pressed,
+            self.states[2], buttons["motor8_gripper"], self.motor8_gripper_pressed
         )
         self.states[3], self.motor7_inclination_pressed = self.apply_toggle(
-            self.states[3],
-            self.get_configured_button(msg, "motor7_inclination_button"),
-            self.motor7_inclination_pressed,
+            self.states[3], buttons["motor7_inclination"], self.motor7_inclination_pressed
         )
         self.states[1], self.motor8_inclination_pressed = self.apply_toggle(
-            self.states[1],
-            self.get_configured_button(msg, "motor8_inclination_button"),
-            self.motor8_inclination_pressed,
+            self.states[1], buttons["motor8_inclination"], self.motor8_inclination_pressed
         )
 
     def reset_edge_memory(self):
@@ -127,6 +140,29 @@ class PneumaticGripperJoystickBridgeNode(Node):
         self.motor8_gripper_pressed = True
         self.motor7_inclination_pressed = True
         self.motor8_inclination_pressed = True
+
+    @staticmethod
+    def maybe_swap_button_pairs(
+        motor7_gripper,
+        motor8_gripper,
+        motor7_inclination,
+        motor8_inclination,
+        swap_enabled,
+        view_orientation,
+    ):
+        """Return button states after optional D-pad-down Motor7/Motor8 swap."""
+        if bool(swap_enabled) and int(view_orientation) == 2:
+            motor7_gripper, motor8_gripper = motor8_gripper, motor7_gripper
+            motor7_inclination, motor8_inclination = (
+                motor8_inclination,
+                motor7_inclination,
+            )
+        return {
+            "motor7_gripper": bool(motor7_gripper),
+            "motor8_gripper": bool(motor8_gripper),
+            "motor7_inclination": bool(motor7_inclination),
+            "motor8_inclination": bool(motor8_inclination),
+        }
 
     @staticmethod
     def normalize_state(value):

@@ -66,7 +66,7 @@ ros2 param get /joystick_bridge max_rotation
 ```text
 max_speed_cm = 150.0
 translation_linear_weight = 0.1
-max_rotation = 1.2
+max_rotation = 3.0
 rotation_linear_weight = 0.1
 ```
 
@@ -198,7 +198,7 @@ R1 不应看到 R2 的 `/damiao_motor_controller`、`/global_navigation_node`、
 
 ## 2026-06-06 混合曲线测试补充
 
-当前平移上限为 `150 cm/s`，旋转上限为 `1.2 rad/s`，两者曲线均为 `0.1x + 0.9x³`。Motor 7 最大 `1.3 rad/s`，R2/L2 也使用同一曲线。测试顺序应为离地检查，再在安全区域逐步测试 10%/25%/50%/75%/100% 输入。START/SELECT 不再改变底盘速度。
+当前平移上限为 `150 cm/s`，旋转上限为 `3.0 rad/s`，两者曲线均为 `0.1x + 0.9x³`。Motor 7 最大 `1.3 rad/s`，R2/L2 也使用同一曲线。测试顺序应为离地检查，再在安全区域逐步测试 10%/25%/50%/75%/100% 输入。START/SELECT 不再改变底盘速度。
 
 ## 2026-06-07 急停自动恢复测试
 
@@ -335,9 +335,9 @@ ros2 topic echo /horizontal_speed_cmd
 3. 左搖桿回中，十字鍵右，狀態變為 `1`；左搖桿向前，方向約為 `-1.57 rad`。
 4. 左搖桿回中，十字鍵下，狀態變為 `2`；左搖桿向前，方向約為 `+/-3.14 rad`。
 5. 左搖桿未回中時按十字鍵，`/view_orientation` 不應改變；鬆開十字鍵及左搖桿後重按。
-6. `L3` 預期 `/horizontal_speed_cmd=[10.0]`。
-7. `R3` 預期 `/horizontal_speed_cmd=[-10.0]`。
-8. 同時按 `L3+R3` 或全部鬆開，預期 `[0.0]`。
+6. `L2` 全按預期 `/horizontal_speed_cmd` 接近 `[30.0]`。
+7. `R2` 全按預期 `/horizontal_speed_cmd` 接近 `[-30.0]`。
+8. 同時按 `L2+R2` 或全部鬆開，預期 `[0.0]`。
 
 四方向確認完成後，再落地低速確認左搖桿方向與人的視角一致。沒有 IMU，車身旋轉或操作人
 改變站位後必須手動重新設定十字鍵方向。
@@ -357,14 +357,14 @@ P2 = L3
 
 ```bash
 ros2 topic echo /joystick_data
-ros2 topic echo /horizontal_speed_cmd
+ros2 topic echo /pneumatic_gripper_cmd
 ```
 
 預期結果：
 
-1. 按住 `P1`，`/joystick_data` 應顯示 `r3: true`，`/horizontal_speed_cmd` 應為 `[-10.0]`。
-2. 按住 `P2`，`/joystick_data` 應顯示 `l3: true`，`/horizontal_speed_cmd` 應為 `[10.0]`。
-3. 同時按 `P1+P2` 或全部鬆開，`/horizontal_speed_cmd` 應為 `[0.0]`。
+1. 切到 STAFF mode 後按 `P1`，`/joystick_data` 應顯示 `r3: true`，`/pneumatic_gripper_cmd[3]` 應切換 Motor7 inclination/head relay。
+2. 切到 STAFF mode 後按 `P2`，`/joystick_data` 應顯示 `l3: true`，`/pneumatic_gripper_cmd[1]` 應切換 Motor8 inclination/head relay。
+3. 切到 KFS mode 後 P1/P2 不應控制 `/horizontal_speed_cmd`；Motor6 horizontal 由 L2/R2 控制。
 
 注意：P1／P2 目前沒有獨立 evdev event，不應期待 `/joystick_data` 出現 `p1` 或 `p2`
 欄位。這次測試確認的是背鍵作為 L3／R3 替代鍵可用。
@@ -764,3 +764,95 @@ STAFF mode：`A=Motor7 左右 90°/preset`，`X=Motor8 左右 90°/preset`，`B=
 KFS mode：`Y=KFS gripper`，`L2/R2=Motor6 horizontal positive/negative`，`L1/R1=Motor5 elevator negative/positive`。
 
 最新 Arduino 五路 relay 順序為 `[KFS gripper, M7 gripper, M8 inclination, M8 gripper, M7 inclination]`，安全狀態為 `[0,1,0,1,0]`。
+
+## 2026-06-20 KFS mechanism speed parameters
+
+目前 source code 中 KFS mode 的機構速度如下：
+
+```text
+Motor5 elevator = 28.0 rad/s
+  L1: negative/down
+  R1: positive/up
+
+Motor6 horizontal = 30.0 rad/s
+  L2: positive/out at full trigger
+  R2: negative/in at full trigger
+```
+
+對應參數：`elevator_joystick_bridge_node.command_speed_rad_s=28.0`、`elevator_controller_node.max_speed_rad_s=28.0`、`horizontal_joystick_bridge_node.command_speed_rad_s=30.0`、`horizontal_controller_node.max_speed_rad_s=30.0`。只有 `/operation_mode=2` 時生效；超時保護仍為 `timeout_sec=0.3 s`。
+
+## 2026-06-20 STAFF D-pad Down Motor7/Motor8 Swap
+
+目前 STAFF mode 會讀取 `/view_orientation`。規則：
+
+```text
+/view_orientation = 0  # D-pad 上，KFS visual front 在機手前方
+  STAFF mapping 保持正常：Motor7 按鍵仍控制 Motor7，Motor8 按鍵仍控制 Motor8
+
+/view_orientation = 2  # D-pad 下，KFS visual front 在機手後方
+  STAFF mapping 對調：所有 Motor7 staff gripper 控制改送 Motor8，所有 Motor8 staff gripper 控制改送 Motor7
+```
+
+D-pad 左/右 (`1/3`) 目前不觸發對調，保持正常 mapping。對調只在 STAFF mode (`/operation_mode=1`) 影響 staff gripper 相關控制；KFS mode、底盤左/右搖桿、Motor5 elevator、Motor6 horizontal 不受影響。
+
+正常 mapping：
+
+```text
+A -> Motor7 90° / preset
+X -> Motor8 90° / preset
+B -> Motor7 staff gripper relay
+Y -> Motor8 staff gripper relay
+R1/R2 -> Motor7 trim -/+
+L1/L2 -> Motor8 trim -/+
+R3/P1 -> Motor7 inclination/head relay
+L3/P2 -> Motor8 inclination/head relay
+```
+
+D-pad 下 swap mapping：
+
+```text
+A -> Motor8 90° / preset
+X -> Motor7 90° / preset
+B -> Motor8 staff gripper relay
+Y -> Motor7 staff gripper relay
+R1/R2 -> Motor8 trim +/-   # R1/R2 also swapped, so R1 positive and R2 negative
+L1/L2 -> Motor7 trim +/-   # L1/L2 also swapped, so L1 positive and L2 negative
+R3/P1 -> Motor8 inclination/head relay
+L3/P2 -> Motor7 inclination/head relay
+```
+
+相關參數：
+
+```text
+motor_position_selector_joystick_bridge_node.swap_staff_grippers_on_view_down = true
+pneumatic_gripper_joystick_bridge_node.swap_staff_grippers_on_view_down = true
+```
+
+## 2026-06-20 Chassis Rotation Speed
+
+Right stick rotation speed default is now:
+
+```text
+joystick_bridge.max_rotation = 3.0 rad/s
+```
+
+The rotation curve remains:
+
+```text
+rotation = (0.1x + 0.9x^3) * max_rotation
+```
+
+So small right-stick input still gives fine control, while full right-stick input can request up to `3.0 rad/s`. Actual chassis motion may still be scaled by `local_navigation_node.max_wheel_speed_rad_s = 40.0 rad/s` when translation and rotation are combined.
+
+### 2026-06-20 STAFF D-pad Down Trim Direction Update
+
+D-pad 下的 STAFF swap 現在也會把微調方向一起對調：`R1/R2` 互換、`L1/L2` 互換。因此 D-pad 下時：
+
+```text
+R1 -> Motor8 trim positive
+R2 -> Motor8 trim negative
+L1 -> Motor7 trim positive
+L2 -> Motor7 trim negative
+```
+
+D-pad 上仍保持原本：`R1/R2=Motor7 -/+`，`L1/L2=Motor8 -/+`。

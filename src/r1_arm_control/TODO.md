@@ -222,7 +222,32 @@ KFS mode 不變：`Y=KFS gripper`，`L2/R2=horizontal positive/negative`，`L1/R
 
 ## 2026-06-19 Motor5 elevator speed increase
 
-- [x] Increase `elevator_joystick_bridge_node.command_speed_rad_s` from `3.0` to `9.0`
-- [x] Increase `elevator_controller_node.max_speed_rad_s` from `3.0` to `9.0`
+- [x] Increase `elevator_joystick_bridge_node.command_speed_rad_s` from `3.0` to `28.0`
+- [x] Increase `elevator_controller_node.max_speed_rad_s` from `3.0` to `28.0`
 - [x] Keep KFS-only mode gate and `timeout_sec=0.3 s` unchanged
-- [ ] Test Motor5 elevator at 9.0 rad/s with mechanism clear of hard stops
+- [ ] Test Motor5 elevator at 28.0 rad/s with mechanism clear of hard stops
+
+## 2026-06-20 KFS mechanism speed parameters
+
+- [x] Motor5 elevator bridge default `command_speed_rad_s = 28.0`
+- [x] Motor5 elevator controller default `max_speed_rad_s = 28.0`
+- [x] Motor6 horizontal bridge default `command_speed_rad_s = 30.0`
+- [x] Motor6 horizontal controller default `max_speed_rad_s = 30.0`
+- [x] Keep KFS-only `/operation_mode=2` gate and `timeout_sec=0.3 s` unchanged
+- [ ] Test Motor5 elevator at `28.0 rad/s` with mechanism clear of hard stops
+- [ ] Test Motor6 horizontal at `30.0 rad/s` with mechanism clear of hard stops
+
+## 2026-06-20 STAFF D-pad Down Motor7/Motor8 Swap
+
+- [x] `motor_position_selector_joystick_bridge_node` subscribes to `/view_orientation`
+- [x] `/view_orientation=2` swaps Motor7/Motor8 position preset and trim mapping
+- [x] `/view_orientation=0/1/3` keeps normal Motor7/Motor8 mapping
+- [x] Add no-hardware unit test for position swap helper
+- [ ] Real robot test: STAFF mode D-pad up normal mapping, D-pad down swapped mapping
+
+## 2026-06-20 STAFF D-pad Down Trim Direction Update
+
+- [x] D-pad down swaps Motor7/Motor8 position targets
+- [x] D-pad down also reverses each trim pair: `R1/R2` and `L1/L2`
+- [x] Add no-hardware unit test for trim swap and direction reversal
+- [ ] Real robot test D-pad down: `R1=Motor8 positive`, `R2=Motor8 negative`, `L1=Motor7 positive`, `L2=Motor7 negative`

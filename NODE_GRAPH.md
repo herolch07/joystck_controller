@@ -411,7 +411,7 @@ If `/damiao_motor_controller`, `/global_navigation_node`, `/base/dummy_control`,
 
 ## 2026-06-06 控制输入更新
 
-`/joystick_bridge` 将左摇杆平移映射到 `0..150 cm/s`，右摇杆旋转映射到 `-1.2..1.2 rad/s`；两者均使用 `0.1x + 0.9x³`。START/SELECT 当前不参与底盘调速。
+`/joystick_bridge` 将左摇杆平移映射到 `0..150 cm/s`，右摇杆旋转映射到 `-3.0..3.0 rad/s`；两者均使用 `0.1x + 0.9x³`。START/SELECT 当前不参与底盘调速。
 
 ## 2026-06-07 Damiao 恢复状态 Topic
 
@@ -502,7 +502,7 @@ graph LR
 
 ```text
 D-pad -> joystick_bridge view selection only
-L3/R3 -> horizontal_joystick_bridge_node -> /horizontal_speed_cmd [-10/0/+10]
+L2/R2 -> horizontal_joystick_bridge_node -> /horizontal_speed_cmd [-30..+30]；P1/P2 remap 為 R3/L3，用於 STAFF head relay
 ```
 
 視角值為 `0=前、1=右、2=後、3=左`；左搖桿回中後才接受新值。本功能已於
@@ -746,3 +746,133 @@ STAFF mode：`A=Motor7 左右 90°/preset`，`X=Motor8 左右 90°/preset`，`B=
 KFS mode：`Y=KFS gripper`，`L2/R2=Motor6 horizontal positive/negative`，`L1/R1=Motor5 elevator negative/positive`。
 
 最新 Arduino 五路 relay 順序為 `[KFS gripper, M7 gripper, M8 inclination, M8 gripper, M7 inclination]`，安全狀態為 `[0,1,0,1,0]`。
+
+## 2026-06-20 KFS mechanism speed parameters
+
+目前 source code 中 KFS mode 的機構速度如下：
+
+```text
+Motor5 elevator = 28.0 rad/s
+  L1: negative/down
+  R1: positive/up
+
+Motor6 horizontal = 30.0 rad/s
+  L2: positive/out at full trigger
+  R2: negative/in at full trigger
+```
+
+對應參數：`elevator_joystick_bridge_node.command_speed_rad_s=28.0`、`elevator_controller_node.max_speed_rad_s=28.0`、`horizontal_joystick_bridge_node.command_speed_rad_s=30.0`、`horizontal_controller_node.max_speed_rad_s=30.0`。只有 `/operation_mode=2` 時生效；超時保護仍為 `timeout_sec=0.3 s`。
+
+## 2026-06-20 STAFF D-pad Down Motor7/Motor8 Swap
+
+目前 STAFF mode 會讀取 `/view_orientation`。規則：
+
+```text
+/view_orientation = 0  # D-pad 上，KFS visual front 在機手前方
+  STAFF mapping 保持正常：Motor7 按鍵仍控制 Motor7，Motor8 按鍵仍控制 Motor8
+
+/view_orientation = 2  # D-pad 下，KFS visual front 在機手後方
+  STAFF mapping 對調：所有 Motor7 staff gripper 控制改送 Motor8，所有 Motor8 staff gripper 控制改送 Motor7
+```
+
+D-pad 左/右 (`1/3`) 目前不觸發對調，保持正常 mapping。對調只在 STAFF mode (`/operation_mode=1`) 影響 staff gripper 相關控制；KFS mode、底盤左/右搖桿、Motor5 elevator、Motor6 horizontal 不受影響。
+
+正常 mapping：
+
+```text
+A -> Motor7 90° / preset
+X -> Motor8 90° / preset
+B -> Motor7 staff gripper relay
+Y -> Motor8 staff gripper relay
+R1/R2 -> Motor7 trim -/+
+L1/L2 -> Motor8 trim -/+
+R3/P1 -> Motor7 inclination/head relay
+L3/P2 -> Motor8 inclination/head relay
+```
+
+D-pad 下 swap mapping：
+
+```text
+A -> Motor8 90° / preset
+X -> Motor7 90° / preset
+B -> Motor8 staff gripper relay
+Y -> Motor7 staff gripper relay
+R1/R2 -> Motor8 trim +/-   # R1/R2 also swapped, so R1 positive and R2 negative
+L1/L2 -> Motor7 trim +/-   # L1/L2 also swapped, so L1 positive and L2 negative
+R3/P1 -> Motor8 inclination/head relay
+L3/P2 -> Motor7 inclination/head relay
+```
+
+相關參數：
+
+```text
+motor_position_selector_joystick_bridge_node.swap_staff_grippers_on_view_down = true
+pneumatic_gripper_joystick_bridge_node.swap_staff_grippers_on_view_down = true
+```
+
+## 2026-06-20 Chassis Rotation Speed
+
+Right stick rotation speed default is now:
+
+```text
+joystick_bridge.max_rotation = 3.0 rad/s
+```
+
+The rotation curve remains:
+
+```text
+rotation = (0.1x + 0.9x^3) * max_rotation
+```
+
+So small right-stick input still gives fine control, while full right-stick input can request up to `3.0 rad/s`. Actual chassis motion may still be scaled by `local_navigation_node.max_wheel_speed_rad_s = 40.0 rad/s` when translation and rotation are combined.
+
+### 2026-06-20 STAFF D-pad Down Trim Direction Update
+
+D-pad 下的 STAFF swap 現在也會把微調方向一起對調：`R1/R2` 互換、`L1/L2` 互換。因此 D-pad 下時：
+
+```text
+R1 -> Motor8 trim positive
+R2 -> Motor8 trim negative
+L1 -> Motor7 trim positive
+L2 -> Motor7 trim negative
+```
+
+D-pad 上仍保持原本：`R1/R2=Motor7 -/+`，`L1/L2=Motor8 -/+`。
+
+
+## 2026-06-20 STAFF View Swap Mermaid Graph
+
+```mermaid
+graph LR
+    Joy[/joystick_data/]
+    View[/view_orientation<br/>0 normal / 2 swap/]
+    Mode[/operation_mode<br/>1 STAFF/]
+
+    PosBridge[ motor_position_selector_joystick_bridge_node<br/>A/X preset<br/>R1/R2 and L1/L2 trim ]
+    PneuBridge[ pneumatic_gripper_joystick_bridge_node<br/>B/Y gripper<br/>R3/L3 head relay ]
+
+    M7Pos[/motor7_position_input/]
+    M8Pos[/motor8_position_input/]
+    PneuCmd[/pneumatic_gripper_cmd<br/>M7 grip / M8 head / M8 grip / M7 head/]
+
+    Joy --> PosBridge
+    Joy --> PneuBridge
+    Mode --> PosBridge
+    Mode --> PneuBridge
+    View --> PosBridge
+    View --> PneuBridge
+
+    PosBridge -->|view 0: A,R2(-)/R1(+) to M7<br/>view 2: X,L2(-)/L1(+) to M7| M7Pos
+    PosBridge -->|view 0: X,L2(-)/L1(+) to M8<br/>view 2: A,R2(-)/R1(+) to M8| M8Pos
+    PneuBridge -->|view 0 normal<br/>view 2 M7/M8 swapped| PneuCmd
+```
+
+## 2026-06-20 Current Rotation Default
+
+Current source default:
+
+```text
+joystick_bridge.max_rotation = 3.0 rad/s
+```
+
+Older sections mentioning `1.2 rad/s` or `2.4 rad/s` are historical and are not the current runtime default.

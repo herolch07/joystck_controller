@@ -85,3 +85,17 @@ def test_staff_mode_button_trim_negative_direction():
     )
     assert motor7_trim == pytest.approx(-1.0)
     assert motor8_trim == pytest.approx(-1.0)
+
+
+def test_staff_view_down_swaps_position_motor_values():
+    swap = MotorPositionSelectorJoystickBridgeNode.maybe_swap_motor_values
+    assert swap("m7", "m8", True, 0) == ("m7", "m8")
+    assert swap("m7", "m8", True, 2) == ("m8", "m7")
+    assert swap("m7", "m8", False, 2) == ("m7", "m8")
+
+
+def test_staff_view_down_swaps_and_reverses_trim_pairs():
+    swap = MotorPositionSelectorJoystickBridgeNode.maybe_swap_trim_values
+    assert swap(-1.0, 0.5, True, 0) == pytest.approx((-1.0, 0.5))
+    assert swap(-1.0, 0.5, True, 2) == pytest.approx((-0.5, 1.0))
+    assert swap(-1.0, 0.5, False, 2) == pytest.approx((-1.0, 0.5))

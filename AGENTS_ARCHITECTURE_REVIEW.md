@@ -274,7 +274,7 @@
 - A / B：目前選中 arm 的 height / gripper toggle。
 - SELECT：目前選中 arm 的 inclination toggle。
 - P1 = R3，P2 = L3。
-- P1/R3：Motor6 horizontal 負方向；P2/L3：Motor6 horizontal 正方向。
+- P1/R3：STAFF mode Motor7 inclination/head relay；P2/L3：STAFF mode Motor8 inclination/head relay。
 
 風險：
 

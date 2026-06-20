@@ -127,3 +127,19 @@ KFS mode：`Y=KFS gripper`，`L2/R2=Motor6 horizontal positive/negative`，`L1/R
 `joystick_shutdown_node` 監聽 `/joystick_data`，當 `X+Y+B+A` 同時長按 `hold_seconds=5.0` 時發布 `/robot_power_status` 並執行關機命令。此功能不受 `/operation_mode` 影響，因為它屬於全機安全/電源控制。
 
 若 `dry_run=true`，只發布狀態不執行 `sudo /sbin/shutdown -h now`；正式比賽使用前需要確認 sudoers 權限與 `dry_run` 參數。
+
+## 2026-06-20 KFS mechanism speed parameters
+
+目前 source code 中 KFS mode 的機構速度如下：
+
+```text
+Motor5 elevator = 28.0 rad/s
+  L1: negative/down
+  R1: positive/up
+
+Motor6 horizontal = 30.0 rad/s
+  L2: positive/out at full trigger
+  R2: negative/in at full trigger
+```
+
+對應參數：`elevator_joystick_bridge_node.command_speed_rad_s=28.0`、`elevator_controller_node.max_speed_rad_s=28.0`、`horizontal_joystick_bridge_node.command_speed_rad_s=30.0`、`horizontal_controller_node.max_speed_rad_s=30.0`。只有 `/operation_mode=2` 時生效；超時保護仍為 `timeout_sec=0.3 s`。

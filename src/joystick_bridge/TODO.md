@@ -166,3 +166,5 @@
 
 - [x] Update current documented `max_rotation` to `3.0 rad/s`
 - [ ] Real robot test combined translation + full rotation to check wheel speed scaling
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

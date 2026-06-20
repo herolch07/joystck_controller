@@ -278,3 +278,5 @@ ros2 node list
 /arm_gripper_joystick_bridge_node
 /pneumatic_gripper_joystick_bridge_node
 ```
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

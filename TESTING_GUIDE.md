@@ -859,3 +859,5 @@ L2 -> Motor7 trim negative
 ```
 
 D-pad 上仍保持原本：`R1/R2=Motor7 -/+`，`L1/L2=Motor8 -/+`。
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

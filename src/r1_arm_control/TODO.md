@@ -251,3 +251,5 @@ KFS mode 不變：`Y=KFS gripper`，`L2/R2=horizontal positive/negative`，`L1/R
 - [x] D-pad down also reverses each trim pair: `R1/R2` and `L1/L2`
 - [x] Add no-hardware unit test for trim swap and direction reversal
 - [ ] Real robot test D-pad down: `R1=Motor8 positive`, `R2=Motor8 negative`, `L1=Motor7 positive`, `L2=Motor7 negative`
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

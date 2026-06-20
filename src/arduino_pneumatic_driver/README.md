@@ -763,3 +763,5 @@ Y -> Motor8 staff gripper relay toggle only
 KFS mode 不變：`Y=KFS gripper`，`L2/R2=horizontal positive/negative`，`L1/R1=elevator negative/positive`。
 
 </details>
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

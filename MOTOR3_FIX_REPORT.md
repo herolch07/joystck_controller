@@ -278,3 +278,5 @@ ros2 run base_omniwheel_r2_700 damiao_node
 **修复人员：** Qoder AI Assistant  
 **问题发现者：** 用户（准确观察到 data[3] 的编码规律）  
 **状态：** ✅ 已解决
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

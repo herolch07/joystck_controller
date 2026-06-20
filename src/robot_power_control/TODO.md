@@ -23,3 +23,5 @@
 - [x] 記錄 `X+Y+B+A` 長按 5 秒作為 shutdown combo
 - [ ] 正式使用前確認 `dry_run=false` 且 sudoers 權限正確
 - [ ] 比賽前做一次實機關機測試，確認不會被 systemd watcher 立即重啟
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

@@ -19,3 +19,5 @@
 - [ ] 添加手柄 ID 字段（用于多手柄区分）
 - [ ] 添加电池电量字段（如果支持）
 - [ ] 考虑添加陀螺仪/加速度计数据（部分手柄支持）
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

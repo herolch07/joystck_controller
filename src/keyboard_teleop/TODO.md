@@ -17,3 +17,5 @@
 - [ ] 实机低速测试底盘方向是否符合键盘直觉
 - [ ] 根据实机测试结果调整默认速度参数
 - [ ] 如需要长期使用，补充 launch 文件统一启动 keyboard teleop 测试系统
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

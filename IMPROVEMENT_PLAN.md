@@ -224,3 +224,5 @@ ros2 run joystick_bridge joystick_bridge --ros-args \
 - `README.md` 顶部当前最终版说明
 - `r1 final operation guide 1.0.md` 第 10 节
 - `src/base_omniwheel_r2_700/README.md` v8 实机最终确认版
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

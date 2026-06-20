@@ -337,3 +337,5 @@ systemd/r1-control-autostart.service
 `r1_start_base_1_0.sh` 新增 `R1_NO_TMUX_ATTACH=1`，讓 systemd watcher 可以背景建立 `r1_control` tmux session 而不 attach。預設 `STOP_ON_CONTROLLER_LOST=0`，手柄中途關掉不 kill 整套 ROS。
 
 此更新改善啟動流程，但不改變 ROS topic、motor control、pneumatic control 或 watchdog 行為。雙 USB-CAN / udev 穩定路徑仍未完成。
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

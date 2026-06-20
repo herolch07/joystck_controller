@@ -212,3 +212,5 @@ KFS mode 不變：`Y=KFS gripper`，`L2/R2=horizontal positive/negative`，`L1/R
 - [x] `/view_orientation=0/1/3` keeps normal relay mapping
 - [x] Add no-hardware unit tests for pneumatic button swap helper
 - [ ] Real robot test: D-pad down swaps B/Y and P1/P2 relay targets correctly
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

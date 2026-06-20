@@ -20,3 +20,5 @@
 - [x] 確認 `SELECT=STAFF`、`START=KFS`
 - [x] Zone3 不新增第三套鍵位，由機手手動切 STAFF/KFS mode
 - [x] 文件補充 mode 不直接控制 actuator，只作為下游 bridge gate
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

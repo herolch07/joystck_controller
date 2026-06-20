@@ -159,3 +159,5 @@
 - [x] KFS gripper `Y` 只在 `/operation_mode=2` 時生效
 - [x] 全系統 relay safe state 記錄為 `[0,1,0,1,0]`
 - [ ] 實機長時間測試 KFS/STAF mode 來回切換時 relay 不誤動作
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

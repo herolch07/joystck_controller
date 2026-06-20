@@ -637,3 +637,5 @@ relay 3 -> pin 10
 4. 如果和旧 pneumatic 共用同一个 Arduino，不能两个 ROS serial driver 同时打开同一个 `/dev/ttyUSB*`。本 package 的 aggregator node 就是为了解决这个问题。
 
 </details>
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

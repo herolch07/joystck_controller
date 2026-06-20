@@ -1077,3 +1077,5 @@ max_wheel_speed_rad_s = 40.0 rad/s
 5. 若匀速仍偏航，再进行机械检查和四轮增益校准，不应继续修改矢量限幅比例。
 
 </details>
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

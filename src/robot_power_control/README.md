@@ -143,3 +143,5 @@ Motor6 horizontal = 30.0 rad/s
 ```
 
 對應參數：`elevator_joystick_bridge_node.command_speed_rad_s=28.0`、`elevator_controller_node.max_speed_rad_s=28.0`、`horizontal_joystick_bridge_node.command_speed_rad_s=30.0`、`horizontal_controller_node.max_speed_rad_s=30.0`。只有 `/operation_mode=2` 時生效；超時保護仍為 `timeout_sec=0.3 s`。
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

@@ -324,3 +324,5 @@ def destroy_node(self):
 
 **维护者**：EdUHK Robocon Robotics Team  
 **最后更新**：2026-02-03
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

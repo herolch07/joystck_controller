@@ -402,3 +402,5 @@ P1 + P2 或全部鬆開 -> Motor6 0 rad/s
 新增 controller-gated autostart：Pi 開機後可由 `systemd/r1-control-autostart.service` 啟動 `scripts/wait_and_start_robot.sh`，等 8BitDo / Xbox controller active 後才自動執行 `r1_start_base_1_0.sh`。預設 `STOP_ON_CONTROLLER_LOST=0`，手柄中途關掉不自動 kill 整套 ROS，仍依靠各 node watchdog 進安全輸出。
 
 </details>
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

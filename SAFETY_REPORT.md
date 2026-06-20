@@ -162,3 +162,5 @@ joystick_bridge.max_rotation = 3.0 rad/s
 ```
 
 Older sections mentioning `1.2 rad/s` or `2.4 rad/s` are historical and are not the current runtime default.
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

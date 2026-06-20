@@ -80,3 +80,5 @@
 - [x] 記錄目前 remap：`P1=R3`、`P2=L3`
 - [x] 記錄現行用途：STAFF mode `P1/R3=Motor7 inclination`、`P2/L3=Motor8 inclination`
 - [ ] 若未來手柄模式能提供獨立 P1/P2 evdev code，再評估擴充 message
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

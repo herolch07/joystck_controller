@@ -181,3 +181,5 @@ README 必须清晰说明：
 
 若任一项不满足，你必须在回答中明确指出并说明原因。
 """
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

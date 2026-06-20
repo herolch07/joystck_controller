@@ -179,3 +179,5 @@
 - [x] 保留 `vector` 模式，方便 runtime 對比測試
 - [x] 新增 per-wheel acceleration limiter 單元測試
 - [ ] 實機比較 `per_wheel` 與 `vector` 在 22°、45°、高速起步時的偏航差異
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

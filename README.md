@@ -556,3 +556,5 @@ R3 -> Motor7 inclination/head relay
 L1/R1/L2/R2 remain reserved for Motor7/8 manual trim.
 
 </details>
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

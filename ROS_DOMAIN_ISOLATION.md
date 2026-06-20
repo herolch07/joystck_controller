@@ -286,3 +286,5 @@ local_navigation_node.max_wheel_accel_rad_s2 = 25.0 rad/s^2
 ```
 
 旧 `10 -> 20 -> 40 -> 60 -> 100 -> 150 cm/s` 速度档和 `64.0 rad/s` 轮速内容只保留在历史调试记录中，不代表当前实机默认。
+
+maintainer: Hero@EdUHK robotics team 2026 | github: herolch07

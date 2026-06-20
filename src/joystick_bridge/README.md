@@ -48,7 +48,7 @@
 - 已确认异常根因是 R1 能看到 R2 的 ROS2 node / topic，而不是 joystick `128/512` 映射。
 - R1 启动脚本已固定 `ROS_DOMAIN_ID=1` 与 `ROS_LOCALHOST_ONLY=1`，避免再次被 R2 graph 影响。
 - 默认 `speed_levels_cm` 设置为 `[10, 20, 40, 60, 100, 150]`，继续按较安全速度路线测试。
-- `local_navigation_node max_wheel_speed_rad_s` 保持 `64.0 rad/s` 不变。
+- 當時 `local_navigation_node max_wheel_speed_rad_s` 保持 `64.0 rad/s`；目前 source 預設為 `40.0 rad/s`。
 
 ### v1.4.0 (2026-05-27)
 **恢复上一版速度档位用于复测**
@@ -58,7 +58,7 @@
 ### v1.3.0 (2026-05-27)
 **200 cm/s 实机触发保护后的速度档位调整**
 - 实机测试中 `200 cm/s` 档位导致底盘突然断反应，疑似触发电源或驱动器保护。
-- 不修改 `local_navigation_node max_wheel_speed_rad_s`，仍保持 `64.0 rad/s`。
+- 當時不修改 `local_navigation_node max_wheel_speed_rad_s`，仍保持 `64.0 rad/s`；目前 source 預設為 `40.0 rad/s`。
 - 默认 `speed_levels_cm` 改为 `[10, 20, 40, 60, 100, 150]`，controller 最高档暂定 `150 cm/s`。
 
 ### v1.2.0 (2026-05-25)
@@ -364,7 +364,7 @@ ros2 param get /joystick_bridge max_speed_cm
 ros2 param get /joystick_bridge speed_level_index
 ```
 
-注意：`150 cm/s` 是当前 controller 默认最高档。`200/400 cm/s` 仍可通过参数临时测试，但不再作为默认按钮档位；`local_navigation_node max_wheel_speed_rad_s` 保持 `64.0 rad/s`。
+注意：本段是旧速度档历史记录。当前 source 默认不再使用 START/SELECT 速度档；`max_speed_cm=150.0 cm/s`，`local_navigation_node max_wheel_speed_rad_s=40.0 rad/s`。
 
 ## 2026-06-06 - v1.6.0 历史控制方式
 

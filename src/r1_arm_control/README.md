@@ -419,7 +419,7 @@ R2: 当前所选电机正向微调，按压深度决定微调速度
   -> /damiao_control [8, 2, speed, target_position]
 ```
 
-Motor 7 与 Motor 8 当前源码默认参数相同：
+Motor 7 與 Motor 8 當時實驗參數曾短暫設為以下值；目前 source-verified 預設請看下一節 v8：
 
 ```text
 position_a_rad = 0.0 rad
@@ -435,7 +435,7 @@ trim_speed_rad_s = 2.0 rad/s
 
 ## 2026-06-13 v8 Motor 7/8 三位置循环
 
-Motor 7 和 Motor 8 的 X 预设由两点改为三点，两个 controller 使用相同源码默认值：
+Motor 7 和 Motor 8 的 preset 由兩點改為三點，两个 controller 使用相同源码默认值。現行 bridge 映射為 `A -> Motor7`、`X -> Motor8`：
 
 ```text
 position_a_rad = 0.0 rad       # selected_position = 0
@@ -445,14 +445,13 @@ min_position_rad = -32.0 rad
 max_position_rad = 32.0 rad
 ```
 
-每次短按 X 的循环顺序：
+每次短按對應 preset 鍵的循環順序：
 
 ```text
 0 rad -> +32 rad -> -32 rad -> 0 rad
 ```
 
-Motor 7 和 Motor 8 分别保存自己的 `selected_position`。START 切换当前控制电机时，
-不会改变未选中电机的预设索引或目标位置。L2/R2 仍可在 `-32..32 rad` 范围内微调。
+Motor 7 和 Motor 8 分别保存自己的 `selected_position`。Motor7 和 Motor8 各自保存自己的 `selected_position`。目前不再使用 START 選電機；STAFF mode 下 `A` 直接切 Motor7，`X` 直接切 Motor8。R1/R2 控 Motor7 微調，L1/L2 控 Motor8 微調，範圍為 `-32..32 rad`。
 
 
 ## 2026-06-14 v9 Motor6 改用 L3／R3
@@ -523,7 +522,7 @@ R2 -> Motor7 manual trim，正方向，按壓深度 0..1
 
 `/motor7_position_input` 與 `/motor8_position_input` 格式仍為 `[toggle_event, trim_input, input_valid]`。mode 不是 STAFF、`/operation_mode` 超過 `mode_timeout_sec=0.5 s` 未更新、或 `/joystick_data` 超過 `input_timeout_sec=0.3 s` 未更新時，bridge 發布 `[0,0,0]`，position controller 停止接收 toggle/trim 並以自身安全邏輯保持/回到當前位置。
 
-`elevator_joystick_bridge_node` 的 legacy L1/R1 elevator mapping 目前預設 `enabled=false`，避免和 STAFF pneumatic 的 L1/R1 抬頭鍵位衝突。如要恢復舊 Motor5 elevator 手動控制，可用參數顯式啟用。
+`elevator_joystick_bridge_node` 沒有 `enabled` 參數；它靠 `/operation_mode=2` 且 mode 未超時來啟用 KFS elevator 控制。STAFF mode 下 L1/R1 不會送 elevator speed。
 
 
 ## 2026-06-19 KFS mode elevator/horizontal 鍵位

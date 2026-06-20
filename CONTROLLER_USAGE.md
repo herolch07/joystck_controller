@@ -1,6 +1,6 @@
 # R1 Controller Usage - Current Keymap
 
-> Last updated: 2026-06-19
+> Last updated: 2026-06-20, source-verified against current Python nodes
 > 本文件是目前手柄操作的唯一準則。其他 README 中較早日期的鍵位章節保留為歷史紀錄；實機操作以本文件為準。
 
 ## 1. Operation Mode
@@ -274,8 +274,10 @@ A -> Motor8 90° / preset
 X -> Motor7 90° / preset
 B -> Motor8 staff gripper relay
 Y -> Motor7 staff gripper relay
-R1/R2 -> Motor8 trim +/-   # R1/R2 also swapped, so R1 positive and R2 negative
-L1/L2 -> Motor7 trim +/-   # L1/L2 also swapped, so L1 positive and L2 negative
+R1 -> Motor8 trim positive
+R2 -> Motor8 trim negative
+L1 -> Motor7 trim positive
+L2 -> Motor7 trim negative
 R3/P1 -> Motor8 inclination/head relay
 L3/P2 -> Motor7 inclination/head relay
 ```

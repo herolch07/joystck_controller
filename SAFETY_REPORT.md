@@ -26,11 +26,12 @@ joystick_bridge max_speed_cm = 150.0
 joystick_bridge translation_linear_weight = 0.1
 joystick_bridge max_rotation = 3.0
 joystick_bridge rotation_linear_weight = 0.1
-local_navigation_node max_wheel_speed_rad_s = 64.0
-local_navigation_node max_wheel_accel_rad_s2 = 12.0
+local_navigation_node max_wheel_speed_rad_s = 40.0
+local_navigation_node max_wheel_accel_rad_s2 = 25.0
+local_navigation_node accel_limit_mode = per_wheel
 ```
 
-这些默认值用于低速联调，降低横向、斜向、旋转叠加时的电流冲击。
+这些默认值对应当前 DM-S3519 底盘配置：150 cm/s 手柄目标、40 rad/s 轮速上限、25 rad/s² 加速度上限。
 
 ## Watchdog 链路
 

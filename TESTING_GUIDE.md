@@ -111,14 +111,17 @@ ros2 topic pub --once /horizontal_speed_cmd std_msgs/msg/Float32MultiArray "{dat
 ros2 topic echo /horizontal_status
 ```
 
-机械夹爪电机：
+Motor7 / Motor8 staff position controller：
 
 ```bash
-ros2 topic pub --once /arm_gripper_speed_cmd std_msgs/msg/Float32MultiArray "{data: [0.3]}"
-ros2 topic echo /arm_gripper_status
+ros2 topic echo /motor7_position_status
+ros2 topic echo /motor8_position_status
+ros2 topic echo /motor_position_selector_status
 ```
 
-这些命令只发布一次，controller 会在 `timeout_sec = 0.3s` 后自动归零。
+目前 Motor7/8 走 POS_VEL，不再用旧 `/arm_gripper_speed_cmd` 速度 topic。實機動作測試應優先用手柄 STAFF mode 的 `A/X` preset 和 `R1/R2/L1/L2` trim；不要在 start base 同時啟動舊 `arm_gripper_controller_node`。
+
+这些速度命令只发布一次时，controller 会在 `timeout_sec = 0.3s` 后自动归零；Motor7/8 position controller 由自身 input/feedback timeout 保护。
 
 ## 6. Pneumatic Gripper 测试
 

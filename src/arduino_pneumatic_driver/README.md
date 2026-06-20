@@ -5,36 +5,26 @@
 # arduino_pneumatic_driver
 
 
-## 2026-06-18 v15 目前正式狀態摘要
+## 2026-06-20 Source-Verified Current State
 
-目前正式 `/pneumatic_gripper_cmd` 為 6 路：
-
-```text
-[M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper, M7 inclination]
-```
-
-`SELECT/-` 控制目前由 `START/+` 選中的 arm inclination。Motor7 inclination 對應 Arduino relay7 / pin28；Motor8 inclination 對應 relay4 / pin25。舊 v14「relay7 reserved」段落只保留作歷史過渡記錄。
-
-Arduino Mega pneumatic relay gripper driver。此 package 通过 USB Serial 连接 Arduino Mega，并复用已测试的 Arduino 协议：
+目前正式啟動路徑只使用 `pneumatic_gripper_joystick_bridge_node`，不再啟動舊 `pneumatic_relay_driver_node`。本 package 現行輸出 topic 為四路 STAFF pneumatic command：
 
 ```text
-[0,0]
-[1,1]
-[0,1]
-[1,0]
+/pneumatic_gripper_cmd = [M7 gripper, M8 inclination, M8 gripper, M7 inclination]
+DEFAULT_ARM_SAFE_STATE = [1,0,1,0]
 ```
 
-Arduino 侧定义：
+STAFF mode source mapping：`B -> M7 gripper`，`Y -> M8 gripper`，`R3/P1 -> M7 inclination/head`，`L3/P2 -> M8 inclination/head`。當 `/view_orientation=2`（D-pad 下）時，Motor7/Motor8 relay controls 會對調。
+
+完整 Arduino 五路 serial owner 在 `kfs_staff_gripper` package：
 
 ```text
-Relay 1: arm gripper open/close
-  0 = gripper OPEN
-  1 = gripper CLOSE
-
-Relay 2: arm gripper height
-  0 = height LOW
-  1 = height HIGH
+/kfs_staff_gripper_arduino_node
+full relay order = [KFS gripper, M7 gripper, M8 inclination, M8 gripper, M7 inclination]
+full safe_state = [0,1,0,1,0]
 ```
+
+本 README 前面較舊的二路、六路、七路 relay 記錄只作歷史回溯，不代表目前 start base 實機 wiring。
 
 ## 更新记录
 
@@ -118,11 +108,13 @@ Relay 2: arm gripper height
 
 ## 适用范围
 
-本 package 适用于 Arduino Mega + USB Serial + 2 路 relay / solenoid valve 的 pneumatic gripper。它不绑定某一年比赛流程，也不包含战术状态机。
+本 package 目前在正式系統中只負責 STAFF pneumatic joystick bridge：把 STAFF mode 的手柄按鍵轉成 `/pneumatic_gripper_cmd` 四路 relay command。它不直接打開 Arduino serial port；Arduino serial 由 `kfs_staff_gripper_arduino_node` 統一管理。
+
+舊 `pneumatic_relay_driver_node` 仍保留在 package 中，僅作二路 relay standalone 歷史測試或回溯用途；不要和 `kfs_staff_gripper_arduino_node` 同時打開同一個 Arduino。
 
 ## Nodes
 
-### pneumatic_relay_driver_node
+### pneumatic_relay_driver_node（legacy standalone，当前 start base 不启动）
 
 职责：
 
@@ -186,49 +178,51 @@ input_timeout_sec = 0.3
 
 ## 超时保护
 
-`pneumatic_relay_driver_node` 实现 command timeout。
+### pneumatic_gripper_joystick_bridge_node（当前正式路径）
 
 触发条件：
 
 ```text
-超过 command_timeout_sec 没有收到 /pneumatic_gripper_cmd
+/joystick_data 超过 input_timeout_sec = 0.3 s 未更新
+或 /operation_mode 不是 STAFF / mode_timeout_sec = 0.5 s 失效
 ```
 
-默认值：
+行为：
 
 ```text
-command_timeout_sec = 0.5 s
+joystick timeout -> /pneumatic_gripper_cmd 回到 safe_state [1,0,1,0]
+mode 不是 STAFF 或 mode timeout -> 忽略新按键，不接受新的 relay toggle
 ```
 
-超时行为：
+`/pneumatic_gripper_cmd` 四路顺序固定为：
 
 ```text
-向 Arduino 发送 safe_state
-默认启动 safe_state = [0,1] = LOW + CLOSE
+[M7 gripper, M8 inclination, M8 gripper, M7 inclination]
 ```
 
-当前 bridge 默认和 timeout 状态是 `[1,0]`，即 height LOW + gripper CLOSE。B 按住 OPEN、松开 CLOSE。A 锁定 height LOW，X 锁定 height HIGH。
+### pneumatic_relay_driver_node（legacy standalone）
 
-`pneumatic_gripper_joystick_bridge_node` 也有 `/joystick_data` 输入 timeout。超过 `input_timeout_sec = 0.3 s` 后，bridge 会回到 `[1,0]`，即 height LOW + gripper CLOSE。
+该 node 是旧二路 serial driver，当前 `r1_start_base_1_0.sh` 不启动。正式五路 Arduino serial timeout 请看 `src/kfs_staff_gripper/README.md`。
 
 ## 最小测试
 
-启动 driver：
+正式測試請先啟動完整系統：
 
 ```bash
 cd /home/robotics/robocon2026_r1/r1_control_ws
-source install/setup.bash
-ros2 run arduino_pneumatic_driver pneumatic_relay_driver_node
+./r1_start_base_1_0.sh
 ```
 
-另一个 terminal：
+觀察 STAFF pneumatic bridge 和 Arduino aggregator：
 
 ```bash
-source install/setup.bash
-ros2 topic pub /pneumatic_gripper_cmd std_msgs/msg/Int32MultiArray "{data: [0, 0]}" --once
-ros2 topic pub /pneumatic_gripper_cmd std_msgs/msg/Int32MultiArray "{data: [1, 1]}" --once
-ros2 topic echo /pneumatic_gripper_status
+ros2 topic echo /operation_mode
+ros2 topic echo /view_orientation
+ros2 topic echo /pneumatic_gripper_cmd
+ros2 topic echo /kfs_staff_gripper_status
 ```
+
+只測本 package 的 bridge 時，要另外提供 `/joystick_data` 和 `/operation_mode=1`，否則 node 會因 mode gate 或 input timeout 回到 safe/invalid 狀態。
 
 ## 调试
 
@@ -400,6 +394,241 @@ SELECT/-: 切換目前選中 arm inclination
 M8 inclination 仍是 command 第三位，對應 relay4 / pin25。
 
 
+## 2026-06-19 Pneumatic keymap transition notes（historical）
+
+本段原本包含 2026-06-19 當天多次 pneumatic 鍵位迭代：六路 command、A/Y height、Y/A gripper relay、L1/R1 inclination 等。這些都已被後面的 `2026-06-19 現行手柄鍵位總表` 和 `2026-06-19 arduino_pneumatic_driver 現行五路 STAFF relay` 取代。
+
+目前 source-truth：
+
+```text
+/pneumatic_gripper_cmd = [M7 gripper, M8 inclination, M8 gripper, M7 inclination]
+STAFF normal: B=M7 gripper, Y=M8 gripper, R3/P1=M7 inclination, L3/P2=M8 inclination
+STAFF D-pad down: Motor7/Motor8 relay controls swap
+safe_state = [1,0,1,0]
+```
+
+## 2026-06-19 現行手柄鍵位總表（以 CONTROLLER_USAGE.md 為準）
+
+目前手柄操作的唯一準則已整理到 `/home/robotics/robocon2026_r1/r1_control_ws/CONTROLLER_USAGE.md`。若本文件前面存在舊版鍵位描述，保留為歷史紀錄；實機操作以本節和 `CONTROLLER_USAGE.md` 為準。
+
+固定不變：左搖桿控制底盤平移，右搖桿控制底盤旋轉，D-pad 設定 KFS visual front 的人視角方向，`X+Y+B+A` 長按 5 秒觸發 Raspberry Pi shutdown command。
+
+模式切換：`SELECT/中左 = STAFF mode (/operation_mode=1)`，`START/中右 = KFS mode (/operation_mode=2)`。
+
+STAFF mode：`A=Motor7 左右 90°/preset`，`X=Motor8 左右 90°/preset`，`B=Motor7 staff gripper relay`，`Y=Motor8 staff gripper relay`，`R1/R2=Motor7 微調 -/+`，`L1/L2=Motor8 微調 -/+`，`R3/P1=Motor7 抬頭/inclination relay`，`L3/P2=Motor8 抬頭/inclination relay`。
+
+KFS mode：`Y=KFS gripper`，`L2/R2=Motor6 horizontal positive/negative`，`L1/R1=Motor5 elevator negative/positive`。
+
+最新 Arduino 五路 relay 順序為 `[KFS gripper, M7 gripper, M8 inclination, M8 gripper, M7 inclination]`，安全狀態為 `[0,1,0,1,0]`。
+
+
+## 2026-06-19 arduino_pneumatic_driver 現行五路 STAFF relay
+
+`pneumatic_gripper_joystick_bridge_node` 現在只輸出四路 STAFF arm relay，topic 順序固定為：
+
+```text
+/pneumatic_gripper_cmd = [M7 gripper, M8 inclination, M8 gripper, M7 inclination]
+```
+
+STAFF mode 按鍵：`B -> M7 gripper`，`Y -> M8 gripper`，`R3/P1 -> M7 inclination/head`，`L3/P2 -> M8 inclination/head`。`A/X` 不在本 node 切 relay；它們由 `r1_arm_control` 的 position bridge 控制 Motor7/Motor8 preset。
+
+安全值為 `[1,0,1,0]`。`/joystick_data` 超過 `input_timeout_sec=0.3 s` 未更新時回到安全值；`/operation_mode` 不是 STAFF 或超過 `mode_timeout_sec=0.5 s` 時忽略新按鍵，但不因切 mode 立即改變已保持的 relay 狀態。
+
+## 2026-06-20 KFS mechanism speed parameters
+
+目前 source code 中 KFS mode 的機構速度如下：
+
+```text
+Motor5 elevator = 28.0 rad/s
+  L1: negative/down
+  R1: positive/up
+
+Motor6 horizontal = 30.0 rad/s
+  L2: positive/out at full trigger
+  R2: negative/in at full trigger
+```
+
+對應參數：`elevator_joystick_bridge_node.command_speed_rad_s=28.0`、`elevator_controller_node.max_speed_rad_s=28.0`、`horizontal_joystick_bridge_node.command_speed_rad_s=30.0`、`horizontal_controller_node.max_speed_rad_s=30.0`。只有 `/operation_mode=2` 時生效；超時保護仍為 `timeout_sec=0.3 s`。
+
+## 2026-06-20 STAFF D-pad Down Motor7/Motor8 Swap
+
+目前 STAFF mode 會讀取 `/view_orientation`。規則：
+
+```text
+/view_orientation = 0  # D-pad 上，KFS visual front 在機手前方
+  STAFF mapping 保持正常：Motor7 按鍵仍控制 Motor7，Motor8 按鍵仍控制 Motor8
+
+/view_orientation = 2  # D-pad 下，KFS visual front 在機手後方
+  STAFF mapping 對調：所有 Motor7 staff gripper 控制改送 Motor8，所有 Motor8 staff gripper 控制改送 Motor7
+```
+
+D-pad 左/右 (`1/3`) 目前不觸發對調，保持正常 mapping。對調只在 STAFF mode (`/operation_mode=1`) 影響 staff gripper 相關控制；KFS mode、底盤左/右搖桿、Motor5 elevator、Motor6 horizontal 不受影響。
+
+正常 mapping：
+
+```text
+A -> Motor7 90° / preset
+X -> Motor8 90° / preset
+B -> Motor7 staff gripper relay
+Y -> Motor8 staff gripper relay
+R1/R2 -> Motor7 trim -/+
+L1/L2 -> Motor8 trim -/+
+R3/P1 -> Motor7 inclination/head relay
+L3/P2 -> Motor8 inclination/head relay
+```
+
+D-pad 下 swap mapping：
+
+```text
+A -> Motor8 90° / preset
+X -> Motor7 90° / preset
+B -> Motor8 staff gripper relay
+Y -> Motor7 staff gripper relay
+R1/R2 -> Motor8 trim +/-   # R1/R2 also swapped, so R1 positive and R2 negative
+L1/L2 -> Motor7 trim +/-   # L1/L2 also swapped, so L1 positive and L2 negative
+R3/P1 -> Motor8 inclination/head relay
+L3/P2 -> Motor7 inclination/head relay
+```
+
+相關參數：
+
+```text
+motor_position_selector_joystick_bridge_node.swap_staff_grippers_on_view_down = true
+pneumatic_gripper_joystick_bridge_node.swap_staff_grippers_on_view_down = true
+```
+
+## 2026-06-20 Chassis Rotation Speed
+
+Right stick rotation speed default is now:
+
+```text
+joystick_bridge.max_rotation = 3.0 rad/s
+```
+
+The rotation curve remains:
+
+```text
+rotation = (0.1x + 0.9x^3) * max_rotation
+```
+
+So small right-stick input still gives fine control, while full right-stick input can request up to `3.0 rad/s`. Actual chassis motion may still be scaled by `local_navigation_node.max_wheel_speed_rad_s = 40.0 rad/s` when translation and rotation are combined.
+
+### 2026-06-20 STAFF D-pad Down Trim Direction Update
+
+D-pad 下的 STAFF swap 現在也會把微調方向一起對調：`R1/R2` 互換、`L1/L2` 互換。因此 D-pad 下時：
+
+```text
+R1 -> Motor8 trim positive
+R2 -> Motor8 trim negative
+L1 -> Motor7 trim positive
+L2 -> Motor7 trim negative
+```
+
+D-pad 上仍保持原本：`R1/R2=Motor7 -/+`，`L1/L2=Motor8 -/+`。
+
+## 2026-06-20 Archived Previous README Content - arduino-pneumatic-driver
+
+以下內容是本次 source-verified 文檔同步前已存在的 README 段落。它們已被前面的 current/source-verified 段落取代，只保留作版本回溯與排錯依據，不代表目前實機操作。
+
+<details><summary>Archived section 1</summary>
+
+## 2026-06-18 v15 目前正式狀態摘要
+
+目前正式 `/pneumatic_gripper_cmd` 為 6 路：
+
+```text
+[M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper, M7 inclination]
+```
+
+`SELECT/-` 控制目前由 `START/+` 選中的 arm inclination。Motor7 inclination 對應 Arduino relay7 / pin28；Motor8 inclination 對應 relay4 / pin25。舊 v14「relay7 reserved」段落只保留作歷史過渡記錄。
+
+Arduino Mega pneumatic relay gripper driver。此 package 通过 USB Serial 连接 Arduino Mega，并复用已测试的 Arduino 协议：
+
+```text
+[0,0]
+[1,1]
+[0,1]
+[1,0]
+```
+
+Arduino 侧定义：
+
+```text
+Relay 1: arm gripper open/close
+  0 = gripper OPEN
+  1 = gripper CLOSE
+
+Relay 2: arm gripper height
+  0 = height LOW
+  1 = height HIGH
+```
+
+</details>
+
+<details><summary>Archived section 2</summary>
+
+## 适用范围
+
+本 package 适用于 Arduino Mega + USB Serial + 2 路 relay / solenoid valve 的 pneumatic gripper。它不绑定某一年比赛流程，也不包含战术状态机。
+
+</details>
+
+<details><summary>Archived section 3</summary>
+
+## 超时保护
+
+`pneumatic_relay_driver_node` 实现 command timeout。
+
+触发条件：
+
+```text
+超过 command_timeout_sec 没有收到 /pneumatic_gripper_cmd
+```
+
+默认值：
+
+```text
+command_timeout_sec = 0.5 s
+```
+
+超时行为：
+
+```text
+向 Arduino 发送 safe_state
+默认启动 safe_state = [0,1] = LOW + CLOSE
+```
+
+当前 bridge 默认和 timeout 状态是 `[1,0]`，即 height LOW + gripper CLOSE。B 按住 OPEN、松开 CLOSE。A 锁定 height LOW，X 锁定 height HIGH。
+
+`pneumatic_gripper_joystick_bridge_node` 也有 `/joystick_data` 输入 timeout。超过 `input_timeout_sec = 0.3 s` 后，bridge 会回到 `[1,0]`，即 height LOW + gripper CLOSE。
+
+</details>
+
+<details><summary>Archived section 4</summary>
+
+## 最小测试
+
+启动 driver：
+
+```bash
+cd /home/robotics/robocon2026_r1/r1_control_ws
+source install/setup.bash
+ros2 run arduino_pneumatic_driver pneumatic_relay_driver_node
+```
+
+另一个 terminal：
+
+```bash
+source install/setup.bash
+ros2 topic pub /pneumatic_gripper_cmd std_msgs/msg/Int32MultiArray "{data: [0, 0]}" --once
+ros2 topic pub /pneumatic_gripper_cmd std_msgs/msg/Int32MultiArray "{data: [1, 1]}" --once
+ros2 topic echo /pneumatic_gripper_status
+```
+
+</details>
+
+<details><summary>Archived section 5</summary>
+
 ## 2026-06-19 STAFF/KFS operation mode pneumatic 鍵位
 
 本節取代前文「A/B/SELECT 作用於目前 selected arm」的現行行為；舊內容保留作歷史記錄。
@@ -533,122 +762,4 @@ Y -> Motor8 staff gripper relay toggle only
 
 KFS mode 不變：`Y=KFS gripper`，`L2/R2=horizontal positive/negative`，`L1/R1=elevator negative/positive`。
 
-
-## 2026-06-19 現行手柄鍵位總表（以 CONTROLLER_USAGE.md 為準）
-
-目前手柄操作的唯一準則已整理到 `/home/robotics/robocon2026_r1/r1_control_ws/CONTROLLER_USAGE.md`。若本文件前面存在舊版鍵位描述，保留為歷史紀錄；實機操作以本節和 `CONTROLLER_USAGE.md` 為準。
-
-固定不變：左搖桿控制底盤平移，右搖桿控制底盤旋轉，D-pad 設定 KFS visual front 的人視角方向，`X+Y+B+A` 長按 5 秒觸發 Raspberry Pi shutdown command。
-
-模式切換：`SELECT/中左 = STAFF mode (/operation_mode=1)`，`START/中右 = KFS mode (/operation_mode=2)`。
-
-STAFF mode：`A=Motor7 左右 90°/preset`，`X=Motor8 左右 90°/preset`，`B=Motor7 staff gripper relay`，`Y=Motor8 staff gripper relay`，`R1/R2=Motor7 微調 -/+`，`L1/L2=Motor8 微調 -/+`，`R3/P1=Motor7 抬頭/inclination relay`，`L3/P2=Motor8 抬頭/inclination relay`。
-
-KFS mode：`Y=KFS gripper`，`L2/R2=Motor6 horizontal positive/negative`，`L1/R1=Motor5 elevator negative/positive`。
-
-最新 Arduino 五路 relay 順序為 `[KFS gripper, M7 gripper, M8 inclination, M8 gripper, M7 inclination]`，安全狀態為 `[0,1,0,1,0]`。
-
-
-## 2026-06-19 arduino_pneumatic_driver 現行五路 STAFF relay
-
-`pneumatic_gripper_joystick_bridge_node` 現在只輸出四路 STAFF arm relay，topic 順序固定為：
-
-```text
-/pneumatic_gripper_cmd = [M7 gripper, M8 inclination, M8 gripper, M7 inclination]
-```
-
-STAFF mode 按鍵：`B -> M7 gripper`，`Y -> M8 gripper`，`R3/P1 -> M7 inclination/head`，`L3/P2 -> M8 inclination/head`。`A/X` 不在本 node 切 relay；它們由 `r1_arm_control` 的 position bridge 控制 Motor7/Motor8 preset。
-
-安全值為 `[1,0,1,0]`。`/joystick_data` 超過 `input_timeout_sec=0.3 s` 未更新時回到安全值；`/operation_mode` 不是 STAFF 或超過 `mode_timeout_sec=0.5 s` 時忽略新按鍵，但不因切 mode 立即改變已保持的 relay 狀態。
-
-## 2026-06-20 KFS mechanism speed parameters
-
-目前 source code 中 KFS mode 的機構速度如下：
-
-```text
-Motor5 elevator = 28.0 rad/s
-  L1: negative/down
-  R1: positive/up
-
-Motor6 horizontal = 30.0 rad/s
-  L2: positive/out at full trigger
-  R2: negative/in at full trigger
-```
-
-對應參數：`elevator_joystick_bridge_node.command_speed_rad_s=28.0`、`elevator_controller_node.max_speed_rad_s=28.0`、`horizontal_joystick_bridge_node.command_speed_rad_s=30.0`、`horizontal_controller_node.max_speed_rad_s=30.0`。只有 `/operation_mode=2` 時生效；超時保護仍為 `timeout_sec=0.3 s`。
-
-## 2026-06-20 STAFF D-pad Down Motor7/Motor8 Swap
-
-目前 STAFF mode 會讀取 `/view_orientation`。規則：
-
-```text
-/view_orientation = 0  # D-pad 上，KFS visual front 在機手前方
-  STAFF mapping 保持正常：Motor7 按鍵仍控制 Motor7，Motor8 按鍵仍控制 Motor8
-
-/view_orientation = 2  # D-pad 下，KFS visual front 在機手後方
-  STAFF mapping 對調：所有 Motor7 staff gripper 控制改送 Motor8，所有 Motor8 staff gripper 控制改送 Motor7
-```
-
-D-pad 左/右 (`1/3`) 目前不觸發對調，保持正常 mapping。對調只在 STAFF mode (`/operation_mode=1`) 影響 staff gripper 相關控制；KFS mode、底盤左/右搖桿、Motor5 elevator、Motor6 horizontal 不受影響。
-
-正常 mapping：
-
-```text
-A -> Motor7 90° / preset
-X -> Motor8 90° / preset
-B -> Motor7 staff gripper relay
-Y -> Motor8 staff gripper relay
-R1/R2 -> Motor7 trim -/+
-L1/L2 -> Motor8 trim -/+
-R3/P1 -> Motor7 inclination/head relay
-L3/P2 -> Motor8 inclination/head relay
-```
-
-D-pad 下 swap mapping：
-
-```text
-A -> Motor8 90° / preset
-X -> Motor7 90° / preset
-B -> Motor8 staff gripper relay
-Y -> Motor7 staff gripper relay
-R1/R2 -> Motor8 trim +/-   # R1/R2 also swapped, so R1 positive and R2 negative
-L1/L2 -> Motor7 trim +/-   # L1/L2 also swapped, so L1 positive and L2 negative
-R3/P1 -> Motor8 inclination/head relay
-L3/P2 -> Motor7 inclination/head relay
-```
-
-相關參數：
-
-```text
-motor_position_selector_joystick_bridge_node.swap_staff_grippers_on_view_down = true
-pneumatic_gripper_joystick_bridge_node.swap_staff_grippers_on_view_down = true
-```
-
-## 2026-06-20 Chassis Rotation Speed
-
-Right stick rotation speed default is now:
-
-```text
-joystick_bridge.max_rotation = 3.0 rad/s
-```
-
-The rotation curve remains:
-
-```text
-rotation = (0.1x + 0.9x^3) * max_rotation
-```
-
-So small right-stick input still gives fine control, while full right-stick input can request up to `3.0 rad/s`. Actual chassis motion may still be scaled by `local_navigation_node.max_wheel_speed_rad_s = 40.0 rad/s` when translation and rotation are combined.
-
-### 2026-06-20 STAFF D-pad Down Trim Direction Update
-
-D-pad 下的 STAFF swap 現在也會把微調方向一起對調：`R1/R2` 互換、`L1/L2` 互換。因此 D-pad 下時：
-
-```text
-R1 -> Motor8 trim positive
-R2 -> Motor8 trim negative
-L1 -> Motor7 trim positive
-L2 -> Motor7 trim negative
-```
-
-D-pad 上仍保持原本：`R1/R2=Motor7 -/+`，`L1/L2=Motor8 -/+`。
+</details>

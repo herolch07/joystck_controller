@@ -6,6 +6,67 @@
 
 本說明面向日常操作。當前完整系統以 `r1_start_base_1_0.sh` 為入口；`start.sh`、`start_background.sh` 只保留為舊底盤 4 節點流程，不建議作為 R1 完整系統首選。
 
+## 2026-06-20 Source-Verified Current How To Use
+
+本節是目前 `HOW_TO_USE.md` 的 source-verified 操作摘要，依據 `r1_start_base_1_0.sh` 和目前 Python nodes。本文後面較早日期段落若描述 START 選 Motor7/8、A/Y height、十字鍵控制 Motor6、七路 relay 或 `arm_gripper_*`，都只作歷史記錄。
+
+啟動：
+
+```bash
+cd /home/robotics/robocon2026_r1/r1_control_ws
+./r1_start_base_1_0.sh
+```
+
+固定控制：
+
+```text
+左搖桿：底盤按 D-pad 選定的人視角平移
+右搖桿：底盤旋轉，max_rotation=3.0 rad/s
+D-pad：設定 KFS gripper / visual front 在機手視角中的方向
+SELECT/中左：STAFF mode
+START/中右：KFS mode
+X+Y+B+A 長按 5 秒：Raspberry Pi shutdown command
+```
+
+STAFF mode：
+
+```text
+A -> Motor7 90° / preset cycle
+X -> Motor8 90° / preset cycle
+B -> Motor7 staff gripper relay toggle
+Y -> Motor8 staff gripper relay toggle
+R1/R2 -> Motor7 trim -/+
+L1/L2 -> Motor8 trim -/+
+R3/P1 -> Motor7 inclination/head relay
+L3/P2 -> Motor8 inclination/head relay
+```
+
+STAFF mode 且 D-pad 下：
+
+```text
+A -> Motor8 preset，X -> Motor7 preset
+B -> Motor8 relay，Y -> Motor7 relay
+R1 -> Motor8 trim positive，R2 -> Motor8 trim negative
+L1 -> Motor7 trim positive，L2 -> Motor7 trim negative
+R3/P1 -> Motor8 inclination，L3/P2 -> Motor7 inclination
+```
+
+KFS mode：
+
+```text
+Y -> KFS gripper toggle
+L1/R1 -> Motor5 elevator negative/down、positive/up
+L2/R2 -> Motor6 horizontal positive/out、negative/in
+```
+
+Arduino 五路 relay：
+
+```text
+[KFS gripper, M7 gripper, M8 inclination, M8 gripper, M7 inclination]
+full safe_state = [0,1,0,1,0]
+```
+
+
 ## 日常啓動
 
 ```bash
@@ -54,22 +115,33 @@ PY
 ## 控制方式
 
 ```text
-左搖桿上/下: 底盤前進/後退
-左搖桿左/右: 底盤左/右橫移
+固定不變：
+左搖桿上/下/左/右: 底盤按 D-pad 選定的人視角平移
 右搖桿左/右: 底盤原地旋轉
-R1: Motor 5 elevator 正向，固定速度
-L1: Motor 5 elevator 反向，固定速度
-D-pad 左/右: Motor 6 horizontal 左/右移動
-D-pad 上/下: Motor 6 horizontal power level 增加/減少
-START/SELECT: 當前不用於底盤調速
-R2: Motor 7 arm gripper 正向，按壓深度調速
-L2: Motor 7 arm gripper 反向，按壓深度調速
-B: arm pneumatic gripper OPEN while held，松開 CLOSE
-A: arm pneumatic height LOW latch
-X: arm pneumatic height HIGH latch
-Y: KFS staff gripper OPEN，松開 CLOSE
-R3: 當前不使用
+D-pad: 設定 KFS gripper / visual front 在機手視角中的方向
+X+Y+B+A 長按 5 秒: Raspberry Pi shutdown command
+
+模式切換：
+SELECT / 中左: STAFF mode (/operation_mode=1)
+START / 中右: KFS mode (/operation_mode=2)
+
+STAFF mode：
+A: Motor7 90° / preset cycle
+X: Motor8 90° / preset cycle
+B: Motor7 staff gripper relay toggle
+Y: Motor8 staff gripper relay toggle
+R1/R2: Motor7 trim -/+
+L1/L2: Motor8 trim -/+
+R3/P1: Motor7 inclination/head relay toggle
+L3/P2: Motor8 inclination/head relay toggle
+
+KFS mode：
+Y: KFS gripper toggle
+L1/R1: Motor5 elevator negative/down、positive/up
+L2/R2: Motor6 horizontal positive/out、negative/in
 ```
+
+D-pad 下的 STAFF swap 詳細規則看本文最上方 source-verified 區塊或 `CONTROLLER_USAGE.md`。
 
 ## 底盤速度曲線
 
@@ -91,10 +163,12 @@ ros2 param get /joystick_bridge max_speed_cm
 ros2 param get /joystick_bridge translation_linear_weight
 ros2 param get /joystick_bridge max_rotation
 ros2 param get /joystick_bridge rotation_linear_weight
-ros2 param get /arm_gripper_joystick_bridge_node gripper_linear_weight
+ros2 param get /local_navigation_node max_wheel_speed_rad_s
+ros2 param get /local_navigation_node max_wheel_accel_rad_s2
+ros2 param get /local_navigation_node accel_limit_mode
 ```
 
-START/SELECT 當前不用於底盤調速。左搖桿平移與右搖桿旋轉都使用 `0.1x + 0.9x³`；滿桿分別達到 `150 cm/s` 和 `3.0 rad/s`。Motor 7 的 R2/L2 也使用同一曲線，滿按達到 `1.3 rad/s`。
+START/SELECT 當前不用於底盤調速，只切換 STAFF/KFS mode。左搖桿平移與右搖桿旋轉都使用 `0.1x + 0.9x³`；滿桿分別達到 `150 cm/s` 和 `3.0 rad/s`。Motor7/8 staff gripper 目前使用 POS_VEL position controller，不再使用舊 R2/L2 速度型 arm_gripper 曲線。
 
 ## 安全保護
 
@@ -240,167 +314,11 @@ Y       : KFS gripper 開關切換，與 Motor7/8 選擇無關
 按 START 只切換控制對象，不改變任何已鎖定氣動狀態。不要同時按 START 和其他機構按鈕。
 
 
-## 2026-06-14 目前完整手柄按鍵配置（現行唯一操作依據）
+## 2026-06-14 歷史手柄配置記錄（已被 STAFF/KFS mode 取代）
 
-本節取代前面歷史章節中的舊按鍵說明。前面的 Motor7 速度模式、Motor8 `L3/R3` 微調、
-氣動夾爪按住控制等內容只保留作版本回溯，不再代表目前正式啟動配置。
+本段原本記錄 START 選 Motor7/8、A/B 控所選 arm pneumatic、十字鍵控制 Motor6 的方案。該方案已被目前 STAFF/KFS mode、五路 relay、D-pad KFS visual-front 視角方案取代，不再作為實機操作依據。
 
-### 全部按鍵
-
-| 手柄輸入 | 目前功能 | 操作方式 |
-|---|---|---|
-| 左搖桿上／下 | 底盤前進／後退 | 持續推動 |
-| 左搖桿左／右 | 底盤左／右橫移 | 持續推動 |
-| 左搖桿斜向 | 底盤斜向平移 | 持續推動 |
-| 右搖桿左／右 | 底盤原地旋轉 | 持續推動 |
-| 右搖桿上／下 | 未使用 | - |
-| 十字鍵左 | Motor6 horizontal 負方向 | 按住移動，放開停止 |
-| 十字鍵右 | Motor6 horizontal 正方向 | 按住移動，放開停止 |
-| 十字鍵上 | 提高 Motor6 horizontal 速度檔 | 每按一次提高一檔 |
-| 十字鍵下 | 降低 Motor6 horizontal 速度檔 | 每按一次降低一檔 |
-| `L1` | Motor5 elevator 負方向 | 按住移動，放開停止 |
-| `R1` | Motor5 elevator 正方向 | 按住移動，放開停止 |
-| `L2` | 目前所選 Motor7/8 負方向微調 | 按壓深度控制微調量 |
-| `R2` | 目前所選 Motor7/8 正方向微調 | 按壓深度控制微調量 |
-| `A` | 目前所選 arm height 高／低切換 | 每按一次切換並保持 |
-| `B` | 目前所選 arm gripper 開／關切換 | 每按一次切換並保持 |
-| `X` | 目前所選 Motor7/8 三個預設位置循環 | 每按一次切換位置 |
-| `Y` | KFS gripper 開／關切換 | 每按一次切換並保持 |
-| `START/+` | 選擇 Motor7 或 Motor8 | 每按一次切換控制對象 |
-| `SELECT/-` | Motor8 inclination 高／低切換 | 只有選中 Motor8 時有效 |
-| `L3` | 未使用 | - |
-| `R3` | 未使用 | - |
-
-### Motor7／Motor8 選擇邏輯
-
-系統啟動時預設選中 `Motor7`：
-
-```text
-按一次 START/+：Motor7 -> Motor8
-再按一次 START/+：Motor8 -> Motor7
-```
-
-`START/+` 只改變目前控制對象，不會立即改變任何電機位置或氣動鎖定狀態。切換前必須先
-放開 `X`、`L2`、`R2`；其中任何一個仍在操作時，本次切換會被阻止。
-
-選中 Motor7 時：
-
-```text
-X       : Motor7 三位置循環
-L2/R2   : Motor7 位置微調
-A       : Motor7 arm height
-B       : Motor7 arm gripper
-SELECT/-: 無動作
-```
-
-選中 Motor8 時：
-
-```text
-X       : Motor8 三位置循環
-L2/R2   : Motor8 位置微調
-A       : Motor8 arm height
-B       : Motor8 arm gripper
-SELECT/-: Motor8 inclination
-```
-
-Motor7 與 Motor8 分別保存自己的位置目標和氣動狀態。`Y` 控制 KFS，完全不受 Motor7／8
-選擇影響。
-
-### Motor7／Motor8 三個預設位置
-
-每次短按 `X` 的循環順序：
-
-```text
-第一次：目前位置 -> +32 rad
-第二次：+32 rad -> -32 rad
-第三次：-32 rad -> 0 rad
-之後重複循環
-```
-
-`L2/R2` 用於在軟限位 `-32..+32 rad` 內微調目標位置，預設最大微調速度為 `2 rad/s`。
-
-### Motor6 horizontal 速度檔
-
-Motor6 啟動預設為 20% 檔。十字鍵上／下只切換速度檔，不會直接令 Motor6 移動：
-
-```text
-20% = 4 rad/s
-50% = 10 rad/s
-100% = 20 rad/s
-```
-
-切換速度檔後，使用十字鍵左／右控制實際移動方向。
-
-### 同時按鍵行為
-
-```text
-L1 + R1                : Motor5 停止
-深度相同的 L2 + R2     : Motor7/8 微調互相抵消
-X、L2 或 R2 操作期間按 +: 不切換 Motor7/8
-Motor7 模式按 SELECT/- : 無動作
-```
-
-### 目前底盤上限
-
-```text
-最大平移速度：150 cm/s
-最大旋轉速度：3.0 rad/s
-```
-
-目前左搖桿使用底盤自身座標：底盤旋轉後，搖桿向前仍代表「底盤目前正前方」，不是固定的
-場地方向。現階段尚未加入 IMU 或手動 90 度方向偏移功能。
-
-
-## 2026-06-14 人視角底盤測試配置（取代上一版十字鍵功能）
-
-本節是目前最新操作依據。十字鍵不再控制 Motor6，而是告訴程式 E-stop／車頭在人視角中的
-方向；按十字鍵不會令底盤旋轉。
-
-```text
-十字鍵上：E-stop 在人的前方
-十字鍵右：E-stop 在人的右方
-十字鍵下：E-stop 在人的後方
-十字鍵左：E-stop 在人的左方
-```
-
-左搖桿必須先回中才接受新的方向。視角設定後，左搖桿永遠按人的前後左右解讀；右搖桿
-仍直接控制底盤旋轉。
-
-例如底盤向左轉 90 度、E-stop 在人視角左邊：
-
-```text
-1. 鬆開左搖桿
-2. 按十字鍵左
-3. 左搖桿向前
-4. 底盤以車體向右橫移，實際向人的前方移動
-```
-
-Motor6 新按鍵：
-
-```text
-L3：Motor6 正方向
-R3：Motor6 負方向
-L3 + R3：停止
-固定命令速度：10 rad/s
-```
-
-查看目前視角：
-
-```bash
-ros2 topic echo /view_orientation
-```
-
-```text
-0 = E-stop 在人前方
-1 = E-stop 在人右方
-2 = E-stop 在人後方
-3 = E-stop 在人左方
-```
-
-其他按鍵保持不變：`L1/R1` 控制 Motor5，`START/X/L2/R2` 控制 Motor7／8，`A/B` 控制
-所選 arm 氣動，`SELECT/-` 控制 Motor8 inclination，`Y` 控制 KFS。
-
-實機結果（2026-06-15）：四個人視角方向及 Motor6 `L3/R3` 控制均測試成功，正式保留此配置。
+目前操作請看本文最上方 `2026-06-20 Source-Verified Current How To Use` 或根目錄 `CONTROLLER_USAGE.md`。
 
 ## 2026-06-16 8BitDo P1／P2 背鍵配置
 
@@ -427,7 +345,7 @@ KFS mode 不使用 P1/P2；Motor6 horizontal 目前由 L2/R2 控制
 
 ## 2026-06-18 七路 Arduino 氣動 panel（歷史過渡記錄，已由下一節取代）
 
-目前新 Arduino sketch 使用 7 路 relay，pin 為 `22..28`。ROS 操作按鍵不變，只有底層
+當時新 Arduino sketch 使用 7 路 relay，pin 為 `22..28`。ROS 操作按鍵不變，只有底層
 Arduino serial command 從 6 路變為 7 路。
 
 目前完整 relay 順序：
@@ -606,7 +524,7 @@ dry_run:=false
 
 ## 2026-06-19 KFS gripper 人視角底盤控制（取代 2026-06-14 E-stop 基準）
 
-本節是目前最新操作依據。十字鍵現在表示 **KFS gripper 在你眼中的方向**，不是 E-stop／車頭方向。
+本節是視角方案演進記錄；目前操作以本文最上方 source-verified 區塊和 `CONTROLLER_USAGE.md` 為準。當時說明：十字鍵表示 **KFS gripper 在你眼中的方向**，不是 E-stop／車頭方向。
 
 ```text
 十字鍵上：KFS gripper 在你的前方，view=0
@@ -634,7 +552,7 @@ ros2 topic echo /view_orientation
 
 ## 2026-06-19 KFS gripper 車頭標控制（取代同日 KFS +1 偏移方案）
 
-本節是目前最新操作依據。KFS gripper 是機器上最大、最顯眼的方向標記，因此現在直接把 **KFS gripper 當作車頭／機器前方**。
+本節是視角方案演進記錄；目前操作以本文最上方 source-verified 區塊和 `CONTROLLER_USAGE.md` 為準。當時說明：KFS gripper 是機器上最大、最顯眼的方向標記，因此把 **KFS gripper 當作車頭／機器前方**。
 
 ```text
 十字鍵上：KFS gripper／車頭 在你的前方，view=0
@@ -686,212 +604,11 @@ body_front_view = (KFS view - 1) % 4
 開機仍預設 `view=0`，也就是 KFS 在前。校正後，KFS 在前時不按十字鍵或按十字鍵上，左搖桿向前應該在你眼中向前走。
 
 
-## 2026-06-19 STAFF/KFS mode 現行鍵位
+## 2026-06-19 STAFF/KFS mode 過渡鍵位記錄（已被現行總表取代）
 
-本節是目前最新機構按鍵依據。底盤控制不受 mode 影響：
+本段原本包含多次同日鍵位迭代，例如 A/Y height、Y/A 同時控制 preset 和 relay、以及五路 relay 的中間版本。這些內容已被後面的 `2026-06-19 現行手柄鍵位總表（以 CONTROLLER_USAGE.md 為準）` 和本文最上方 `2026-06-20 Source-Verified Current How To Use` 取代。
 
-```text
-左搖桿：底盤平移
-右搖桿：底盤旋轉
-D-pad：KFS 視覺車頭方向
-```
-
-Mode 切換：
-
-```text
-SELECT / 中左：STAFF mode
-START  / 中右：KFS mode
-```
-
-查看目前 mode：
-
-```bash
-ros2 topic echo /operation_mode
-```
-
-```text
-0 = INVALID / joystick timeout
-1 = STAFF mode
-2 = KFS mode
-```
-
-STAFF mode 鍵位：
-
-```text
-X  ：Motor8 staff gripper preset/open-close cycle
-B  ：Motor7 staff gripper preset/open-close cycle
-L2 ：Motor8 manual trim
-R2 ：Motor7 manual trim
-L1 ：Motor8 抬頭 / inclination toggle
-R1 ：Motor7 抬頭 / inclination toggle
-Y  ：Motor8 height toggle
-A  ：Motor7 height toggle
-```
-
-KFS mode 鍵位：
-
-```text
-Y：KFS gripper open/close toggle
-```
-
-Zone 使用方式：
-
-```text
-Zone 1：切 STAFF mode
-Zone 2：切 KFS mode
-Zone 3：機手按 SELECT/START 在 STAFF/KFS mode 之間切換
-```
-
-切 mode 本身不會自動動任何 motor 或 relay，只改變之後按鍵由哪個 bridge 接收。
-
-
-## 2026-06-19 KFS mode Zone2 擴展鍵位
-
-本節更新 KFS mode 的現行鍵位，取代前文「KFS mode 只有 Y」的簡化說明。
-
-KFS mode：
-
-```text
-Y  ：KFS gripper open/close toggle
-L2 ：Motor6 horizontal 入 / negative
-R2 ：Motor6 horizontal 出 / positive
-L1 ：Motor5 elevator 降 / negative
-R1 ：Motor5 elevator 升 / positive
-```
-
-STAFF mode 中同一批鍵位的用途不同：
-
-```text
-L2 ：Motor8 微調
-R2 ：Motor7 微調
-L1 ：Motor8 抬頭
-R1 ：Motor7 抬頭
-Y  ：Motor8 height
-```
-
-所以操作前先看 `/operation_mode`，確認現在是 `1=STAFF` 還是 `2=KFS`。
-
-
-## 2026-06-19 STAFF mode 五路 relay 更新
-
-最新 Arduino 只有五路 relay：
-
-```text
-Pins: 22, 24, 25, 27, 28
-ROS relay order: [KFS, M7 gripper, M8 inclination, M8 gripper, M7 inclination]
-```
-
-Motor7/Motor8 height relay 已拆除，所以 STAFF mode 的 A/Y height 功能取消。
-
-STAFF mode 現行鍵位：
-
-```text
-X  ：Motor8 staff gripper 開合 / position preset，同時切 Motor8 gripper relay
-B  ：Motor7 staff gripper 開合 / position preset，同時切 Motor7 gripper relay
-L2 ：Motor8 manual trim
-R2 ：Motor7 manual trim
-L1 ：Motor8 抬頭 / inclination relay toggle
-R1 ：Motor7 抬頭 / inclination relay toggle
-A  ：暫不使用
-Y  ：STAFF mode 暫不使用；KFS mode 才控制 KFS gripper
-```
-
-KFS mode 鍵位維持：
-
-```text
-Y  ：KFS gripper open/close toggle
-L2 ：Motor6 horizontal 入 / negative
-R2 ：Motor6 horizontal 出 / positive
-L1 ：Motor5 elevator 降 / negative
-R1 ：Motor5 elevator 升 / positive
-```
-
-
-## 2026-06-19 STAFF/KFS mode 最新修正鍵位
-
-本節取代前文 STAFF mode `X/B` 與 KFS mode `L2/R2` 的說明。
-
-STAFF mode：
-
-```text
-Y  ：Motor7 左右 90° / preset cycle，同時切 Motor7 gripper relay
-A  ：Motor8 左右 90° / preset cycle，同時切 Motor8 gripper relay
-R1 ：Motor7 微調 negative
-R2 ：Motor7 微調 positive
-L1 ：Motor8 微調 negative
-L2 ：Motor8 微調 positive
-B  ：不由 STAFF mode 使用，保留既有 90° turn 行為
-X  ：目前不由 STAFF mode 使用
-```
-
-KFS mode：
-
-```text
-Y  ：KFS gripper open/close toggle
-L2 ：Motor6 horizontal 出 / positive
-R2 ：Motor6 horizontal 入 / negative
-L1 ：Motor5 elevator 降 / negative
-R1 ：Motor5 elevator 升 / positive
-```
-
-
-## 2026-06-19 STAFF mode L3/R3 抬頭更新
-
-STAFF mode 最新補充：
-
-```text
-L3 ：Motor8 抬頭 / inclination relay toggle
-R3 ：Motor7 抬頭 / inclination relay toggle
-```
-
-`L1/L2` 仍是 Motor8 微調，`R1/R2` 仍是 Motor7 微調。
-
-
-## 2026-06-19 Final STAFF Gripper / 90-Degree Split
-
-This section supersedes any same-day text that says Y/A also toggle gripper relays.
-
-Current STAFF mode split:
-
-```text
-Y  -> Motor7 left-right 90-degree / preset cycle only
-A  -> Motor8 left-right 90-degree / preset cycle only
-B  -> Motor7 staff gripper relay toggle only
-X  -> Motor8 staff gripper relay toggle only
-R1 -> Motor7 manual trim negative
-R2 -> Motor7 manual trim positive
-L1 -> Motor8 manual trim negative
-L2 -> Motor8 manual trim positive
-R3 -> Motor7 head / inclination relay toggle
-L3 -> Motor8 head / inclination relay toggle
-```
-
-Current KFS mode remains:
-
-```text
-Y  -> KFS gripper toggle
-L2 -> Motor6 horizontal positive / out
-R2 -> Motor6 horizontal negative / in
-L1 -> Motor5 elevator negative / down
-R1 -> Motor5 elevator positive / up
-```
-
-
-## 2026-06-19 Final STAFF ABXY Layout
-
-最新 STAFF mode ABXY：
-
-```text
-A -> Motor7 左右 90° / preset cycle only
-X -> Motor8 左右 90° / preset cycle only
-B -> Motor7 staff gripper relay toggle only
-Y -> Motor8 staff gripper relay toggle only
-```
-
-其他 STAFF 鍵位不變：`R1/R2=Motor7 微調`，`L1/L2=Motor8 微調`，`R3=Motor7 抬頭`，`L3=Motor8 抬頭`。
-
-KFS mode 不變：`Y=KFS gripper`，`L2/R2=horizontal positive/negative`，`L1/R1=elevator negative/positive`。
-
+目前實機只採用：STAFF mode `A/X` 控 Motor7/8 preset，`B/Y` 控 Motor7/8 staff gripper relay，`R3/L3` 控 Motor7/8 inclination；KFS mode `Y` 控 KFS gripper，`L1/R1` 控 Motor5，`L2/R2` 控 Motor6。
 
 ## 2026-06-19 現行手柄鍵位總表（以 CONTROLLER_USAGE.md 為準）
 

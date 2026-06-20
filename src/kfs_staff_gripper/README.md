@@ -5,26 +5,21 @@
 # kfs_staff_gripper
 
 
-## 2026-06-18 v0.4.2 目前正式狀態摘要
+## 2026-06-20 Source-Verified Current State
 
-目前正式七路 Arduino relay 順序：
-
-```text
-[KFS, M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper, M7 inclination]
-```
-
-`/pneumatic_gripper_cmd` 為 6 路並映射到 relay2-7；`/kfs_staff_gripper_cmd` 為 1 路並映射到 relay1。完整 safe state 保持 `[0,0,1,0,1,1,0]`。舊 v0.4.1「relay7 reserved」段落只保留作歷史過渡記錄。
-
-KFS staff gripper 的 Arduino Mega 三路 relay 控制 package。
-
-此 package 用于你提供的 Arduino sketch：
+目前 source code 的正式 Arduino relay 順序為五路：
 
 ```text
-relayPins = {8, 9, 10}
-serial command = [1,0,1]
-1 = ON, 0 = OFF
-D8/D9/D10 均为高电平触发
+relayPins = {22, 24, 25, 27, 28}
+serial command = [r1,r2,r3,r4,r5]
+HIGH = ON, LOW = OFF
+[KFS gripper, M7 gripper, M8 inclination, M8 gripper, M7 inclination]
+full safe_state = [0,1,0,1,0]
 ```
+
+`/pneumatic_gripper_cmd` 必須是 4 路並映射到 relay2-5；`/kfs_staff_gripper_cmd` 是 1 路並映射到 relay1。舊三路、六路、七路段落只保留作硬件演進記錄，不代表目前實機 wiring。
+
+KFS/STAFF pneumatic 的 Arduino Mega 五路 relay 控制 package。
 
 ## 更新记录 / Changelog
 
@@ -88,7 +83,7 @@ D8/D9/D10 均为高电平触发
 
 ## Package 用途与适用范围
 
-本 package 适用于 Arduino Mega + 三路 relay board + KFS staff gripper pneumatic 结构。
+本 package 适用于 Arduino Mega + 五路 relay board + KFS gripper + 雙 STAFF gripper/inclination pneumatic 结构。
 它只负责 relay 输出与手柄到 staff gripper command 的桥接，不包含比赛策略、自动流程或年份绑定逻辑。
 
 重要限制：如果 KFS staff gripper 和 arm pneumatic 接在同一个 Arduino Mega 上，运行本 package 时不要再同时运行旧的 `pneumatic_relay_driver_node`，否则两个 node 会抢同一个 serial port。
@@ -98,21 +93,21 @@ D8/D9/D10 均为高电平触发
 ```text
 pneumatic_gripper_joystick_bridge_node  -> /pneumatic_gripper_cmd
 kfs_staff_gripper_joystick_bridge_node  -> /kfs_staff_gripper_cmd
-kfs_staff_gripper_arduino_node          -> Arduino serial [r1,r2,r3]
+kfs_staff_gripper_arduino_node          -> Arduino serial [r1,r2,r3,r4,r5]
 ```
 
 ## Node 列表
 
 ### `kfs_staff_gripper_arduino_node`
 
-职责：统一打开 Arduino Mega serial port，并把 arm pneumatic 与 KFS staff gripper 的 relay 状态合并成三路 Arduino command。
+职责：统一打开 Arduino Mega serial port，并把 STAFF pneumatic 与 KFS gripper 的 relay 状态合并成五路 Arduino command。
 
 订阅：
 
 | Topic | Type | 含义 | 频率 |
 |---|---|---|---|
-| `/pneumatic_gripper_cmd` | `std_msgs/msg/Int32MultiArray` | 原 arm pneumatic 两路状态，默认映射到 relay 1-2 | 约 20 Hz |
-| `/kfs_staff_gripper_cmd` | `std_msgs/msg/Int32MultiArray` | KFS staff gripper 单路状态，默认映射到 relay 3 | 约 20 Hz |
+| `/pneumatic_gripper_cmd` | `std_msgs/msg/Int32MultiArray` | STAFF 四路状态 `[M7 gripper, M8 inclination, M8 gripper, M7 inclination]`，默认映射到 relay 2-5 | 约 20 Hz |
+| `/kfs_staff_gripper_cmd` | `std_msgs/msg/Int32MultiArray` | KFS gripper 单路状态，默认映射到 relay 1 | 约 20 Hz |
 
 发布：
 
@@ -130,17 +125,17 @@ kfs_staff_gripper_arduino_node          -> Arduino serial [r1,r2,r3]
 | `command_timeout_sec` | `0.5` | s | 超过此时间未收到新 command 后进入 safe state |
 | `watchdog_hz` | `20.0` | Hz | timeout/reconnect 检查频率 |
 | `reconnect_sec` | `1.0` | s | serial 断开后的重连间隔 |
-| `safe_state` | `[0, 1, 0]` | - | 安全状态：arm height LOW + arm gripper CLOSE + KFS CLOSE |
-| `arm_relay_indices` | `[0, 1]` | - | `/pneumatic_gripper_cmd` 映射到三路 relay 的位置 |
-| `staff_relay_indices` | `[2]` | - | `/kfs_staff_gripper_cmd` 映射到 relay 3 的位置 |
+| `safe_state` | `[0, 1, 0, 1, 0]` | - | 五路安全状态：KFS CLOSE + M7 gripper OPEN + M8 inclination LOW + M8 gripper OPEN + M7 inclination LOW |
+| `arm_relay_indices` | `[1, 2, 3, 4]` | - | `/pneumatic_gripper_cmd` 映射到五路 relay 的位置 |
+| `staff_relay_indices` | `[0]` | - | `/kfs_staff_gripper_cmd` 映射到 relay 1 的位置 |
 | `arm_cmd_topic` | `/pneumatic_gripper_cmd` | - | arm pneumatic command topic |
 | `staff_cmd_topic` | `/kfs_staff_gripper_cmd` | - | KFS staff gripper command topic |
 
 Arduino 输出格式：
 
 ```text
-[relay1,relay2,relay3]\n
-example: [1,0,1]
+[relay1,relay2,relay3,relay4,relay5]\n
+example: [0,1,0,1,0]
 ```
 
 ### `kfs_staff_gripper_joystick_bridge_node`
@@ -162,8 +157,8 @@ example: [1,0,1]
 默认手柄映射（2026-05-28 实机确认）：
 
 ```text
-Y  : KFS staff gripper OPEN while held，松开后 CLOSE
-R3 : 当前不使用
+Y  : KFS mode 下每按一次切換 KFS gripper OPEN/CLOSE
+R3 : 不由本 node 使用
 ```
 
 实机状态约定：
@@ -241,7 +236,7 @@ colcon build --packages-select kfs_staff_gripper --symlink-install
 source install/setup.bash
 ```
 
-只测 Arduino 三路 relay：
+只測 KFS relay / 五路 aggregator：
 
 ```bash
 ros2 run kfs_staff_gripper kfs_staff_gripper_arduino_node
@@ -284,15 +279,17 @@ ros2 run arduino_pneumatic_driver pneumatic_relay_driver_node
 
 ## 接口约定
 
-- 三路 relay 状态只允许 `0` 或 `1`。
+- 五路 relay 状态只允许 `0` 或 `1`。
 - `kfs_staff_gripper_arduino_node` 内部会把非零值 clamp 成 `1`，零值为 `0`。
-- Arduino command 固定为 `[r1,r2,r3]`。
+- Arduino command 固定为 `[r1,r2,r3,r4,r5]`。
 - 默认 relay 编号按 Arduino sketch 数组顺序解释：
 
 ```text
-relay 1 -> pin 8
-relay 2 -> pin 9
-relay 3 -> pin 10
+relay 1 -> pin 22 -> KFS gripper
+relay 2 -> pin 24 -> Motor7 staff gripper
+relay 3 -> pin 25 -> Motor8 inclination/head
+relay 4 -> pin 27 -> Motor8 staff gripper
+relay 5 -> pin 28 -> Motor7 inclination/head
 ```
 
 ## 调试方式与常见问题
@@ -335,10 +332,10 @@ ros2 topic echo /kfs_staff_gripper_status
 
 ## 你提供的 Arduino code 需要注意的问题
 
-1. 当前 sketch 中 D8/D9/D10 三路均为高电平触发：`HIGH = Relay ON`，`LOW = Relay OFF`。如果后续 relay module 类型改变，Arduino 里的 `RELAY_ON/OFF` 要同步修改。
-2. 现在 Arduino 只接受长度刚好为 7 的 `[1,0,1]`，格式很严格。ROS node 已按这个格式发送。
-3. Arduino 没有超时保护。如果 ROS 或 USB 断开，Arduino 会保持最后一次 relay 状态。本 package 在 ROS 侧对 arm pneumatic 与 KFS staff gripper 分别做 timeout safe state，但如果 USB 线直接断开，Arduino 仍不会自动关 relay。之后建议把 Arduino sketch 也加 millis watchdog。
-4. 如果和旧 pneumatic 共用同一个 Arduino，不能两个 ROS serial driver 同时打开同一个 `/dev/ttyUSB*`。本 package 的 aggregator node 就是为了解决这个问题。
+1. 現行 sketch 是五路 relay：`relayPins = {22,24,25,27,28}`，serial 格式必須剛好是 `[1,0,1,0,1]` 這種五值 list。
+2. 目前 Arduino code 註釋和實際陣列都表示高電平觸發：`HIGH = Relay ON`，`LOW = Relay OFF`。如果 relay module 類型改變，Arduino 里的 `RELAY_ON/OFF` 要同步修改。
+3. Arduino 本身沒有 millis watchdog。如果 ROS 或 USB 斷開，Arduino 會保持最後一次 relay 狀態。本 package 在 ROS 側做 timeout safe state，但 USB 線直接斷開時 Arduino 仍不會自動關 relay；後續建議 Arduino sketch 也加 watchdog。
+4. 不能同時運行舊 `pneumatic_relay_driver_node` 和 `kfs_staff_gripper_arduino_node`，否則兩個 ROS serial driver 會搶同一個 Arduino port。
 
 ## 2026-06-10 v0.3.6 arm 默认 OPEN、KFS 默认 CLOSE
 
@@ -520,7 +517,7 @@ inclination。也就是 START 選中 Motor7 時，SELECT 切換 Motor7 inclinati
 `kfs_staff_gripper_joystick_bridge_node` 現在訂閱 `/operation_mode`。只有 `/operation_mode=2` (KFS) 且 mode topic 未超過 `mode_timeout_sec=0.5 s` 時，`Y` 才會切換 KFS gripper。
 
 ```text
-SELECT / 中左 = STAFF mode，此時 Y 交給 Motor8 staff height
+SELECT / 中左 = STAFF mode，此時 Y 交給 Motor8 staff gripper relay
 START  / 中右 = KFS mode，此時 Y 控制 KFS gripper toggle
 ```
 
@@ -608,3 +605,35 @@ Motor6 horizontal = 30.0 rad/s
 ```
 
 對應參數：`elevator_joystick_bridge_node.command_speed_rad_s=28.0`、`elevator_controller_node.max_speed_rad_s=28.0`、`horizontal_joystick_bridge_node.command_speed_rad_s=30.0`、`horizontal_controller_node.max_speed_rad_s=30.0`。只有 `/operation_mode=2` 時生效；超時保護仍為 `timeout_sec=0.3 s`。
+
+## 2026-06-20 Archived Previous README Content - kfs-staff-gripper
+
+以下內容是本次 source-verified 文檔同步前已存在的 README 段落。它們已被前面的 current/source-verified 段落取代，只保留作版本回溯與排錯依據，不代表目前實機操作。
+
+<details><summary>Archived section 1</summary>
+
+## 接口约定
+
+- 三路 relay 状态只允许 `0` 或 `1`。
+- `kfs_staff_gripper_arduino_node` 内部会把非零值 clamp 成 `1`，零值为 `0`。
+- Arduino command 固定为 `[r1,r2,r3]`。
+- 默认 relay 编号按 Arduino sketch 数组顺序解释：
+
+```text
+relay 1 -> pin 8
+relay 2 -> pin 9
+relay 3 -> pin 10
+```
+
+</details>
+
+<details><summary>Archived section 2</summary>
+
+## 你提供的 Arduino code 需要注意的问题
+
+1. 当前 sketch 中 D8/D9/D10 三路均为高电平触发：`HIGH = Relay ON`，`LOW = Relay OFF`。如果后续 relay module 类型改变，Arduino 里的 `RELAY_ON/OFF` 要同步修改。
+2. 现在 Arduino 只接受长度刚好为 7 的 `[1,0,1]`，格式很严格。ROS node 已按这个格式发送。
+3. Arduino 没有超时保护。如果 ROS 或 USB 断开，Arduino 会保持最后一次 relay 状态。本 package 在 ROS 侧对 arm pneumatic 与 KFS staff gripper 分别做 timeout safe state，但如果 USB 线直接断开，Arduino 仍不会自动关 relay。之后建议把 Arduino sketch 也加 millis watchdog。
+4. 如果和旧 pneumatic 共用同一个 Arduino，不能两个 ROS serial driver 同时打开同一个 `/dev/ttyUSB*`。本 package 的 aggregator node 就是为了解决这个问题。
+
+</details>

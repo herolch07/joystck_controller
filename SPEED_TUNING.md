@@ -62,7 +62,6 @@ max_wheel_accel_rad_s2
 | `max_rotation` | `3.0` | `rad/s` | `/joystick_bridge` | 右摇杆推到底时的目标最大旋转角速度 |
 | `translation_linear_weight` | `0.1` | ratio | `/joystick_bridge` | 平移混合曲线线性权重 |
 | `rotation_linear_weight` | `0.1` | ratio | `/joystick_bridge` | 旋转混合曲线线性权重 |
-| `gripper_linear_weight` | `0.1` | ratio | `/arm_gripper_joystick_bridge_node` | Motor 7 扳机混合曲线线性权重 |
 | `deadzone` | `15` | joystick units | `/joystick_bridge` | 摇杆小幅漂移过滤，当前摇杆范围是 `-512..512` |
 | `input_timeout_sec` | `0.3` | `s` | `/joystick_bridge` | `/joystick_data` 超时后发布底盘停止指令 |
 | `max_wheel_speed_rad_s` | `40.0` | `rad/s` | `/local_navigation_node` | 单个轮子的角速度上限 |
@@ -78,8 +77,10 @@ max_speed_cm = 150.0
 translation_linear_weight = 0.1
 max_rotation = 3.0
 rotation_linear_weight = 0.1
-gripper max_speed_rad_s = 1.3
-gripper_linear_weight = 0.1
+Motor7/8 position_b_rad = 32.0
+Motor7/8 position_c_rad = -32.0
+Motor7/8 preset_speed_rad_s = 3.0
+Motor7/8 trim_speed_rad_s = 2.0
 deadzone = 15
 input_timeout_sec = 0.3
 max_wheel_speed_rad_s = 40.0
@@ -151,48 +152,28 @@ ros2 param set /local_navigation_node max_wheel_speed_rad_s 64.0
 chassis_speed_m_s = wheel_speed_rad_s * wheel_radius_m
 ```
 
-当前轮半径：
+当前 source 默认：
 
 ```text
 wheel_radius_m = 0.0635
-```
-
-如果设置：
-
-```text
 max_wheel_speed_rad_s = 40.0
 ```
 
 理论轮子线速度：
 
 ```text
-64.0 * 0.0635 = 4.064 m/s
+40.0 * 0.0635 = 2.540 m/s = 254.0 cm/s
 ```
 
-换算：
+所以当前 `150 cm/s` 手柄目标在纯前后/左右平移时不会被 `40 rad/s` 轮速限制截断；斜向或叠加满旋转时仍可能触发四轮同比缩放。
+
+旧的 `64 rad/s / 400 cm/s` 段落属于历史高风险测试记录：
 
 ```text
-4.064 m/s = 406.4 cm/s
+64.0 * 0.0635 = 4.064 m/s = 406.4 cm/s
 ```
 
-因此，如果同时设置：
-
-```bash
-ros2 param set /joystick_bridge max_speed_cm 400.0
-ros2 param set /local_navigation_node max_wheel_speed_rad_s 64.0
-```
-
-理论纯平移最高目标速度约为：
-
-```text
-min(400.0, 406.4) = 400.0 cm/s
-```
-
-也就是：
-
-```text
-400 cm/s = 4.0 m/s
-```
+这高于 DM-S3519 输出轴实际能力边界，不应作为当前默认设置。
 
 ## 5. 加速度计算
 
@@ -202,36 +183,32 @@ min(400.0, 406.4) = 400.0 cm/s
 chassis_accel_m_s2 = wheel_accel_rad_s2 * wheel_radius_m
 ```
 
-默认：
+当前 source 默认：
 
 ```text
 max_wheel_accel_rad_s2 = 25.0
+wheel_radius_m = 0.0635
 ```
 
-线加速度约为：
+理论线加速度约为：
 
 ```text
-12.0 * 0.0635 = 0.762 m/s^2
+25.0 * 0.0635 = 1.5875 m/s^2
 ```
 
-从 `0` 加速到 `4.0 m/s`，理论需要：
+纯前后/左右平移到 `150 cm/s` 约需要：
 
 ```text
-4.0 / 0.762 = 5.25 s
+1.5 / 1.5875 = 0.94 s
 ```
 
-速度随时间大约为：
+到 `40 rad/s` 轮速对应的 `254 cm/s` 理论边界约需要：
 
 ```text
-1 s: 76 cm/s
-2 s: 152 cm/s
-3 s: 229 cm/s
-4 s: 305 cm/s
-5 s: 381 cm/s
-5.25 s: 400 cm/s
+2.54 / 1.5875 = 1.60 s
 ```
 
-前提是电机、驱动器、电池和轮子抓地力都能支持。
+这些是理想计算；真实加速仍受电机、驱动器限流、电池、轮子抓地力、载重和地面影响。
 
 ## 6. 22.8V 和 20kg 载重的影响
 
@@ -369,7 +346,7 @@ ros2 param set /joystick_bridge max_speed_cm 400.0
 ros2 param set /local_navigation_node max_wheel_speed_rad_s 64.0
 ```
 
-如果 `max_wheel_accel_rad_s2` 保持默认 `12.0`，加速到目标速度大约需要 `5.25 s`。
+这是旧高风险测试示例；当前默认 `max_wheel_accel_rad_s2=25.0`，且当前默认轮速上限为 `40.0 rad/s`。
 
 不建议在 20kg 载重实机上直接使用这个设置。应先低速逐步测试。
 
@@ -393,7 +370,7 @@ echo $ROS_LOCALHOST_ONLY
 ros2 topic list
 ```
 
-R1 speed tests must not be run while `/base/dummy_control` or `/damiao_motor_controller` from R2 is visible. Current controller speed levels are `10/20/40/60/100/150 cm/s`.
+R1 speed tests must not be run while `/base/dummy_control` or `/damiao_motor_controller` from R2 is visible. Current controller speed levels have been removed; source default is `max_speed_cm=150.0 cm/s`.
 
 ## 2026-06-06 当前平移控制策略
 
@@ -512,17 +489,29 @@ TMAX = 10
 
 每一级在实际载重和比赛地面测试：纯前进、纯横移、斜向、原地旋转、斜向加旋转、满速松杆和正反快速切换。监控 `/damiao_motor_status`、电池压降、驱动器故障码、MOS/转子温度和轮胎打滑。当前不建议在保持 `40 rad/s` 轮速限制时直接把手柄目标改到 `200 cm/s` 以上。
 
-## 2026-06-11 25 rad/s² 四轮统一矢量加速度限制
+## 2026-06-11 加速度限制模式说明（source-verified current）
 
-当前 `max_wheel_accel_rad_s2 = 25.0` 保持不变，但算法已由四轮独立截断改为四轮共享同一个加速比例 `alpha`。旧实现可能在 22° 等任意方向加速时破坏目标轮速关系并引入瞬时偏航；新实现沿完整四轮矢量向目标插值，最忙轮仍严格不超过 `25 rad/s²`。
+当前 `max_wheel_accel_rad_s2 = 25.0` 保持不变。`local_navigation_node` 目前支持两种模式：
+
+```text
+accel_limit_mode = per_wheel   # 默认，直接启动 start base 时使用
+accel_limit_mode = vector      # 可手动切换，四轮共享同一个 alpha
+```
+
+默认 `per_wheel` 会对每个轮子的速度变化分别做 `±max_delta` 限制，手感更直接。可选 `vector` 模式才会使用四轮统一比例：
 
 ```text
 alpha = min(1, 25 * dt / max(abs(target_wheel_i - current_wheel_i)))
 new_wheel_i = current_wheel_i + alpha * (target_wheel_i - current_wheel_i)
 ```
 
-这项修改主要改善加速和方向切换阶段，不是 IMU 航向闭环。如果底盘达到稳定速度后仍持续转向，应检查轮子接地、滚子阻力、载重分布和四轮实际输出差异。
+因此，当前直接启动不会启用 vector limit。需要临时测试时才执行：
 
+```bash
+ros2 param set /local_navigation_node accel_limit_mode vector
+```
+
+这类加速度限制只影响加速和方向切换阶段，不是 IMU 航向闭环。如果底盘达到稳定速度后仍持续转向，应检查轮子接地、滚子阻力、载重分布和四轮实际输出差异。
 
 ## 2026-06-20 当前旋转速度更新
 

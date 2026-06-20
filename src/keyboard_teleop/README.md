@@ -2,6 +2,10 @@
 
 # keyboard_teleop
 
+## 2026-06-20 Source-Verified Current Warning
+
+`keyboard_teleop_node` 仍按舊調試接口發布 `/arm_gripper_speed_cmd` 和二值 `/pneumatic_gripper_cmd = [D9_gripper_state, D8_height_state]`。這符合目前 source code，但不符合正式五路 Arduino relay 比賽操作；正式操作請使用手柄和 `r1_start_base_1_0.sh`。
+
 键盘临时遥控 package。它用于没有实体手柄时，在 Linux terminal 中用键盘发布机器人各子系统的既有控制 topic。
 
 本 package 属于 operator input / teleop 层，不包含电机驱动、CAN/Serial 协议、底盘运动学、比赛流程或战术状态机。

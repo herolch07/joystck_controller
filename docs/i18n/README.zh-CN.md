@@ -229,3 +229,7 @@ scripts/wait_and_start_robot.sh
 ```
 
 它会等待 8BitDo / Xbox 手柄出现后再启动 `r1_start_base_1_0.sh`。当前 `STOP_ON_CONTROLLER_LOST=0`，手柄短暂断连不会杀掉 tmux session，安全输出由各节点 watchdog 负责。
+
+## License
+
+本项目使用 Apache License 2.0。详见 [LICENSE](../../LICENSE)。

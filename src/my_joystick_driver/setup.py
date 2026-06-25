@@ -16,7 +16,7 @@ setup(
     maintainer='robotics',
     maintainer_email='robotics@todo.todo',
     description='TODO: Package description',
-    license='TODO: License declaration',
+    license='Apache License 2.0',
     extras_require={
         'test': [
             'pytest',

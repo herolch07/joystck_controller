@@ -227,3 +227,7 @@ scripts/wait_and_start_robot.sh
 ```
 
 It waits for an 8BitDo / Xbox controller before starting `r1_start_base_1_0.sh`. Current `STOP_ON_CONTROLLER_LOST=0` means a short controller dropout does not kill the tmux session; node watchdogs remain responsible for safe output.
+
+## License
+
+This project is licensed under the Apache License 2.0. See [LICENSE](LICENSE).

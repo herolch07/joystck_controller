@@ -1,103 +1,61 @@
-> 2026-06-19 現行操作入口：目前手柄鍵位、STAFF/KFS mode、D-pad 視角、五路 relay 順序請先看 [`CONTROLLER_USAGE.md`](CONTROLLER_USAGE.md)。本文若是舊測試/排查紀錄，內容保留作歷史，不代表目前實機鍵位。
+# EdUHK Robocon R1 ROS 2 Workspace
 
-> 2026-06-19 現行操作準則：手柄鍵位、STAFF/KFS mode、D-pad 視角與五路 relay 順序以 [`CONTROLLER_USAGE.md`](CONTROLLER_USAGE.md) 為唯一準則。本文件較早日期的鍵位段落保留為歷史紀錄，不作為目前實機操作依據。
+語言 / Language: [English](../../README.md) | [简体中文](README.zh-CN.md) | 繁體中文
 
-# Robocon R1 ROS 2 工作區
+本倉庫是 EdUHK Robocon Robotics Team 的 R1 機器人 ROS 2 控制工作區。當前最終版本以 8BitDo 手柄控制為主，涵蓋四輪全向底盤、達妙電機、STAFF gripper、KFS gripper、Arduino 五路繼電器氣動面板、自動啟動與多層安全 watchdog。
 
-[English](README.md) | [简体中文](README.zh-CN.md) | 繁體中文
+維護者：Hero@EdUHK Robotics Team 2026  
+GitHub：`herolch07`
 
-本倉庫是 EdUHK Robotics Team @ Hero 開發的目前 R1 機器人控制工作區。
+## 當前狀態
 
-- GitHub：`herolch07`
-- 目前最終操作指南：[r1 final operation guide 1.0.md](r1%20final%20operation%20guide%201.0.md)
-- 系統架構說明：[ARCHITECTURE.md](ARCHITECTURE.md)
-- Node/topic 圖：[NODE_GRAPH.md](NODE_GRAPH.md)
-- 底盤速度調參說明：[SPEED_TUNING.md](SPEED_TUNING.md)
-- 目前完整啟動腳本：`./r1_start_base_1_0.sh`
-- 專案記錄中的目前實機確認日期：2026-05-22
+這是繁體中文 README。GitHub 首頁使用的英文主版在 [../../README.md](../../README.md)。
 
-## 目前系統
+正式操作和接口說明以這些文件為準：
 
-這個工作區是 Robocon R1 的 ROS 2 控制系統，包含：
+- [QUICK_START.md](../../QUICK_START.md)：最快啟動和驗證步驟
+- [CONTROLLER_USAGE.md](../../CONTROLLER_USAGE.md)：當前手柄按鍵表
+- [ARCHITECTURE.md](../../ARCHITECTURE.md)：系統架構和節點職責
+- [NODE_GRAPH.md](../../NODE_GRAPH.md)：node/topic 數據流
+- [TESTING_GUIDE.md](../../TESTING_GUIDE.md)：測試與實機檢查
+- [SAFETY_REPORT.md](../../SAFETY_REPORT.md)：安全機制說明
 
-- Motor 1-4：四輪全向底盤，VEL 模式
-- Motor 5：KFS 升降機構，VEL 模式
-- Motor 6：KFS 水平移動機構，VEL 模式
-- Motor 7：STAFF gripper 位置馬達，POS_VEL 模式
-- Motor 8：STAFF gripper 位置馬達，POS_VEL 模式
-- Arduino 五路氣動 relay panel：KFS gripper、M7/M8 staff gripper、M7/M8 inclination/head relay
-- 8BitDo 手掣輸入，底層使用 Linux `evdev`
-- 可選鍵盤遙控 package 只保留作舊低速調試；目前比賽操作使用手掣
+歷史文件和早期調參記錄只用於回溯，不再作為當前實機操作依據。清理前的舊版根目錄 README 已歸檔到 [../history/README.root-before-cleanup.md](../history/README.root-before-cleanup.md)。
 
-## 手掣映射
+## 命名說明
 
-```text
-永遠生效：
-  左搖桿：人視角底盤平移
-  右搖桿：底盤原地旋轉
-  D-pad：設定 KFS visual front 在人視角中的方向
-  X + Y + B + A 長按 5 秒：Raspberry Pi shutdown command
+當前正確名稱是 **STAFF gripper**，不是 arm gripper。
 
-模式切換：
-  SELECT / 中左：STAFF mode (/operation_mode = 1)
-  START / 中右：KFS mode (/operation_mode = 2)
+倉庫中仍可能出現這些舊命名：
 
-STAFF mode：
-  A：Motor7 90° / preset cycle
-  X：Motor8 90° / preset cycle
-  B：Motor7 staff gripper relay toggle
-  Y：Motor8 staff gripper relay toggle
-  R1/R2：Motor7 微調 負/正
-  L1/L2：Motor8 微調 負/正
-  R3/P1：Motor7 inclination/head relay toggle
-  L3/P2：Motor8 inclination/head relay toggle
+- `arm_gripper_controller_node`
+- `arm_gripper_joystick_bridge_node`
+- `/arm_gripper_speed_cmd`
+- `/arm_gripper_status`
 
-KFS mode：
-  Y：KFS gripper toggle
-  L2/R2：Motor6 horizontal 正向(out)/負向(in)
-  L1/R1：Motor5 elevator 負向(down)/正向(up)
-```
+這些屬於舊的 Motor 7 速度控制鏈路，當前正式啟動腳本不再使用。當前 STAFF gripper 由以下鏈路控制：
 
-## 目前重要預設值
+- Motor 7 / Motor 8 位置控制：`motor7_position_controller_node`、`motor8_position_controller_node`
+- STAFF pneumatic relay：`pneumatic_gripper_joystick_bridge_node`
+- Arduino 五路 relay 聚合：`kfs_staff_gripper_arduino_node`
+
+如果後續要真正重命名 package，建議將 `src/r1_arm_control` 改為 `src/r1_mechanism_control`，而不是 `staff_gripper_control`，因為它還負責 Motor 5 elevator 和 Motor 6 horizontal。
+
+## 當前系統組成
 
 ```text
-手掣搖桿範圍：-512 .. 512
-扳機範圍：0 .. 512
-手掣死區：15
-joystick_bridge max_speed_cm：150.0
-joystick_bridge max_rotation：3.0
-joystick_bridge translation_linear_weight：0.1
-joystick_bridge rotation_linear_weight：0.1
-local_navigation_node max_wheel_speed_rad_s：40.0
-local_navigation_node max_wheel_accel_rad_s2：25.0
-local_navigation_node accel_limit_mode：per_wheel
-damiao_node motor_ids：[1,2,3,4,5,6,7,8]
-damiao_node position_mode_motor_ids：[7,8]
-damiao_node command_timeout_sec：0.5
-Motor7/Motor8 位置點：[0.0, 32.0, -32.0] rad
-STAFF pneumatic safe_state：[1,0,1,0]
-Arduino 五路 safe_state：[0,1,0,1,0]
-```
-
-底盤運動學預設值：
-
-```text
-Motor 1 = 左前
-Motor 2 = 右前
-Motor 3 = 右後
-Motor 4 = 左後
-
-lateral_axis_sign = 1.0
-rotation_axis_sign = 1.0
-forward_coeff_1..4 = [1, 1, -1, -1]
-lateral_coeff_1..4 = [1, -1, -1, 1]
-rotation_coeff_1..4 = [1, -1, 1, -1]
-motor_direction_1..4 = [-1, 1, -1, 1]
+Motor 1-4  : 四輪全向底盤，VEL 模式
+Motor 5    : KFS elevator，VEL 模式
+Motor 6    : KFS horizontal，VEL 模式
+Motor 7    : STAFF gripper position motor，POS_VEL 模式
+Motor 8    : STAFF gripper position motor，POS_VEL 模式
+Arduino    : 五路 relay 面板，控制 KFS gripper、Motor7/8 STAFF gripper relay、Motor7/8 head/inclination relay
+Controller : 8BitDo 手柄，通過 Linux evdev 輸入
 ```
 
 ## 快速啟動
 
-在機器人主機上執行：
+在機器人主機上：
 
 ```bash
 cd /home/robotics/robocon2026_r1/r1_control_ws
@@ -107,300 +65,204 @@ chmod +x r1_start_base_1_0.sh
 ./r1_start_base_1_0.sh
 ```
 
-腳本會啟動 tmux session：
+啟動後會建立 tmux session：
 
 ```text
 r1_control
 ```
 
-常用 tmux 命令：
+常用 tmux 操作：
 
 ```text
-重新進入：tmux attach -t r1_control
-離開但保持運行：Ctrl+b，然後按 d
-關閉全部：tmux kill-session -t r1_control
+進入窗口: tmux attach -t r1_control
+離開窗口: Ctrl+b, then d
+停止系統: tmux kill-session -t r1_control
 ```
 
-## Package 一覽
+## 當前啟動節點
+
+`r1_start_base_1_0.sh` 是當前正式啟動腳本，會啟動：
 
 ```text
-src/my_joystick_msgs          自訂 Joystick 訊息
-src/my_joystick_driver        evdev 手掣驅動，發布 /joystick_data
-src/joystick_bridge           手掣到底盤 /local_driving 的橋接
-src/base_omniwheel_r2_700     全向底盤運動學與達妙馬達驅動
-src/r1_arm_control            Motor 5/6 速度控制與 Motor 7/8 POS_VEL 控制
-src/kfs_staff_gripper         KFS/STAFF 五路 Arduino relay aggregator
-src/arduino_pneumatic_driver  Arduino relay 氣動夾爪 joystick bridge
-src/keyboard_teleop           鍵盤低速調試遙控
+joystick_node
+operation_mode_selector_node
+joystick_bridge
+damiao_node
+local_navigation_node
+elevator_controller_node
+elevator_joystick_bridge_node
+horizontal_controller_node
+horizontal_joystick_bridge_node
+motor7_position_controller_node
+motor8_position_controller_node
+motor_position_selector_joystick_bridge_node
+kfs_staff_gripper_arduino_node
+pneumatic_gripper_joystick_bridge_node
+kfs_staff_gripper_joystick_bridge_node
+joystick_shutdown_node
+monitor shell
 ```
 
-## 安全保護
+不要把舊的 `start.sh`、`start_background.sh`、`start_ssh.sh` 當作當前正式入口。它們已歸檔到 `archive/legacy_scripts/`。
 
-目前控制鏈有多層 watchdog：
+## 手柄按鍵
 
-- `joystick_bridge`：`/joystick_data` 超時後發布 `/local_driving = [0, 0, 0]`。
-- `local_navigation_node`：`/local_driving` 超時後讓 Motor 1-4 歸零。
-- `damiao_node`：連續 VEL 命令超時後只讓對應馬達歸零。
-- `r1_arm_control` controllers：對應 speed command 超時後執行機構速度歸零。
-- `arduino_pneumatic_driver`：STAFF bridge 在 joystick timeout 後回到 `/pneumatic_gripper_cmd=[1,0,1,0]`；`kfs_staff_gripper_arduino_node` 擁有 Arduino serial，啟動/重連/關閉時套用完整五路 `safe_state=[0,1,0,1,0]`。
-
-## 舊文件說明
-
-本工作區裡有一些歷史報告。如果某段內容提到 `±8192`、`410` 手掣死區、`100 cm/s` 預設底盤速度、`start_all_nodes.sh`、`start_full_control_chain.sh`、VESC 節點，或舊路徑 `Robocon2026_r2/2026R2_ws`，除非該段明確標成目前狀態，否則應視為舊版記錄。
-
-目前操作以本 README 和 [r1 final operation guide 1.0.md](r1%20final%20operation%20guide%201.0.md) 為準。
-
-## ROS2 網絡隔離
-
-R1 啟動腳本預設使用獨立 ROS2 環境：
-
-```bash
-ROS_DOMAIN_ID=1
-ROS_LOCALHOST_ONLY=1
-```
-
-這樣可以避免 R1 發現 R2 的 `/damiao_motor_controller`、`/global_navigation_node`、`/base/dummy_control` 等 node/topic。修改前請先閱讀 `ROS_DOMAIN_ISOLATION.md`。
-
-## 達妙馬達急停自動恢復
-
-Motor 1-8 回饋逾時或失能後，driver 每 2 秒自動發送對應模式的 enable/safe command，並阻止非零命令。收到已使能回饋且手掣回中一次後才恢復運動。監控 `/damiao_motor_status`：`0=RECOVERING`、`1=WAIT_NEUTRAL`、`2=READY`、`3=DISABLED`。
-
-
-## 2026-06-15 現行人視角底盤控制
-
-此節為目前正式配置，取代文件前面所有「十字鍵控制 Motor6」或「L3／R3 未使用」的現行
-描述；舊內容只保留作版本回溯。
+固定功能：
 
 ```text
-十字鍵上：E-stop／車頭在人視角前方，view=0
-十字鍵右：E-stop／車頭在人視角右方，view=1
-十字鍵下：E-stop／車頭在人視角後方，view=2
-十字鍵左：E-stop／車頭在人視角左方，view=3
+左搖桿: 底盤平移，按操作者視角控制
+右搖桿: 底盤原地旋轉
+D-pad : 設置 KFS visual front 在操作者視角中的方向
+X + Y + B + A 長按 5 秒: Raspberry Pi shutdown
 ```
 
-十字鍵只設定左搖桿的平移座標，不會命令底盤旋轉。左搖桿必須回中才接受視角切換；右搖桿
-旋轉、`150 cm/s` 平移上限、`3.0 rad/s` 旋轉上限、`40 rad/s` 輪速上限及
-`25 rad/s²` 四輪統一加速度限幅均保持不變。
-
-Motor6 horizontal 已搬到：
+模式選擇：
 
 ```text
-L3：+10 rad/s
-R3：-10 rad/s
-L3 + R3 或全部鬆開：0 rad/s
+SELECT / 中左: STAFF mode (/operation_mode = 1)
+START  / 中右: KFS mode   (/operation_mode = 2)
 ```
 
-監控目前視角：
-
-```bash
-ros2 topic echo /view_orientation
-```
-
-## 2026-06-16 8BitDo P1／P2 背鍵配置
-
-P1／P2 目前不是 ROS 內的獨立按鍵。`evtest` 實測 A/B/X/Y 有事件，但 P1／P2 沒有獨立
-事件，因此目前不修改 `Joystick.msg`、`joystick_node.py` 或任何 bridge node。
-
-目前使用 8BitDo 軟體 remap：
+STAFF mode：
 
 ```text
-P1 = R3
-P2 = L3
+A     : Motor7 STAFF gripper 90-degree / preset cycle
+X     : Motor8 STAFF gripper 90-degree / preset cycle
+B     : Motor7 STAFF gripper relay toggle
+Y     : Motor8 STAFF gripper relay toggle
+R1/R2 : Motor7 trim negative / positive
+L1/L2 : Motor8 trim negative / positive
+R3/P1 : Motor7 head / inclination relay toggle
+L3/P2 : Motor8 head / inclination relay toggle
 ```
 
-實際效果：
+KFS mode：
 
 ```text
-P1 -> R3 -> Motor6 -10 rad/s
-P2 -> L3 -> Motor6 +10 rad/s
-P1 + P2 或全部鬆開 -> Motor6 0 rad/s
+Y     : KFS gripper toggle
+L2/R2 : Motor6 horizontal positive(out) / negative(in)
+L1/R1 : Motor5 elevator negative(down) / positive(up)
 ```
 
-這只改變手柄物理操作位置，不改變 ROS topic、message、timeout 或控制計算。
+D-pad down 時，STAFF mode 會交換 Motor7/Motor8 的 STAFF gripper 控制映射，以適配操作者反向面對機器人時的操作直覺。詳細規則見 [CONTROLLER_USAGE.md](../../CONTROLLER_USAGE.md)。
 
-本功能已於 2026-06-15 完成實機測試並確認繼續採用。
-
-## 2026-06-18 七路 relay 操作更新歷史記錄（已被五路 relay 取代）
-
-本節保留 2026-06-18 臨時七路 relay / 六值 `/pneumatic_gripper_cmd` 設計，不再是目前 source-truth runtime。現行正式 Arduino 五路 relay 為：
+## 當前重要參數
 
 ```text
-[KFS gripper, M7 gripper, M8 inclination, M8 gripper, M7 inclination]
-/pneumatic_gripper_cmd = [M7 gripper, M8 inclination, M8 gripper, M7 inclination]
-/kfs_staff_gripper_cmd = [KFS gripper]
+Joystick axis range: -512 .. 512
+Trigger range: 0 .. 512
+Joystick deadzone: 15
+
+joystick_bridge.max_speed_cm: 150.0
+joystick_bridge.max_rotation: 3.0
+joystick_bridge.translation_linear_weight: 0.1
+joystick_bridge.rotation_linear_weight: 0.1
+
+local_navigation_node.max_wheel_speed_rad_s: 40.0
+local_navigation_node.max_wheel_accel_rad_s2: 25.0
+local_navigation_node.accel_limit_mode: per_wheel
+
+damiao_node.motor_ids: [1,2,3,4,5,6,7,8]
+damiao_node.position_mode_motor_ids: [7,8]
+damiao_node.command_timeout_sec: 0.5
+
+Motor5 elevator speed: 28.0 rad/s
+Motor6 horizontal speed: 30.0 rad/s
+Motor7/Motor8 position presets: [0.0, 32.0, -32.0] rad
+
+STAFF pneumatic safe_state: [1,0,1,0]
+Arduino five-relay safe_state: [0,1,0,1,0]
 ```
 
-手柄內部 remap 仍有效：`P1=R3`、`P2=L3`，目前在 STAFF mode 用於 Motor7/Motor8 inclination/head relay。controller-gated autostart 也仍有效：`systemd/r1-control-autostart.service` 可啟動 `scripts/wait_and_start_robot.sh`，等 8BitDo / Xbox controller active 後自動執行 `r1_start_base_1_0.sh`。
-
-## 2026-06-19 Final STAFF Gripper / 90-Degree Split
-
-This section supersedes any same-day text that says Y/A also toggle gripper relays.
-
-Current STAFF mode split:
+底盤當前標定：
 
 ```text
-Y  -> Motor7 left-right 90-degree / preset cycle only
-A  -> Motor8 left-right 90-degree / preset cycle only
-B  -> Motor7 staff gripper relay toggle only
-X  -> Motor8 staff gripper relay toggle only
-R1 -> Motor7 manual trim negative
-R2 -> Motor7 manual trim positive
-L1 -> Motor8 manual trim negative
-L2 -> Motor8 manual trim positive
-R3 -> Motor7 head / inclination relay toggle
-L3 -> Motor8 head / inclination relay toggle
+Motor 1 = left front
+Motor 2 = right front
+Motor 3 = right rear
+Motor 4 = left rear
+
+lateral_axis_sign = 1.0
+rotation_axis_sign = 1.0
+forward_coeff_1..4   = [1, 1, -1, -1]
+lateral_coeff_1..4   = [1, -1, -1, 1]
+rotation_coeff_1..4  = [1, -1, 1, -1]
+motor_direction_1..4 = [-1, 1, -1, 1]
 ```
 
-Current KFS mode remains:
+## Package 地圖
 
 ```text
-Y  -> KFS gripper toggle
-L2 -> Motor6 horizontal positive / out
-R2 -> Motor6 horizontal negative / in
-L1 -> Motor5 elevator negative / down
-R1 -> Motor5 elevator positive / up
+src/my_joystick_msgs          自定義 Joystick message
+src/my_joystick_driver        evdev 手柄驅動，發布 /joystick_data
+src/joystick_bridge           手柄到底盤 /local_driving 的橋接
+src/base_omniwheel_r2_700     四輪全向底盤運動學與達妙電機驅動
+src/operation_mode_control    STAFF/KFS 模式選擇
+src/r1_arm_control            當前實際是 R1 mechanism control，含 Motor5/6/7/8 控制
+src/arduino_pneumatic_driver  STAFF pneumatic bridge，發布 /pneumatic_gripper_cmd
+src/kfs_staff_gripper         五路 Arduino relay 聚合與 KFS gripper bridge
+src/keyboard_teleop           鍵盤調試入口，非當前正式比賽入口
+src/robot_power_control       手柄長按關機
 ```
 
+## 安全機制
 
-## 2026-06-19 現行手柄鍵位總表（以 CONTROLLER_USAGE.md 為準）
+當前系統有多層 timeout/watchdog：
 
-目前手柄操作的唯一準則已整理到 [`CONTROLLER_USAGE.md`](CONTROLLER_USAGE.md)。若本文件前面存在舊版鍵位描述，保留為歷史紀錄；實機操作以本節和 `CONTROLLER_USAGE.md` 為準。
+- `joystick_bridge`：`/joystick_data` 超時後發布 `/local_driving = [0,0,0]`。
+- `local_navigation_node`：`/local_driving` 超時後向 Motor 1-4 發布零速度。
+- `damiao_node`：電機命令超時後發零速度；反饋丟失或電機 disabled 後進入 recovery；恢復後必須收到 neutral command 才允許非零輸出。
+- `r1_arm_control`：Motor5/6 速度控制超時歸零；Motor7/8 POS_VEL 輸入超時後停止 trim 並 hold 當前反饋位置。
+- `operation_mode_control`：手柄輸入超時後發布 `MODE_INVALID`，下游 mechanism bridge 停止接受舊按鍵狀態。
+- `kfs_staff_gripper_arduino_node`：Arduino 串口啟動、重連、關閉和命令源超時時寫入 safe state。
+- `robot_power_control`：`X+Y+B+A` 長按觸發關機，默認節點支持 dry-run；正式啟動腳本當前傳入 `dry_run:=false`。
 
-固定不變：左搖桿控制底盤平移，右搖桿控制底盤旋轉，D-pad 設定 KFS visual front 的人視角方向，`X+Y+B+A` 長按 5 秒觸發 Raspberry Pi shutdown command。
+## 自動啟動
 
-模式切換：`SELECT/中左 = STAFF mode (/operation_mode=1)`，`START/中右 = KFS mode (/operation_mode=2)`。
-
-STAFF mode：`A=Motor7 左右 90°/preset`，`X=Motor8 左右 90°/preset`，`B=Motor7 staff gripper relay`，`Y=Motor8 staff gripper relay`，`R1/R2=Motor7 微調 -/+`，`L1/L2=Motor8 微調 -/+`，`R3/P1=Motor7 抬頭/inclination relay`，`L3/P2=Motor8 抬頭/inclination relay`。
-
-KFS mode：`Y=KFS gripper`，`L2/R2=Motor6 horizontal positive/negative`，`L1/R1=Motor5 elevator negative/positive`。
-
-最新 Arduino 五路 relay 順序為 `[KFS gripper, M7 gripper, M8 inclination, M8 gripper, M7 inclination]`，安全狀態為 `[0,1,0,1,0]`。
-
-## 2026-06-20 KFS mechanism speed parameters
-
-目前 source code 中 KFS mode 的機構速度如下：
+倉庫包含 systemd watcher：
 
 ```text
-Motor5 elevator = 28.0 rad/s
-  L1: negative/down
-  R1: positive/up
-
-Motor6 horizontal = 30.0 rad/s
-  L2: positive/out at full trigger
-  R2: negative/in at full trigger
+systemd/r1-control-autostart.service
+scripts/wait_and_start_robot.sh
 ```
 
-對應參數：`elevator_joystick_bridge_node.command_speed_rad_s=28.0`、`elevator_controller_node.max_speed_rad_s=28.0`、`horizontal_joystick_bridge_node.command_speed_rad_s=30.0`、`horizontal_controller_node.max_speed_rad_s=30.0`。只有 `/operation_mode=2` 時生效；超時保護仍為 `timeout_sec=0.3 s`。
+它會等待 8BitDo / Xbox 手柄出現後再啟動 `r1_start_base_1_0.sh`。當前 `STOP_ON_CONTROLLER_LOST=0`，手柄短暫斷連不會殺掉 tmux session，安全輸出由各節點 watchdog 負責。
 
-## 2026-06-20 STAFF D-pad Down Motor7/Motor8 Swap
+## 清理狀態
 
-目前 STAFF mode 會讀取 `/view_orientation`。規則：
+為了讓 GitHub record 更清晰：
+
+- 根目錄 README 已更新為當前最終版入口。
+- 舊操作文檔已移動到 `docs/history/`。
+- 舊啟動腳本已移動到 `archive/legacy_scripts/`。
+- 實機 debug 腳本已移動到 `tools/hardware_debug/`。
+- `logs/*.log` 已從 Git 跟蹤中移除，`.gitignore` 已加入 `logs/`。
+
+## 目錄重命名建議
+
+如果只是改顯示文檔，當前 README 已經把 `arm gripper` 糾正為 `STAFF gripper`。
+
+如果要真正改目錄或 package 名，需要同步修改：
 
 ```text
-/view_orientation = 0  # D-pad 上，KFS visual front 在機手前方
-  STAFF mapping 保持正常：Motor7 按鍵仍控制 Motor7，Motor8 按鍵仍控制 Motor8
-
-/view_orientation = 2  # D-pad 下，KFS visual front 在機手後方
-  STAFF mapping 對調：所有 Motor7 staff gripper 控制改送 Motor8，所有 Motor8 staff gripper 控制改送 Motor7
+目錄名
+package.xml 的 <name>
+setup.py 的 package_name
+setup.cfg 的 script_dir / install_scripts
+Python import 路徑
+console_scripts
+所有 ros2 run 命令
+所有文檔和測試 import
 ```
 
-D-pad 左/右 (`1/3`) 目前不觸發對調，保持正常 mapping。對調只在 STAFF mode (`/operation_mode=1`) 影響 staff gripper 相關控制；KFS mode、底盤左/右搖桿、Motor5 elevator、Motor6 horizontal 不受影響。
-
-正常 mapping：
+推薦重命名路線：
 
 ```text
-A -> Motor7 90° / preset
-X -> Motor8 90° / preset
-B -> Motor7 staff gripper relay
-Y -> Motor8 staff gripper relay
-R1/R2 -> Motor7 trim -/+
-L1/L2 -> Motor8 trim -/+
-R3/P1 -> Motor7 inclination/head relay
-L3/P2 -> Motor8 inclination/head relay
+src/r1_arm_control
+  -> src/r1_mechanism_control
+
+r1_arm_control package
+  -> r1_mechanism_control
 ```
 
-D-pad 下 swap mapping：
-
-```text
-A -> Motor8 90° / preset
-X -> Motor7 90° / preset
-B -> Motor8 staff gripper relay
-Y -> Motor7 staff gripper relay
-R1/R2 -> Motor8 trim +/-   # R1/R2 also swapped, so R1 positive and R2 negative
-L1/L2 -> Motor7 trim +/-   # L1/L2 also swapped, so L1 positive and L2 negative
-R3/P1 -> Motor8 inclination/head relay
-L3/P2 -> Motor7 inclination/head relay
-```
-
-相關參數：
-
-```text
-motor_position_selector_joystick_bridge_node.swap_staff_grippers_on_view_down = true
-pneumatic_gripper_joystick_bridge_node.swap_staff_grippers_on_view_down = true
-```
-
-## 2026-06-20 Chassis Rotation Speed
-
-Right stick rotation speed default is now:
-
-```text
-joystick_bridge.max_rotation = 3.0 rad/s
-```
-
-The rotation curve remains:
-
-```text
-rotation = (0.1x + 0.9x^3) * max_rotation
-```
-
-So small right-stick input still gives fine control, while full right-stick input can request up to `3.0 rad/s`. Actual chassis motion may still be scaled by `local_navigation_node.max_wheel_speed_rad_s = 40.0 rad/s` when translation and rotation are combined.
-
-### 2026-06-20 STAFF D-pad Down Trim Direction Update
-
-D-pad 下的 STAFF swap 現在也會把微調方向一起對調：`R1/R2` 互換、`L1/L2` 互換。因此 D-pad 下時：
-
-```text
-R1 -> Motor8 trim positive
-R2 -> Motor8 trim negative
-L1 -> Motor7 trim positive
-L2 -> Motor7 trim negative
-```
-
-D-pad 上仍保持原本：`R1/R2=Motor7 -/+`，`L1/L2=Motor8 -/+`。
-
-## 2026-06-20 Archived Previous README Content - root-2026-06-18
-
-以下內容是本次 source-verified 文檔同步前已存在的 README 段落。它們已被前面的 current/source-verified 段落取代，只保留作版本回溯與排錯依據，不代表目前實機操作。
-
-<details><summary>Archived section 1</summary>
-
-## 2026-06-18 目前正式操作更新
-
-本節為目前最新操作摘要，取代前文所有舊版按鍵方向、relay7 reserved、以及手動啟動優先的說明；舊段落保留作版本回溯。
-
-```text
-P1 = R3 -> STAFF mode Motor7 inclination/head relay
-P2 = L3 -> STAFF mode Motor8 inclination/head relay
-P1 + P2 或全部鬆開 -> Motor6 0 rad/s
-```
-
-七路 Arduino relay 目前順序：
-
-```text
-[relay1, relay2, relay3, relay4, relay5, relay6, relay7]
-[KFS, M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper, M7 inclination]
-```
-
-`/pneumatic_gripper_cmd` 目前為 6 個值：
-
-```text
-[M7 height, M7 gripper, M8 inclination, M8 height, M8 gripper, M7 inclination]
-```
-
-`SELECT/-` 會控制目前由 `START/+` 選中的 arm inclination：選中 Motor7 時控制 relay7 / Motor7 inclination；選中 Motor8 時控制 relay4 / Motor8 inclination。
-
-新增 controller-gated autostart：Pi 開機後可由 `systemd/r1-control-autostart.service` 啟動 `scripts/wait_and_start_robot.sh`，等 8BitDo / Xbox controller active 後才自動執行 `r1_start_base_1_0.sh`。預設 `STOP_ON_CONTROLLER_LOST=0`，手柄中途關掉不自動 kill 整套 ROS，仍依靠各 node watchdog 進安全輸出。
-
-</details>
-
-maintainer: Hero@EdUHK robotics team 2026 | github: herolch07
+不推薦把整個 `r1_arm_control` 改成 `staff_gripper_control`，因為它還負責 KFS elevator 和 KFS horizontal。當前系統已經完結，最穩妥的做法是先只清理文檔和舊腳本，不大規模改 ROS package 名。

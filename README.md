@@ -1,67 +1,59 @@
 # EdUHK Robocon R1 ROS 2 Workspace
 
-本仓库是 EdUHK Robocon Robotics Team 的 R1 机器人 ROS 2 控制工作区。当前版本以手柄控制为主，覆盖底盘、达妙电机、STAFF gripper、KFS gripper、Arduino 五路继电器气动面板、自动启动与安全 watchdog。
+Language: English | [简体中文](docs/i18n/README.zh-CN.md) | [繁體中文](docs/i18n/README.zh-TW.md)
 
-维护者：Hero@EdUHK Robotics Team 2026  
-GitHub：`herolch07`
+This repository is the ROS 2 control workspace for the EdUHK Robocon Robotics Team R1 robot. The current final version is centered on 8BitDo controller operation and covers the omniwheel base, Damiao motors, STAFF gripper, KFS gripper, Arduino five-relay pneumatic panel, autostart, and layered safety watchdogs.
 
-## 当前状态
+Maintainer: Hero@EdUHK Robotics Team 2026  
+GitHub: `herolch07`
 
-这是 R1 控制系统的当前最终整理版 README。打开 GitHub 仓库时应优先阅读本文件。
+## Current Status
 
-当前正式操作与接口以以下文件为准：
+This is the current final README for GitHub. The source-of-truth operation and interface documents are:
 
-- [QUICK_START.md](QUICK_START.md)：最快启动和验证步骤
-- [CONTROLLER_USAGE.md](CONTROLLER_USAGE.md)：当前手柄按键表
-- [ARCHITECTURE.md](ARCHITECTURE.md)：系统架构和节点职责
-- [NODE_GRAPH.md](NODE_GRAPH.md)：node/topic 数据流
-- [TESTING_GUIDE.md](TESTING_GUIDE.md)：测试与实机检查
-- [SAFETY_REPORT.md](SAFETY_REPORT.md)：安全机制说明
+- [QUICK_START.md](QUICK_START.md): fastest startup and verification steps
+- [CONTROLLER_USAGE.md](CONTROLLER_USAGE.md): current controller keymap
+- [ARCHITECTURE.md](ARCHITECTURE.md): system architecture and node responsibilities
+- [NODE_GRAPH.md](NODE_GRAPH.md): node/topic data flow
+- [TESTING_GUIDE.md](TESTING_GUIDE.md): tests and robot-side checks
+- [SAFETY_REPORT.md](SAFETY_REPORT.md): safety mechanism summary
 
-历史文档和早期调参记录只用于回溯，不再作为当前实机操作依据。
-本次清理前的旧版根目录 README 已归档到 [docs/history/README.root-before-cleanup.md](docs/history/README.root-before-cleanup.md)。
+Historical documents and early tuning notes are kept only for traceability. They are not the current robot operation reference. The pre-cleanup root README is archived at [docs/history/README.root-before-cleanup.md](docs/history/README.root-before-cleanup.md).
 
-## 命名说明
+## Naming Note
 
-当前正确名称是 **STAFF gripper**，不是 arm gripper。
+The correct name is **STAFF gripper**, not arm gripper.
 
-仓库里仍可能出现以下旧命名：
+The repository may still contain these legacy names:
 
 - `arm_gripper_controller_node`
 - `arm_gripper_joystick_bridge_node`
 - `/arm_gripper_speed_cmd`
 - `/arm_gripper_status`
 
-这些属于旧的 Motor 7 速度控制链路，当前正式启动脚本不再使用。当前 STAFF gripper 由以下链路控制：
+Those names belong to the old Motor 7 velocity-control chain and are not used by the current official startup script. The current STAFF gripper chain is:
 
-- Motor 7 / Motor 8 位置控制：`motor7_position_controller_node`、`motor8_position_controller_node`
-- STAFF pneumatic relay：`pneumatic_gripper_joystick_bridge_node`
-- Arduino 五路 relay 聚合：`kfs_staff_gripper_arduino_node`
+- Motor 7 / Motor 8 position control: `motor7_position_controller_node`, `motor8_position_controller_node`
+- STAFF pneumatic relay: `pneumatic_gripper_joystick_bridge_node`
+- Arduino five-relay aggregation: `kfs_staff_gripper_arduino_node`
 
-如果后续要重命名目录或 package，建议不要直接把 `src/r1_arm_control` 改名为 `staff_gripper_control`，因为这个 package 还包含 Motor 5 elevator、Motor 6 horizontal、Motor 7/8 position，不只负责 STAFF gripper。更合理的做法是：
+If the package is renamed later, prefer `src/r1_mechanism_control` over `staff_gripper_control`, because the current `src/r1_arm_control` package also owns Motor 5 elevator and Motor 6 horizontal control.
 
-```text
-src/r1_arm_control -> src/r1_mechanism_control
-package name       -> r1_mechanism_control
-```
-
-如果只想修正旧 gripper 命名，可以逐步把旧节点改为 legacy 或删除，而不是让 package 名称只代表其中一个机构。
-
-## 当前系统组成
+## Current System
 
 ```text
-Motor 1-4  : 四轮全向底盘，VEL 模式
-Motor 5    : KFS elevator，VEL 模式
-Motor 6    : KFS horizontal，VEL 模式
-Motor 7    : STAFF gripper position motor，POS_VEL 模式
-Motor 8    : STAFF gripper position motor，POS_VEL 模式
-Arduino    : 五路 relay 面板，控制 KFS gripper、Motor7/8 STAFF gripper relay、Motor7/8 head/inclination relay
-Controller : 8BitDo 手柄，通过 Linux evdev 输入
+Motor 1-4  : four-wheel omni base, VEL mode
+Motor 5    : KFS elevator, VEL mode
+Motor 6    : KFS horizontal, VEL mode
+Motor 7    : STAFF gripper position motor, POS_VEL mode
+Motor 8    : STAFF gripper position motor, POS_VEL mode
+Arduino    : five-relay panel for KFS gripper, Motor7/8 STAFF gripper relays, Motor7/8 head/inclination relays
+Controller : 8BitDo controller through Linux evdev
 ```
 
-## 快速启动
+## Quick Start
 
-在机器人主机上：
+On the robot host:
 
 ```bash
 cd /home/robotics/robocon2026_r1/r1_control_ws
@@ -71,23 +63,23 @@ chmod +x r1_start_base_1_0.sh
 ./r1_start_base_1_0.sh
 ```
 
-启动后会创建 tmux session：
+The script creates this tmux session:
 
 ```text
 r1_control
 ```
 
-常用 tmux 操作：
+Common tmux commands:
 
 ```text
-进入窗口: tmux attach -t r1_control
-离开窗口: Ctrl+b, then d
-停止系统: tmux kill-session -t r1_control
+Attach: tmux attach -t r1_control
+Detach: Ctrl+b, then d
+Stop all: tmux kill-session -t r1_control
 ```
 
-## 当前启动节点
+## Runtime Nodes
 
-`r1_start_base_1_0.sh` 是当前正式启动脚本，会启动：
+`r1_start_base_1_0.sh` is the current official startup script. It starts:
 
 ```text
 joystick_node
@@ -109,27 +101,27 @@ joystick_shutdown_node
 monitor shell
 ```
 
-不要把旧的 `start.sh`、`start_background.sh`、`start_ssh.sh` 当作当前正式入口。
+Do not use the old `start.sh`, `start_background.sh`, or `start_ssh.sh` as the current official entry point. They are archived under `archive/legacy_scripts/`.
 
-## 手柄按键
+## Controller Keymap
 
-固定功能：
-
-```text
-左摇杆: 底盘平移，按操作者视角控制
-右摇杆: 底盘原地旋转
-D-pad : 设置 KFS visual front 在操作者视角中的方向
-X + Y + B + A 长按 5 秒: Raspberry Pi shutdown
-```
-
-模式选择：
+Always active:
 
 ```text
-SELECT / 中左: STAFF mode (/operation_mode = 1)
-START  / 中右: KFS mode   (/operation_mode = 2)
+Left stick: base translation in operator frame
+Right stick: base in-place rotation
+D-pad     : set the KFS visual front direction in operator frame
+Hold X + Y + B + A for 5 s: Raspberry Pi shutdown
 ```
 
-STAFF mode：
+Mode select:
+
+```text
+SELECT / center-left : STAFF mode (/operation_mode = 1)
+START  / center-right: KFS mode   (/operation_mode = 2)
+```
+
+STAFF mode:
 
 ```text
 A     : Motor7 STAFF gripper 90-degree / preset cycle
@@ -142,7 +134,7 @@ R3/P1 : Motor7 head / inclination relay toggle
 L3/P2 : Motor8 head / inclination relay toggle
 ```
 
-KFS mode：
+KFS mode:
 
 ```text
 Y     : KFS gripper toggle
@@ -150,9 +142,9 @@ L2/R2 : Motor6 horizontal positive(out) / negative(in)
 L1/R1 : Motor5 elevator negative(down) / positive(up)
 ```
 
-D-pad down 时，STAFF mode 会交换 Motor7/Motor8 的 STAFF gripper 控制映射，以适配操作者反向面对机器人时的操作直觉。详细规则见 [CONTROLLER_USAGE.md](CONTROLLER_USAGE.md)。
+When D-pad down is active, STAFF mode swaps the Motor7/Motor8 STAFF gripper mappings so operation remains intuitive when the operator faces the robot from the opposite side. See [CONTROLLER_USAGE.md](CONTROLLER_USAGE.md) for details.
 
-## 当前重要参数
+## Important Defaults
 
 ```text
 Joystick axis range: -512 .. 512
@@ -180,7 +172,7 @@ STAFF pneumatic safe_state: [1,0,1,0]
 Arduino five-relay safe_state: [0,1,0,1,0]
 ```
 
-底盘当前标定：
+Current base calibration:
 
 ```text
 Motor 1 = left front
@@ -190,79 +182,78 @@ Motor 4 = left rear
 
 lateral_axis_sign = 1.0
 rotation_axis_sign = 1.0
-forward_coeff_1..4  = [1, 1, -1, -1]
-lateral_coeff_1..4  = [1, -1, -1, 1]
-rotation_coeff_1..4 = [1, -1, 1, -1]
+forward_coeff_1..4   = [1, 1, -1, -1]
+lateral_coeff_1..4   = [1, -1, -1, 1]
+rotation_coeff_1..4  = [1, -1, 1, -1]
 motor_direction_1..4 = [-1, 1, -1, 1]
 ```
 
-## Package 地图
+## Package Map
 
 ```text
-src/my_joystick_msgs          自定义 Joystick message
-src/my_joystick_driver        evdev 手柄驱动，发布 /joystick_data
-src/joystick_bridge           手柄到底盘 /local_driving 的桥接
-src/base_omniwheel_r2_700     四轮全向底盘运动学与达妙电机驱动
-src/operation_mode_control    STAFF/KFS 模式选择
-src/r1_arm_control            当前实际是 R1 mechanism control，含 Motor5/6/7/8 控制
-src/arduino_pneumatic_driver  STAFF pneumatic bridge，发布 /pneumatic_gripper_cmd
-src/kfs_staff_gripper         五路 Arduino relay 聚合与 KFS gripper bridge
-src/keyboard_teleop           键盘调试入口，非当前正式比赛入口
-src/robot_power_control       手柄长按关机
+src/my_joystick_msgs          Custom Joystick message
+src/my_joystick_driver        evdev controller driver, publishes /joystick_data
+src/joystick_bridge           controller-to-/local_driving bridge
+src/base_omniwheel_r2_700     omni base kinematics and Damiao motor driver
+src/operation_mode_control    STAFF/KFS operation mode selector
+src/r1_arm_control            currently R1 mechanism control, owns Motor5/6/7/8 control
+src/arduino_pneumatic_driver  STAFF pneumatic bridge, publishes /pneumatic_gripper_cmd
+src/kfs_staff_gripper         five-relay Arduino aggregation and KFS gripper bridge
+src/keyboard_teleop           keyboard debug entry, not the current match entry
+src/robot_power_control       controller long-press shutdown
 ```
 
-## 安全机制
+## Safety Layers
 
-当前系统有多层 timeout/watchdog：
+The current system has layered timeout/watchdog protection:
 
-- `joystick_bridge`：`/joystick_data` 超时后发布 `/local_driving = [0,0,0]`。
-- `local_navigation_node`：`/local_driving` 超时后向 Motor 1-4 发布零速度。
-- `damiao_node`：电机命令超时后发零速度；反馈丢失或电机 disabled 后进入 recovery；恢复后必须收到 neutral command 才允许非零输出。
-- `r1_arm_control`：Motor5/6 速度控制超时归零；Motor7/8 POS_VEL 输入超时后停止 trim 并 hold 当前反馈位置。
-- `operation_mode_control`：手柄输入超时后发布 `MODE_INVALID`，下游 mechanism bridge 停止接受旧按键状态。
-- `kfs_staff_gripper_arduino_node`：Arduino 串口启动、重连、关闭和命令源超时时写入 safe state。
-- `robot_power_control`：`X+Y+B+A` 长按触发关机，默认节点支持 dry-run；正式启动脚本当前传入 `dry_run:=false`。
+- `joystick_bridge`: publishes `/local_driving = [0,0,0]` when `/joystick_data` times out.
+- `local_navigation_node`: sends zero speed to Motor 1-4 when `/local_driving` times out.
+- `damiao_node`: sends zero speed on motor command timeout; enters recovery when feedback is lost or a motor is disabled; requires a neutral command before non-zero output is unlocked after recovery.
+- `r1_arm_control`: Motor5/6 speed controllers zero on timeout; Motor7/8 POS_VEL controllers stop trim and hold the current feedback position on input timeout.
+- `operation_mode_control`: publishes `MODE_INVALID` on joystick timeout, causing downstream mechanism bridges to reject stale button state.
+- `kfs_staff_gripper_arduino_node`: writes safe state on Arduino serial startup, reconnect, shutdown, and command-source timeout.
+- `robot_power_control`: long-press `X+Y+B+A` triggers shutdown; the node supports dry-run by default, while the official startup script passes `dry_run:=false`.
 
-## 自动启动
+## Autostart
 
-仓库包含 systemd watcher：
+The repository includes a systemd watcher:
 
 ```text
 systemd/r1-control-autostart.service
 scripts/wait_and_start_robot.sh
 ```
 
-它会等待 8BitDo / Xbox 手柄出现后再启动 `r1_start_base_1_0.sh`。当前 `STOP_ON_CONTROLLER_LOST=0`，手柄短暂断连不会杀掉 tmux session，安全输出由各节点 watchdog 负责。
+It waits for an 8BitDo / Xbox controller before starting `r1_start_base_1_0.sh`. Current `STOP_ON_CONTROLLER_LOST=0` means a short controller dropout does not kill the tmux session; node watchdogs remain responsible for safe output.
 
-## 清理建议
+## Cleanup Status
 
-如果要整理 GitHub record：
+To make the GitHub record easier to read:
 
-- 保留本 `README.md` 作为唯一入口说明。
-- 保留每个 package 的 `README.md` 和 `TODO.md`，这是工程文档的一部分。
-- 可将旧操作文档、旧启动脚本、实机 debug 脚本移到 `docs/history/` 或 `tools/hardware_debug/`。
-- 建议从 Git 移除 `logs/*.log`，并在 `.gitignore` 中加入 `logs/`。
-- 建议修正 `base_omniwheel_r2_700/setup.py` 中不存在的旧 console script。
-- 建议给 `src/my_joystick_msgs` 补 `README.md`。
+- The root README is now the current final entry point.
+- Old operation documents were moved to `docs/history/`.
+- Old startup scripts were moved to `archive/legacy_scripts/`.
+- Hardware debug scripts were moved to `tools/hardware_debug/`.
+- `logs/*.log` were removed from Git tracking, and `.gitignore` now includes `logs/`.
 
-## 目录重命名建议
+## Rename Recommendation
 
-如果只是改显示文档，当前 README 已经把 `arm gripper` 纠正为 `STAFF gripper`。
+For documentation only, this README already corrects `arm gripper` to `STAFF gripper`.
 
-如果要真正改目录或 package 名，需要同步修改：
+If the directory or package name is truly changed later, update all of these together:
 
 ```text
-目录名
-package.xml 的 <name>
-setup.py 的 package_name
-setup.cfg 的 script_dir / install_scripts
-Python import 路径
+directory name
+package.xml <name>
+setup.py package_name
+setup.cfg script_dir / install_scripts
+Python import path
 console_scripts
-所有 ros2 run 命令
-所有文档和测试 import
+all ros2 run commands
+all documentation and test imports
 ```
 
-推荐重命名路线：
+Recommended route:
 
 ```text
 src/r1_arm_control
@@ -272,11 +263,4 @@ r1_arm_control package
   -> r1_mechanism_control
 ```
 
-不推荐把整个 `r1_arm_control` 改成 `staff_gripper_control`，因为它还负责 KFS elevator 和 KFS horizontal。若以后要进一步拆包，可以拆成：
-
-```text
-src/r1_kfs_mechanism_control
-src/staff_gripper_control
-```
-
-但当前系统已经完结，最稳妥的做法是先只清理文档和旧脚本，不大规模改 ROS package 名。
+Do not rename the whole package to `staff_gripper_control`, because it also owns KFS elevator and KFS horizontal control. Since the system is already in a final state, the lowest-risk cleanup is documentation and legacy-script organization first, not a broad ROS package rename.

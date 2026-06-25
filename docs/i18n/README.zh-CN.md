@@ -232,4 +232,6 @@ scripts/wait_and_start_robot.sh
 
 ## License
 
+Copyright 2026 EdUHK Robotics Team(Architeacher)@Hero Lam.
+
 本项目使用 Apache License 2.0。详见 [LICENSE](../../LICENSE)。

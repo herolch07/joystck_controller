@@ -19,6 +19,7 @@ GitHub：`herolch07`
 - [NODE_GRAPH.md](../../NODE_GRAPH.md)：node/topic 數據流
 - [TESTING_GUIDE.md](../../TESTING_GUIDE.md)：測試與實機檢查
 - [SAFETY_REPORT.md](../../SAFETY_REPORT.md)：安全機制說明
+- [arduino/five_relay_panel/five_relay_panel.ino](../../arduino/five_relay_panel/five_relay_panel.ino)：Arduino Mega 五路 relay 面板韌體
 
 歷史文件和早期調參記錄只用於回溯，不再作為當前實機操作依據。清理前的舊版根目錄 README 已歸檔到 [../history/README.root-before-cleanup.md](../history/README.root-before-cleanup.md)。
 
@@ -49,7 +50,7 @@ Motor 5    : KFS elevator，VEL 模式
 Motor 6    : KFS horizontal，VEL 模式
 Motor 7    : STAFF gripper position motor，POS_VEL 模式
 Motor 8    : STAFF gripper position motor，POS_VEL 模式
-Arduino    : 五路 relay 面板，控制 KFS gripper、Motor7/8 STAFF gripper relay、Motor7/8 head/inclination relay
+Arduino    : 五路 relay 面板，控制 KFS gripper、Motor7/8 STAFF gripper relay、Motor7/8 head/inclination relay；韌體在 arduino/five_relay_panel/five_relay_panel.ino
 Controller : 8BitDo 手柄，通過 Linux evdev 輸入
 ```
 
@@ -201,6 +202,7 @@ src/operation_mode_control    STAFF/KFS 模式選擇
 src/r1_arm_control            當前實際是 R1 mechanism control，含 Motor5/6/7/8 控制
 src/arduino_pneumatic_driver  STAFF pneumatic bridge，發布 /pneumatic_gripper_cmd
 src/kfs_staff_gripper         五路 Arduino relay 聚合與 KFS gripper bridge
+arduino/five_relay_panel      Arduino Mega 五路 relay 韌體草圖
 src/keyboard_teleop           鍵盤調試入口，非當前正式比賽入口
 src/robot_power_control       手柄長按關機
 ```

@@ -17,6 +17,7 @@ This is the current final README for GitHub. The source-of-truth operation and i
 - [NODE_GRAPH.md](NODE_GRAPH.md): node/topic data flow
 - [TESTING_GUIDE.md](TESTING_GUIDE.md): tests and robot-side checks
 - [SAFETY_REPORT.md](SAFETY_REPORT.md): safety mechanism summary
+- [arduino/five_relay_panel/five_relay_panel.ino](arduino/five_relay_panel/five_relay_panel.ino): Arduino Mega five-relay panel firmware
 
 Historical documents and early tuning notes are kept only for traceability. They are not the current robot operation reference. The pre-cleanup root README is archived at [docs/history/README.root-before-cleanup.md](docs/history/README.root-before-cleanup.md).
 
@@ -47,7 +48,7 @@ Motor 5    : KFS elevator, VEL mode
 Motor 6    : KFS horizontal, VEL mode
 Motor 7    : STAFF gripper position motor, POS_VEL mode
 Motor 8    : STAFF gripper position motor, POS_VEL mode
-Arduino    : five-relay panel for KFS gripper, Motor7/8 STAFF gripper relays, Motor7/8 head/inclination relays
+Arduino    : five-relay panel for KFS gripper, Motor7/8 STAFF gripper relays, Motor7/8 head/inclination relays; firmware at arduino/five_relay_panel/five_relay_panel.ino
 Controller : 8BitDo controller through Linux evdev
 ```
 
@@ -199,6 +200,7 @@ src/operation_mode_control    STAFF/KFS operation mode selector
 src/r1_arm_control            currently R1 mechanism control, owns Motor5/6/7/8 control
 src/arduino_pneumatic_driver  STAFF pneumatic bridge, publishes /pneumatic_gripper_cmd
 src/kfs_staff_gripper         five-relay Arduino aggregation and KFS gripper bridge
+arduino/five_relay_panel      Arduino Mega five-relay firmware sketch
 src/keyboard_teleop           keyboard debug entry, not the current match entry
 src/robot_power_control       controller long-press shutdown
 ```

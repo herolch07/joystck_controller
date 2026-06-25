@@ -15,6 +15,7 @@ serial command = [r1,r2,r3,r4,r5]
 HIGH = ON, LOW = OFF
 [KFS gripper, M7 gripper, M8 inclination, M8 gripper, M7 inclination]
 full safe_state = [0,1,0,1,0]
+Arduino sketch = ../../arduino/five_relay_panel/five_relay_panel.ino
 ```
 
 `/pneumatic_gripper_cmd` 必須是 4 路並映射到 relay2-5；`/kfs_staff_gripper_cmd` 是 1 路並映射到 relay1。舊三路、六路、七路段落只保留作硬件演進記錄，不代表目前實機 wiring。

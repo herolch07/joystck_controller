@@ -146,6 +146,7 @@
 
 - [x] Arduino serial protocol 改為五路 `[r1,r2,r3,r4,r5]`
 - [x] relay pins 更新為 `{22,24,25,27,28}` 對應 ROS 順序 `[KFS, M7 gripper, M8 inclination, M8 gripper, M7 inclination]`
+- [x] 五路 Arduino sketch 已保存到 `arduino/five_relay_panel/five_relay_panel.ino`
 - [x] `DEFAULT_SAFE_STATE` 更新為 `[0,1,0,1,0]`
 - [x] `/pneumatic_gripper_cmd` 改為四路，映射 relay 2-5
 - [x] `/kfs_staff_gripper_cmd` 保持一路，映射 relay 1
